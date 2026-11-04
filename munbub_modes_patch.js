@@ -29,6 +29,7 @@ const stories={
  '이심전심':['선종의 전승','부처가 꽃을 들어 보이자 가섭이 미소로 뜻을 알아차렸다는 염화미소 전승과 관련지어 설명해.'],
  '토사구팽':['사기 관련 고사','토끼를 잡으면 사냥개를 삶는다는 비유로 공을 세운 사람을 필요 없어졌다고 버리는 일을 가리켜.']
 };
+Object.assign(stories,{"군계일학":["진서 혜소전","혜소가 사람들 사이에 있을 때 학이 닭 무리에 서 있는 듯 눈에 띈다는 평가에서 유래했어."],"오리무중":["후한서 장해전","장해가 다섯 리 안을 뒤덮는 안개를 만들 수 있었다는 일화에서 유래했어."],"점입가경":["진서 고개지전","고개지가 사탕수수를 덜 단 부분부터 먹으며 뒤로 갈수록 맛있어진다고 설명한 일화에서 유래했어."],"풍수지탄":["한시외전","고어가 부모를 봉양하려 할 때 이미 때가 늦었다며, 나무는 고요하려 해도 바람이 그치지 않는다고 탄식한 이야기야."],"상전벽해":["신선전 마고 이야기","마고가 동해가 뽕나무밭으로 여러 차례 바뀐 일을 말한다는 전승에서 세상 변화의 큼을 나타내게 되었어."],"온고지신":["논어 위정편","공자는 옛것을 익히고 이를 바탕으로 새것을 알면 남의 스승이 될 수 있다고 말했어."],"유비무환":["서경 관련 구절","미리 준비해 두면 근심할 일이 없다는 뜻의 옛 구절에서 쓰였어."]});
 const style=document.createElement('style');style.id='mb-modes-2026';
 style.textContent=[
  '#homeScreen .mb-home-dashboard{grid-template-columns:minmax(240px,1.08fr) minmax(300px,.92fr)!important}',
@@ -146,11 +147,24 @@ style.textContent=[
    html+='<strong>📖 뜻과 핵심</strong><p>'+esc(q.answer)+' : '+esc(q.meaning)+'</p>';
    const tale=stories[q.answer];
    if(tale)html+='<strong>📜 관련 고사 · '+esc(tale[0])+'</strong><p>'+esc(tale[1])+'</p>';
-   if(!f.good)html+='<strong>왜 오답인가?</strong><p>입력한 '+esc(f.user)+'은(는) 이 뜻에 해당하지 않아. 핵심 뜻을 정답인 '+esc(q.answer)+'과 연결해 기억해 봐.</p>';
+   if(!f.good){
+    const selected=(typeof BANK!=='undefined'&&BANK.idioms||[]).find(item=>item.answer===String(f.user||'').trim());
+    html+='<strong>🔎 오답 분석</strong><p>정답 '+esc(q.answer)+'의 뜻은 '+esc(q.meaning)+'이야. ';
+    if(selected)html+='네가 선택한 '+esc(selected.answer)+'의 뜻은 '+esc(selected.meaning)+'이므로 의미와 상황이 달라.';
+    else html+='입력한 '+esc(f.user)+'은(는) 해당 뜻을 가리키는 바른 사자성어가 아니야.';
+    html+='</p><p>✅ 복습: 문제의 뜻과 정답을 함께 소리 내어 읽어 보자.</p>';
+   }
   }else{
    if(q.note)html+='<strong>✅ 바른 표현의 이유</strong><p>'+esc(q.note)+'</p>';
    if(q.prompt?.includes('___')&&q.answers?.length)html+='<strong>바르게 완성한 문장</strong><p>'+esc(q.prompt.replace('___',q.answers[0]))+'</p>';
-   if(!f.good)html+='<strong>오답 비교</strong><p>선택한 '+esc(f.user)+'과 정답 '+esc((q.answers||[]).join(' / '))+'의 활용·의미·띄어쓰기를 비교해 봐.</p>';
+   if(!f.good){
+    const correct=(q.answers||[])[0]||'';
+    html+='<strong>🔎 오답 비교</strong><p>네 선택: <strong>'+esc(f.user)+'</strong> · 바른 표현: <strong>'+esc((q.answers||[]).join(' / '))+'</strong></p>';
+    if(q.prompt?.includes('___')){
+     html+='<strong>📖 문장 비교</strong><p>오답 문장: '+esc(q.prompt.replace('___',String(f.user)))+'</p><p>정답 문장: '+esc(q.prompt.replace('___',correct))+'</p>';
+    }
+    html+='<p>✅ 복습: 문장의 의미·활용·띄어쓰기를 비교하고 정답이 되는 이유를 확인해 봐.</p>';
+   }
   }
   return html?'<div class="mb-deep-note">'+html+'</div>':'';
  }
