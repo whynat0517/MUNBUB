@@ -64,21 +64,6 @@ style.textContent=[
  const mainLeft=document.querySelector('#homeScreen .mb-dashboard-left');
  const hardButton=document.createElement('button');hardButton.type='button';hardButton.className='mb-hard-button';hardButton.dataset.route='hard';mainLeft?.append(hardButton);
  const row=document.createElement('div');row.className='mb-local-buttons';row.innerHTML='<button id="mb-account-open" type="button">👤 내 프로필</button><button id="mb-rank-open" type="button">🏆 내 기기 랭킹</button>';mainLeft?.append(row);
- const modal=document.createElement('dialog');modal.id='mb-hard-account';document.body.append(modal);
- function showModal(html){modal.innerHTML=html+'<p><button type="button" id="mb-modal-close">닫기</button></p>';modal.querySelector('#mb-modal-close').addEventListener('click',()=>modal.close());modal.showModal()}
- function name(){return read(PROFILE,{}).name||'손님'}
- function ranking(){return read(RANK,[]).filter(x=>x&&Number.isFinite(x.score)).sort((a,b)=>b.score-a.score||b.correct-a.correct).slice(0,100)}
- function accountModal(){
-  showModal('<h2>👤 이 기기의 닉네임</h2><p class="caption">온라인 계정이 아니라 현재 브라우저에 저장되는 로컬 프로필입니다. 이메일이나 비밀번호를 입력하지 마세요.</p><input id="mb-nickname" maxlength="12" placeholder="닉네임 2~12자" value="'+esc(name()==='손님'?'':name())+'"><p><button id="mb-save-name">닉네임 저장</button><button id="mb-signout-name">프로필 해제</button></p>');
-  modal.querySelector('#mb-save-name').addEventListener('click',()=>{const x=modal.querySelector('#mb-nickname').value.trim();if(x.length<2||x.length>12){alert('닉네임은 2~12자로 입력해 줘.');return}save(PROFILE,{name:x});modal.close()});
-  modal.querySelector('#mb-signout-name').addEventListener('click',()=>{save(PROFILE,{});modal.close()});
- }
- function rankingModal(){
-  const list=ranking();let rows=list.length?list.slice(0,30).map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(x.name)+'</td><td>'+x.score+'</td><td>'+x.correct+'</td></tr>').join(''):'<tr><td colspan="4">아직 기록이 없어. 도전해 봐!</td></tr>';
-  showModal('<h2>🏆 내 기기 하드 랭킹</h2><p class="caption">이 순위는 이 브라우저에만 저장됩니다. 온라인 랭킹은 인증·데이터베이스 연결 후 제공할 수 있어요.</p><table><tr><th>순위</th><th>닉네임</th><th>점수</th><th>연속 정답</th></tr>'+rows+'</table>');
- }
- $('mb-account-open')?.addEventListener('click',accountModal);
- $('mb-rank-open')?.addEventListener('click',rankingModal);
  function isBasic(c){return c&&!c.hard&&!c.timed&&!c.infinite&&!c.onlyWrong&&['spelling','idiom'].includes(c.category)}
  function unlocked(){
   if(read(UNLOCK,false))return true;
@@ -189,7 +174,7 @@ style.textContent=[
   const h=endState||{};
   $('view-result').innerHTML='<div class="panel"><h2>⚔ 하드모드 종료!</h2><p class="summary">첫 오답에서 종료 · 연속 정답 '+(h.correct||0)+'개</p><div class="metrics"><span>점수 <strong>'+(h.score||0)+'</strong></span><span>정답 <strong>'+(h.correct||0)+'</strong></span></div><p>객관식은 35초, 서술형은 60초를 기준으로 답변 시간이 짧을수록 높은 점수. 문제당 최대 10점!</p>'+(h.miss?'<h3>마지막 오답과 자세한 해설</h3><div class="feedback bad">'+h.miss+'</div>':'')+'<div class="row"><button class="action" id="mb-hard-replay">다시 도전</button><button class="action" id="mb-hard-leaderboard">온라인 랭킹</button><button class="action" data-route="home">홈으로</button></div></div>';
   $('mb-hard-replay')?.addEventListener('click',()=>openSetup('hard'));
-  $('mb-hard-leaderboard')?.addEventListener('click',rankingModal);
+  // Online leaderboard button is handled by the online module.
  };
  window.finishSession=function(timeUp=false){
   const a=store.active;
