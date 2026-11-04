@@ -297,3 +297,68 @@
  }
  boostHomeMusic();
 })();
+
+
+/* Mascot update only: original navigation, controls, images and quiz logic remain intact. */
+(()=>{
+ 'use strict';
+ if(window.__munbubMascotV1)return;
+ window.__munbubMascotV1=true;
+ const mascot=document.querySelector('#homeScreen .hero-character');
+ if(!mascot)return;
+ mascot.src='./ui-assets/mascot-character.png';
+ mascot.alt='맛춘범 픽셀 캐릭터';
+ mascot.decoding='async';
+ mascot.draggable=false;
+ mascot.classList.add('mb-mascot-animated');
+ const style=document.createElement('style');
+ style.id='mb-mascot-animations-v1';
+ style.textContent=`
+ /* Preserve existing layout sizing on PC, tablets and mobile */
+ #homeScreen .hero-character.mb-mascot-animated{
+  image-rendering:pixelated;
+  transform-origin:52% 86%;
+  animation:mb-mascot-enter .7s cubic-bezier(.2,1.1,.3,1) both,
+            mb-mascot-idle 3.8s ease-in-out .7s infinite;
+  will-change:transform;
+ }
+ #homeScreen .hero-character.mb-mascot-animated.mb-mascot-react{
+  animation:mb-mascot-respond .68s cubic-bezier(.24,.8,.22,1) 1;
+ }
+ @keyframes mb-mascot-enter{
+  0%{opacity:0;transform:translateY(18px) scale(.9) rotate(-7deg)}
+  75%{opacity:1;transform:translateY(-4px) scale(1.035) rotate(2deg)}
+  100%{opacity:1;transform:none}
+ }
+ @keyframes mb-mascot-idle{
+  0%,100%{transform:translateY(0) rotate(-.65deg) scale(1)}
+  25%{transform:translateY(-3px) rotate(.35deg) scale(1.008)}
+  50%{transform:translateY(-5px) rotate(1.15deg) scale(1.016)}
+  75%{transform:translateY(-2px) rotate(-.35deg) scale(1.008)}
+ }
+ @keyframes mb-mascot-respond{
+  0%{transform:translateY(-2px) rotate(-.5deg) scale(1)}
+  22%{transform:translateY(-13px) rotate(-5deg) scale(1.07)}
+  44%{transform:translateY(3px) rotate(5deg) scale(.98)}
+  65%{transform:translateY(-8px) rotate(-3deg) scale(1.035)}
+  100%{transform:translateY(0) rotate(0) scale(1)}
+ }
+ @media(prefers-reduced-motion:reduce){
+  #homeScreen .hero-character.mb-mascot-animated,
+  #homeScreen .hero-character.mb-mascot-animated.mb-mascot-react{
+   animation:none!important;transform:none!important
+  }
+ }`;
+ document.head.appendChild(style);
+ let reactiveTimeout;
+ const play=()=>{
+  if(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return;
+  clearTimeout(reactiveTimeout);
+  mascot.classList.remove('mb-mascot-react');
+  void mascot.offsetWidth;
+  mascot.classList.add('mb-mascot-react');
+  reactiveTimeout=setTimeout(()=>mascot.classList.remove('mb-mascot-react'),680);
+ };
+ document.querySelector('#homeScreen .home-hero')?.addEventListener('pointerdown',play,{passive:true});
+ document.querySelector('#homeScreen .home-card-grid')?.addEventListener('click',play);
+})();
