@@ -63,14 +63,14 @@ style.textContent=[
  if(timerHome){for(const n of timerHome.childNodes)if(n.nodeType===3){n.textContent='시간제한 도전! ';break}const span=timerHome.querySelector('span');if(span)span.textContent='단원과 시간을 선택해서 도전!';}
  const mainLeft=document.querySelector('#homeScreen .mb-dashboard-left');
  const hardButton=document.createElement('button');hardButton.type='button';hardButton.className='mb-hard-button';hardButton.dataset.route='hard';mainLeft?.append(hardButton);
- const row=document.createElement('div');row.className='mb-local-buttons';row.innerHTML='<button id="mb-account-open" type="button">👤 내 프로필</button><button id="mb-rank-open" type="button">🏆 내 기기 랭킹</button>';mainLeft?.append(row);
+ const row=document.createElement('div');row.className='mb-online-actions';row.innerHTML='<button id="mb-account-open" type="button">👤 온라인 로그인</button><button id="mb-rank-open" type="button">🏆 온라인 랭킹</button>';mainLeft?.append(row);
  function isBasic(c){return c&&!c.hard&&!c.timed&&!c.infinite&&!c.onlyWrong&&['spelling','idiom'].includes(c.category)}
  function unlocked(){
   if(read(UNLOCK,false))return true;
   const prior=store.history?.some(x=>!x.abandoned&&isBasic(x.cfg)&&x.answered>=1);
   if(prior)save(UNLOCK,true);return !!prior;
  }
- function updateHardButton(){const yes=unlocked();hardButton.classList.toggle('locked',!yes);hardButton.innerHTML=yes?'⚔ 하드모드<small>한 번 틀리면 즉시 종료 · 빠르게 풀수록 고득점!</small>':'🔒 하드모드<small>기본 맞춤법·사자성어 한 세트를 끝내면 해금</small>'}
+ function updateHardButton(){const yes=unlocked();hardButton.classList.toggle('locked',!yes);hardButton.innerHTML=yes?'⚔ 하드코어<small>오답 한 번이면 종료 · 최고 10점</small>':'🔒 하드코어<small>기본문제 완료 시 해금</small>'}
  const banner=document.createElement('div');banner.id='mb-mode-title';banner.hidden=true;
  const setup=$('view-setup')?.querySelector('.panel');setup?.insertBefore(banner,setup.firstChild);
  function setupUI(m){
