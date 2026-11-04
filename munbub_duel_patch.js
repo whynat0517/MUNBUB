@@ -300,17 +300,25 @@
   if(!info)return;
   const btn=dialog.querySelector('#mb-duel-next-ready');
   if(btn){
-   btn.disabled=!!info.readyAt||busy;
-   btn.textContent=info.readyAt?'✅ 바로 넘어가기 동의 완료':'⚡ 바로 다음 문제로 넘어가기 동의';
+   const disabled=!!info.readyAt||busy;
+   const label=info.readyAt?'✅ 바로 넘어가기 동의 완료':'⚡ 바로 다음 문제로 넘어가기 동의';
+   if(btn.disabled!==disabled)btn.disabled=disabled;
+   if(btn.textContent!==label)btn.textContent=label;
   }
   const clock=dialog.querySelector('#mb-duel-review-clock');
-  if(clock)clock.textContent=!info.otherAnswered?'⏳ 상대 답변 대기 중'
-   :status.turnStartsAt&&now()<status.turnStartsAt
-    ?'⏱ '+(Math.max(0,(status.turnStartsAt-now())/1000)).toFixed(1)+'초 후 자동 진행'
-    :'⚔ 다음 문제 시작!';
+  if(clock){
+   const caption=!info.otherAnswered?'⏳ 상대 답변 대기 중'
+    :status.turnStartsAt&&now()<status.turnStartsAt
+     ?'⏱ '+(Math.max(0,(status.turnStartsAt-now())/1000)).toFixed(1)+'초 후 자동 진행'
+     :'⚔ 다음 문제 시작!';
+   if(clock.textContent!==caption)clock.textContent=caption;
+  }
   const statusText=dialog.querySelector('#mb-duel-review-status');
-  if(statusText)statusText.textContent=info.readyCount+' / 2명 동의'
-   +(info.otherAnswered?' · 둘 다 답변 완료':' · 상대방이 문제를 풀고 있어');
+  if(statusText){
+   const caption=info.readyCount+' / 2명 동의'
+    +(info.otherAnswered?' · 둘 다 답변 완료':' · 상대방이 문제를 풀고 있어');
+   if(statusText.textContent!==caption)statusText.textContent=caption;
+  }
  }
  function updateOpponentSignal(){
   if(!dialog.open||phase!=='question'||!status)return;
