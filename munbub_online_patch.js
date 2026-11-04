@@ -21,7 +21,42 @@
   if(!modal.open)modal.showModal();
  }
  function refreshButtons(){
-  if($('mb-account-open'))$('mb-account-open').textContent='👤 '+(me?.name||'온라인 로그인');
+  const btn=$('mb-account-open');
+  const logged=!!me?.name;
+  if(btn){
+   btn.classList.toggle('mb-account-logged',logged);
+   btn.dataset.accountName=logged?me.name:'';
+   btn.setAttribute('aria-label',logged?me.name+' 계정 열기':'온라인 로그인');
+   btn.replaceChildren();
+   if(logged){
+    const span=document.createElement('span');
+    span.className='mb-account-name';
+    span.textContent=me.name;
+    btn.append(span);
+    const fit=()=>{
+     if(!btn.isConnected)return;
+     const width=Math.max(70,btn.clientWidth*.72);
+     const cv=document.createElement('canvas'),ctx=cv.getContext('2d');
+     let px=Math.min(28,Math.max(13,btn.clientWidth*.16));
+     if(ctx){
+      for(;px>10;px--){
+       ctx.font='900 '+px+'px sans-serif';
+       if(ctx.measureText(me.name).width<=width)break;
+      }
+     }
+     span.style.setProperty('font-size',Math.round(px)+'px','important');
+    };
+    requestAnimationFrame(fit);
+    btn.__mbResizeObserver?.disconnect();
+    if(typeof ResizeObserver!=='undefined'){
+     btn.__mbResizeObserver=new ResizeObserver(fit);
+     btn.__mbResizeObserver.observe(btn);
+    }
+   }else{
+    btn.textContent='👤 온라인 로그인';
+    btn.__mbResizeObserver?.disconnect();
+   }
+  }
   if($('mb-rank-open'))$('mb-rank-open').textContent='🌐 온라인 랭킹';
  }
  api('/api/account').then(x=>{me=x.loggedIn?x:null;refreshButtons()}).catch(()=>refreshButtons());
