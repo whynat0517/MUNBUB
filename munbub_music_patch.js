@@ -48,10 +48,34 @@
   const el=$('bgmNowPlaying');
   if(el)el.textContent=(typeof bgmEnabled!=='undefined'&&!bgmEnabled)?'배경음악 꺼짐':'선택된 곡: '+t.label;
  }
+ function refreshControls(){
+  const on=!!(typeof bgmEnabled!=='undefined'&&bgmEnabled);
+  const pressed=String(on);
+  const main=$('bgmToggle'),quick=$('bgmQuick');
+  if(main){
+   if(main.getAttribute('aria-pressed')!==pressed)main.setAttribute('aria-pressed',pressed);
+   const text=on?'🔊 음악 끄기':'🔇 음악 켜기';
+   if(main.textContent!==text)main.textContent=text;
+  }
+  if(quick){
+   if(quick.getAttribute('aria-pressed')!==pressed)quick.setAttribute('aria-pressed',pressed);
+   const text=on?'♫':'♪̸';
+   if(quick.textContent!==text)quick.textContent=text;
+   quick.setAttribute('aria-label',on?'배경음악 끄기':'배경음악 켜기');
+  }
+  const vol=$('bgmVolume');
+  if(vol&&typeof bgmVolume!=='undefined'){
+   const number=String(Math.round(bgmVolume*100));
+   if(vol.value!==number)vol.value=number;
+   const label=$('bgmVolumeText');
+   if(label&&label.textContent!==number+'%')label.textContent=number+'%';
+  }
+ }
  function update(){
   if(updating)return;
   updating=true;
   try{
+   refreshControls();
    const t=desired(),url=toURL(t.path);
    const playingAllowed=!!(typeof bgmEnabled!=='undefined'&&bgmEnabled&&typeof bgmArmed!=='undefined'&&bgmArmed&&!document.hidden);
    showLabel(t);
