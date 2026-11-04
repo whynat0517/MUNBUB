@@ -68,7 +68,7 @@
  }
  // 1대1 대결은 홈 캐릭터 아래 버튼에서만 진입한다.
  let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null,serverOffset=0;
- let signalBusy=false,signalLastAt=0,signalFailures=0;
+ let signalBusy=false,signalLastAt=0,signalFailures=0,lastOpponentSignal=null;
  const currentRoomKey='mb_duel_last_room_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
  function showError(message){const place=statusEl();if(place)place.textContent=message;else renderNotice(message)}
@@ -89,7 +89,7 @@
   try{const r=await fetch('/api/account',{credentials:'same-origin'});const j=await r.json();return !!j.loggedIn}catch{return false}
  }
  function showLobby(){
-  roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;
+  roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;
   const last=localStorage.getItem(currentRoomKey)||'';
   putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고 같은 문제로 대결해 봐! 방장이 문제 수와 시간, 유형을 정할 수 있어.</p>'+
    '<form id="mb-duel-create-form"><div class="mb-duel-config">'+
@@ -142,7 +142,7 @@
  async function enterRoom(code){
   roomCode=String(code||'').trim().toUpperCase();
   if(!roomCode)return showLobby();
-  phase='room';status=null;feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;
+  phase='room';status=null;feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;
   try{localStorage.setItem(currentRoomKey,roomCode)}catch(_){}
   putHTML('<div class="mb-duel-panel"><p class="mb-duel-status" id="mb-duel-info">대결 정보를 불러오는 중...</p></div>');
   await updateRoom();
@@ -157,8 +157,14 @@
    // An earlier full response must never roll back a fresher signal.
    if(status?.code===code&&signalLastAt>started)return;
    if(Number.isFinite(next.serverNow))serverOffset=next.serverNow-Date.now();
+   const firstSignal=!status?.signalTicket&&!!next.signalTicket;
    status=next;
    showGame();
+   // Don't wait up to 1.4s for the old idle poll timer after room entry.
+   if(firstSignal){
+    clearTimeout(fastTimer);
+    fastTimer=setTimeout(signalPoll,80);
+   }
   }catch(e){showError(e.message)}finally{pollBusy=false}
  }
  // Fast path: a room-bound signed ticket reads only ONE opponent progress Blob
@@ -188,6 +194,7 @@
    const opponent=status.players.find(p=>p.id!==status.me);
    if(!me||!opponent||!Number.isInteger(signal.answered))return;
    if(signal.answered<opponent.answered)return; // Ignore stale Blob copies.
+   lastOpponentSignal=signal;
    const changed=signal.answered!==opponent.answered||
     signal.score!==opponent.score||signal.lastAt!==opponent.lastAt;
    if(!changed)return;
@@ -344,8 +351,26 @@
    if(!Array.isArray(me.answers))me.answers=[];
    if(!me.answers.some(x=>x.index===out.index))
     me.answers.push({index:out.index,at:me.lastAt,correct:out.correct,points:out.points});
-   status.turnReady=false;
-   status.turnStartsAt=null;
+   // If the opponent already chose, both clients can open the next turn
+   // immediately without waiting for the next full multi-Blob refresh.
+   const opponentNow=status.players.find(x=>x.id!==status.me);
+   if(opponentNow&&me.answered<=opponentNow.answered&&me.answered<count()){
+    const index=me.answered-1;
+    const theirs=lastOpponentSignal?.answers?.find(x=>x.index===index)?.at||
+     opponentNow.lastAt;
+    if(theirs){
+     status.turnReady=true;
+     status.turnStartsAt=Math.max(me.lastAt,theirs)+1500;
+    }else{
+     status.turnReady=false;status.turnStartsAt=null;
+    }
+   }else{
+    status.turnReady=false;
+    status.turnStartsAt=null;
+   }
+   status.opponentAnswered=!!opponentNow&&opponentNow.answered>me.answered;
+   status.opponentAnsweredAt=status.opponentAnswered?opponentNow.lastAt:null;
+   status.finished=status.players.every(p=>p.answered>=count());
    showGame();
   }catch(e){lastViewKey='';showError('답변 처리 실패: '+e.message);await updateRoom()}finally{busy=false}
  }
