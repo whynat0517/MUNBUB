@@ -6,6 +6,17 @@ import { configured, noCache, sameOrigin, session, readPrivate, writePrivate, an
 const PREFIX='duels/';
 const MAX_QUESTIONS=10;
 const MS_PER_QUESTION=25000;
+const COUNTS=[5,10,15,20];
+const SECONDS=[10,15,25,40];
+const TYPES=['mixed','spelling','idiom'];
+function validSettings(input){
+ const count=Number(input?.count??10),seconds=Number(input?.seconds??25);
+ const type=String(input?.type??'mixed');
+ return COUNTS.includes(count)&&SECONDS.includes(seconds)&&TYPES.includes(type)
+  ?{count,seconds,type}:null;
+}
+function roomSettings(room){return validSettings(room?.settings)||{count:10,seconds:25,type:'mixed'}}
+
 const ROOM_LIFETIME=45*60*1000;
 const CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const codeOK=s=>typeof s==='string'&&/^[A-HJ-NP-Z2-9]{8}$/.test(s);
@@ -16,15 +27,24 @@ const stepPath=(c,id,index)=>PREFIX+c+'/steps/'+id+'/'+index+'.json';
 const progressPath=(c,id)=>PREFIX+c+'/progress/'+id+'.json';
 const hasExpired=room=>!room||!Number.isFinite(room.expiresAt)||room.expiresAt<Date.now();
 
-function pickQuestions(){
+function pickQuestions(settings){
  const sp=duelQuestionIds().filter(k=>/^s[0-9]+$/.test(k));
  const id=duelQuestionIds().filter(k=>/^i[0-9]+$/.test(k));
- const sample=(arr,n)=>{const a=[...arr];for(let i=0;i<n;i++){const j=i+randomInt(a.length-i);[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)};
- const both=[...sample(sp,5),...sample(id,5)];
- for(let i=both.length-1;i>0;i--){const j=randomInt(i+1);[both[i],both[j]]=[both[j],both[i]]}
- return both;
+ const sample=(arr,n)=>{
+  const a=[...arr];for(let i=0;i<n;i++){const j=i+randomInt(a.length-i);[a[i],a[j]]=[a[j],a[i]]}
+  return a.slice(0,n);
+ };
+ const spCount=settings.type==='spelling'?settings.count
+  :settings.type==='idiom'?0:Math.ceil(settings.count/2);
+ const idiomCount=settings.count-spCount;
+ const all=[...sample(sp,spCount),...sample(id,idiomCount)];
+ if(all.length!==settings.count)throw Error('Insufficient questions for settings');
+ for(let i=all.length-1;i>0;i--){const j=randomInt(i+1);[all[i],all[j]]=[all[j],all[i]]}
+ return all;
 }
+
 async function state(c,room,guest,me){
+ const settings=roomSettings(room);
  const members=[{id:room.hostId,name:room.hostName},...(guest?[{id:guest.id,name:guest.name}]:[])];
  const isMember=members.some(x=>x.id===me.id);
  if(!isMember)return null;
@@ -46,7 +66,7 @@ async function state(c,room,guest,me){
    answered:summary.answered||0,
    correct:summary.correct||0,
    score:summary.score||0,
-   finished:(summary.answered||0)>=MAX_QUESTIONS,
+   finished:(summary.answered||0)>=settings.count,
    lastAt:summary.lastAt||null,
    answers:member.id===me.id?summary.answers||[]:undefined,
    _answerTimes:(summary.answers||[]).map(x=>Number(x.at)||null)
@@ -56,7 +76,9 @@ async function state(c,room,guest,me){
  const other=records.find(x=>x.id!==me.id);
  const turn=mine?.answered||0;
  // The faster player waits for the slower player; the slower one may still answer.
- const turnReady=!!guest&&!!other&&turn<MAX_QUESTIONS&&turn<=other.answered;
+ const turnReady=!!guest&&!!other&&turn<settings.count&&turn<=other.answered;
+ const opponentAnswered=!!other&&other.answered>turn;
+ const opponentAnsweredAt=opponentAnswered?(other._answerTimes[turn]||other.lastAt||null):null;
  const previousAt=turn>0?Math.max(
   mine?._answerTimes[turn-1]||mine?.lastAt||0,
   other?._answerTimes[turn-1]||other?.lastAt||0):0;
@@ -64,6 +86,7 @@ async function state(c,room,guest,me){
  return {code:c,hostName:room.hostName,guestName:guest?.name||null,
   me:me.id,role:room.hostId===me.id?'host':'guest',
   ready:!!guest,startsAt:guest?guest.joinedAt+6000:null,turnReady,turnStartsAt,
+  opponentAnswered,opponentAnsweredAt,serverNow:Date.now(),settings,
   expiresAt:room.expiresAt,questionIds:room.questionIds,
   players:records.map(({_answerTimes,...record})=>record),
   finished:!!guest&&records.every(x=>x.finished)};
@@ -93,14 +116,16 @@ export default async function handler(req,res){
  const body=req.body&&typeof req.body==='object'?req.body:{};
  try{
   if(body.action==='create'){
+   const settings=validSettings(body.settings);
+   if(!settings)return sendError(res,400,'문제 수·시간·유형 중 지원하지 않는 설정이 있어.');
    const code=codeNew(),now=Date.now();
    await put(roomPath(code),JSON.stringify({
-    version:2,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(),
+    version:3,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
    // Create the initial compact read model; avoids a list of empty steps on every poll.
    await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
-   return res.status(201).json({code,expiresAt:now+ROOM_LIFETIME});
+   return res.status(201).json({code,settings,expiresAt:now+ROOM_LIFETIME});
   }
   const code=String(body.code||'').trim().toUpperCase();
   if(!codeOK(code))return sendError(res,400,'올바른 8자리 방 코드를 입력해 줘.');
@@ -139,7 +164,8 @@ export default async function handler(req,res){
    if(!guest)return sendError(res,409,'상대가 입장할 때까지 기다려 줘.');
    if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'이 대결의 참가자가 아니야.');
    const index=Number(body.index);
-   if(!Number.isInteger(index)||index<0||index>=MAX_QUESTIONS)return sendError(res,400,'문제 번호를 확인해 줘.');
+   const settings=roomSettings(room);
+   if(!Number.isInteger(index)||index<0||index>=settings.count)return sendError(res,400,'문제 번호를 확인해 줘.');
    const qid=room.questionIds[index];
    if(!qid)return sendError(res,400,'문제 정보를 찾을 수 없어.');
    const start=guest.joinedAt+6000;
@@ -166,11 +192,19 @@ export default async function handler(req,res){
    if(Date.now()<began)return sendError(res,409,'두 사람의 다음 문제 시작 신호를 기다려 줘.');
    const answer=String(body.answer??'');
    if(answer.length>100)return sendError(res,400,'답변이 너무 길어.');
-   const correct=answerCorrect(qid,answer);
-   if(correct===null)return sendError(res,400,'유효하지 않은 문제야.');
-   const at=Date.now(),elapsed=Math.max(0,at-began);
-   const points=correct?Math.max(0,Math.min(10,Math.round(10-10*Math.min(1,elapsed/MS_PER_QUESTION)))):0;
-   const entry={index,qid,correct,points,at,elapsed};
+   const checked=answerCorrect(qid,answer);
+   if(checked===null)return sendError(res,400,'유효하지 않은 문제야.');
+   const at=Date.now();
+   const opponentAt=Number(otherProgress?.answers?.[index]?.at)||null;
+   // After the opponent chooses, the remaining clock runs at 2x speed.
+   // Only this elapsed time contributes to the deadline; both clients use
+   // the exact same calculation from server timestamps.
+   const elapsed=Math.max(0,at-began)+(opponentAt?Math.max(0,at-opponentAt):0);
+   const maxMs=settings.seconds*1000;
+   const timedOut=elapsed>=maxMs;
+   const correct=!timedOut&&checked;
+   const points=correct?Math.max(0,Math.min(10,Math.round(10-10*Math.min(1,elapsed/maxMs)))):0;
+   const entry={index,qid,correct,points,at,elapsed,timedOut};
    try{await put(path,JSON.stringify(entry),{access:'private',addRandomSuffix:false,contentType:'application/json'})}
    catch(e){return sendError(res,409,'이미 제출되었어. 상태를 새로고침해 줘.')}
    // A compact per-player snapshot makes polling O(2) instead of O(20).
@@ -186,7 +220,7 @@ export default async function handler(req,res){
     // The immutable answer survives even when the read model needs repair.
     console.error('Duel progress snapshot failed',e?.name);
    }
-   return res.status(200).json({accepted:true,index,correct,points,elapsed,finished:index===MAX_QUESTIONS-1});
+   return res.status(200).json({accepted:true,index,correct,points,elapsed,timedOut,finished:index===settings.count-1});
   }
   return sendError(res,400,'알 수 없는 대결 요청이야.');
  }catch(e){console.error('Duel API',e.message);return sendError(res,503,'대결 서버에 문제가 발생했어. 다시 시도해 줘.')}
