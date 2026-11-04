@@ -1,8 +1,7 @@
 /* Private invite-code 1v1 quiz. Neither player's records overwrite the other's. */
 import { randomBytes, randomInt } from 'node:crypto';
 import { list, put } from '@vercel/blob';
-import { configured, noCache, sameOrigin, session, readPrivate, answerCorrect } from '../lib/mb-server.js';
-import answers from '../hard_answer_hashes.json' with { type: 'json' };
+import { configured, noCache, sameOrigin, session, readPrivate, answerCorrect, duelQuestionIds } from '../lib/mb-server.js';
 
 const PREFIX='duels/';
 const MAX_QUESTIONS=10;
@@ -17,8 +16,8 @@ const stepPath=(c,id,index)=>PREFIX+c+'/steps/'+id+'/'+index+'.json';
 const hasExpired=room=>!room||!Number.isFinite(room.expiresAt)||room.expiresAt<Date.now();
 
 function pickQuestions(){
- const sp=Object.keys(answers).filter(k=>/^s[0-9]+$/.test(k));
- const id=Object.keys(answers).filter(k=>/^i[0-9]+$/.test(k));
+ const sp=duelQuestionIds().filter(k=>/^s[0-9]+$/.test(k));
+ const id=duelQuestionIds().filter(k=>/^i[0-9]+$/.test(k));
  const sample=(arr,n)=>{const a=[...arr];for(let i=0;i<n;i++){const j=i+randomInt(a.length-i);[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,n)};
  const both=[...sample(sp,5),...sample(id,5)];
  for(let i=both.length-1;i>0;i--){const j=randomInt(i+1);[both[i],both[j]]=[both[j],both[i]]}
