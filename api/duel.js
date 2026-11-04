@@ -32,14 +32,15 @@ async function state(c,room,guest,me){
   // One fresh progress read per player replaces 2 list operations and up to 20
   // per-answer downloads on every poll. Legacy in-progress rooms use fallback.
   let summary=await readPrivate(progressPath(c,member.id),{fresh:true});
-  if(!summary){
+  if(!summary&&room.version!==2){
    const paths=await list({prefix:PREFIX+c+'/steps/'+member.id+'/',limit:20});
    const entries=(await Promise.all(paths.blobs.slice(0,MAX_QUESTIONS).map(b=>readPrivate(b.pathname).catch(()=>null)))).filter(x=>x&&Number.isInteger(x.index));
    const ordered=[...new Map(entries.map(e=>[e.index,e])).values()].sort((a,b)=>a.index-b.index);
    summary={answered:ordered.length,correct:ordered.reduce((n,x)=>n+(x.correct?1:0),0),
     score:ordered.reduce((n,x)=>n+x.points,0),lastAt:ordered.at(-1)?.at||null,
-    answers:ordered.map(x=>({index:x.index,correct:x.correct,points:x.points}))};
+    answers:ordered.map(x=>({index:x.index,correct:x.correct,points:x.points,at:x.at}))};
   }
+  if(!summary)summary={answered:0,correct:0,score:0,lastAt:null,answers:[]};
   return {
    id:member.id,name:member.name,
    answered:summary.answered||0,
@@ -47,14 +48,25 @@ async function state(c,room,guest,me){
    score:summary.score||0,
    finished:(summary.answered||0)>=MAX_QUESTIONS,
    lastAt:summary.lastAt||null,
-   answers:member.id===me.id?summary.answers||[]:undefined
+   answers:member.id===me.id?summary.answers||[]:undefined,
+   _answerTimes:(summary.answers||[]).map(x=>Number(x.at)||null)
   };
  }));
+ const mine=records.find(x=>x.id===me.id);
+ const other=records.find(x=>x.id!==me.id);
+ const turn=mine?.answered||0;
+ // The faster player waits for the slower player; the slower one may still answer.
+ const turnReady=!!guest&&!!other&&turn<MAX_QUESTIONS&&turn<=other.answered;
+ const previousAt=turn>0?Math.max(
+  mine?._answerTimes[turn-1]||mine?.lastAt||0,
+  other?._answerTimes[turn-1]||other?.lastAt||0):0;
+ const turnStartsAt=turnReady?(turn===0?guest.joinedAt+6000:previousAt+1500):null;
  return {code:c,hostName:room.hostName,guestName:guest?.name||null,
   me:me.id,role:room.hostId===me.id?'host':'guest',
-  ready:!!guest,startsAt:guest?guest.joinedAt+6000:null,expiresAt:room.expiresAt,
-  questionIds:room.questionIds,
-  players:records,finished:!!guest&&records.every(x=>x.finished)};
+  ready:!!guest,startsAt:guest?guest.joinedAt+6000:null,turnReady,turnStartsAt,
+  expiresAt:room.expiresAt,questionIds:room.questionIds,
+  players:records.map(({_answerTimes,...record})=>record),
+  finished:!!guest&&records.every(x=>x.finished)};
 }
 async function sendError(res,code,text){return res.status(code).json({error:text})}
 export default async function handler(req,res){
@@ -66,9 +78,11 @@ export default async function handler(req,res){
   const code=String(req.query?.code||'').toUpperCase();
   if(!codeOK(code))return sendError(res,400,'8자리 방 코드를 입력해 줘.');
   try{
-   const room=await readPrivate(roomPath(code));
+   const [room,guest]=await Promise.all([
+    readPrivate(roomPath(code),{fresh:true}),
+    readPrivate(guestPath(code),{fresh:true})
+   ]);
    if(hasExpired(room))return sendError(res,404,'방이 없거나 유효 시간이 지났어.');
-   const guest=await readPrivate(guestPath(code));
    const data=await state(code,room,guest,me);
    if(!data)return sendError(res,403,'이 방에 참여한 계정이 아니야.');
    return res.status(200).json(data);
@@ -81,7 +95,7 @@ export default async function handler(req,res){
   if(body.action==='create'){
    const code=codeNew(),now=Date.now();
    await put(roomPath(code),JSON.stringify({
-    code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(),
+    version:2,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
    // Create the initial compact read model; avoids a list of empty steps on every poll.
@@ -90,21 +104,29 @@ export default async function handler(req,res){
   }
   const code=String(body.code||'').trim().toUpperCase();
   if(!codeOK(code))return sendError(res,400,'올바른 8자리 방 코드를 입력해 줘.');
-  const room=await readPrivate(roomPath(code));
+  const [room,guest]=await Promise.all([
+   readPrivate(roomPath(code),{fresh:true}),
+   readPrivate(guestPath(code),{fresh:true})
+  ]);
   if(hasExpired(room))return sendError(res,404,'방을 찾을 수 없거나 유효 시간이 지났어.');
-  const guest=await readPrivate(guestPath(code));
   if(body.action==='join'){
    if(room.hostId===me.id)return sendError(res,400,'자기 자신과는 대결할 수 없어.');
-   if(guest)return sendError(res,409,'이미 두 명이 참가한 방이야.');
+   // Reconnecting with the same account should be safe and idempotent.
+   if(guest?.id===me.id)return res.status(200).json({code,joined:true,reconnected:true});
+   if(guest)return sendError(res,409,'이미 다른 계정이 참가한 방이야. 새 방 코드를 받아 줘.');
    try{
     await put(guestPath(code),JSON.stringify({id:me.id,name:me.name,joinedAt:Date.now()}),
-     {access:'private',addRandomSuffix:false,contentType:'application/json'});
+     {access:'private',addRandomSuffix:false,allowOverwrite:false,contentType:'application/json'});
    }catch(e){
-    return sendError(res,409,'이미 다른 사람이 참가했거나 방 입장 중 오류가 발생했어.');
+    // Blob writes are conditional; concurrent callers cannot take the same seat.
+    const occupant=await readPrivate(guestPath(code),{fresh:true}).catch(()=>null);
+    if(occupant?.id===me.id)return res.status(200).json({code,joined:true,reconnected:true});
+    return sendError(res,409,'참가할 수 없는 방이야. 상대가 이미 들어왔는지 확인해 줘.');
    }
-   const joined=await readPrivate(guestPath(code));
-   if(joined?.id!==me.id)return sendError(res,409,'다른 사람이 먼저 입장했어.');
-   await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
+   // Do NOT immediately re-read the Blob and reject a successful write:
+   // storage propagation/caching can briefly return an older guest value.
+   await writePrivate(progressPath(code,me.id),
+    {answered:0,score:0,correct:0,lastAt:null,answers:[]},{overwrite:true});
    return res.status(200).json({code,joined:true});
   }
   if(body.action==='answer'){
@@ -118,12 +140,24 @@ export default async function handler(req,res){
    if(Date.now()<start)return sendError(res,409,'대결 시작 신호를 기다려 줘.');
    const path=stepPath(code,me.id,index);
    if(await readPrivate(path))return sendError(res,409,'이미 제출한 문제야.');
-   const previousProgress=await readPrivate(progressPath(code,me.id),{fresh:true});
+   const otherId=me.id===room.hostId?guest.id:room.hostId;
+   const [previousProgress,otherProgress]=await Promise.all([
+    readPrivate(progressPath(code,me.id),{fresh:true}),
+    readPrivate(progressPath(code,otherId),{fresh:true})
+   ]);
+   const mineCount=previousProgress?.answered||0,otherCount=otherProgress?.answered||0;
+   if(mineCount!==index)return sendError(res,409,'이미 답한 문제이거나 이전 문제부터 풀어야 해.');
+   if(otherCount<index)return sendError(res,409,'상대방이 이전 문제를 마칠 때까지 기다려 줘.');
    let began=start;
    if(index>0){
-    if(previousProgress?.answered!==index)return sendError(res,409,'이전 문제부터 풀어 줘.');
-    began=previousProgress.lastAt;
-   }else if(previousProgress?.answered>0)return sendError(res,409,'이미 대결이 시작됐어.');
+    // Both players get a shared 1.5-second transition window. Waiting for
+    // the opponent never eats into the next 25-second question.
+    began=Math.max(
+     Number(previousProgress?.answers?.[index-1]?.at)||Number(previousProgress?.lastAt)||0,
+     Number(otherProgress?.answers?.[index-1]?.at)||Number(otherProgress?.lastAt)||0
+    )+1500;
+   }
+   if(Date.now()<began)return sendError(res,409,'두 사람의 다음 문제 시작 신호를 기다려 줘.');
    const answer=String(body.answer??'');
    if(answer.length>100)return sendError(res,400,'답변이 너무 길어.');
    const correct=answerCorrect(qid,answer);
@@ -139,9 +173,9 @@ export default async function handler(req,res){
     score:(previousProgress?.score||0)+points,
     correct:(previousProgress?.correct||0)+(correct?1:0),
     lastAt:at,
-    answers:[...(previousProgress?.answers||[]),{index,correct,points}]
+    answers:[...(previousProgress?.answers||[]),{index,correct,points,at}]
    };
-   try{await writePrivate(progressPath(code,me.id),next,{overwrite:!!previousProgress})}
+   try{await writePrivate(progressPath(code,me.id),next,{overwrite:true})}
    catch(e){
     // The immutable answer survives even when the read model needs repair.
     console.error('Duel progress snapshot failed',e?.name);
