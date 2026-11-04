@@ -39,9 +39,10 @@
  document.body.append(dialog);
  document.addEventListener('click',e=>{
   const button=e.target.closest?.('button[data-route="timed"]');
-  if(!button||typeof dialog.showModal!=='function')return;
+  if(!button)return;
   e.preventDefault();e.stopImmediatePropagation();
-  if(!dialog.open)dialog.showModal();
+  if(typeof window.openModeSetup==='function'){window.openModeSetup('timed');return;}
+  if(typeof dialog.showModal==='function'&&!dialog.open)dialog.showModal();
  },true);
  dialog.addEventListener('click',e=>{
   const choice=e.target.closest?.('button[data-seconds]');
