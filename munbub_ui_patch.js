@@ -46,52 +46,251 @@
  v4.id='munbub-application-touch-v4';
  v4.textContent="\n/* v4: application-topic choices, Candy-pop touch response and viewport-safe layouts */\n#applicationTopicWrap{grid-column:1/-1;min-width:0;margin:0;padding:13px 14px 15px;border:3px solid #a77562;border-radius:15px;background:#fff0dc;box-shadow:inset 0 0 0 3px #ffe8cb,0 4px 0 #d3ae96}\n#applicationTopicWrap legend{padding:0 10px;color:#54332b;font-weight:950;font-size:clamp(14px,1.6vw,18px)}\n.application-topic-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}\n.form-grid .application-topic-option{position:relative;display:flex!important;flex-direction:row!important;justify-content:center;align-items:center;gap:6px!important;text-align:center;min-width:0;min-height:60px;padding:8px 7px;cursor:pointer;user-select:none;-webkit-user-select:none;border:2px solid #b98c75;border-radius:11px;background:#fae5ca;box-shadow:0 4px 0 #9d6c58,inset 0 2px #fff7e6;color:#49312e;font-size:clamp(12px,1.25vw,16px)!important;font-weight:900;line-height:1.25;word-break:keep-all;touch-action:manipulation;transition:background .14s,box-shadow .14s,filter .14s,transform .14s}\n.form-grid .application-topic-option input[type=radio]{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important;margin:0!important;padding:0!important;z-index:1}\n.form-grid .application-topic-option .application-topic-icon{display:inline-grid;place-items:center;flex:none;width:30px;height:30px;border-radius:8px;background:#f5cba4;color:#603c33;font-size:20px;line-height:1;font-weight:900}\n.form-grid .application-topic-option:has(input:checked){background:#3e292e;color:#ffe7cb;box-shadow:0 4px 0 #1c1216,inset 0 0 0 2px #efc69e;border-color:#f0bf8f}\n.form-grid .application-topic-option:has(input:checked) .application-topic-icon{background:#f9d3ac;color:#3f292a}\n.form-grid .application-topic-option:has(input:focus-visible){outline:4px solid #e28b5a;outline-offset:4px}\n@media(hover:hover){.form-grid .application-topic-option:hover{filter:brightness(1.06);transform:translateY(-2px)}}\n.munbub-pop-ring,.munbub-pop-star{position:fixed;left:0;top:0;pointer-events:none!important;z-index:2147483000;will-change:transform,opacity;transform:translate(-50%,-50%)}\n.munbub-pop-ring{width:54px;height:54px;border-radius:50%;border:5px solid #ffe3a1;box-shadow:0 0 0 3px #9f5a56,0 0 13px #ffc87a88;animation:munbub-ring .40s ease-out forwards}\n.munbub-pop-star{font-size:clamp(15px,2.5vw,25px);line-height:1;font-weight:900;text-shadow:1px 2px 0 #4c2826;animation:munbub-star .54s cubic-bezier(.1,.74,.4,1) forwards}\n@keyframes munbub-ring{from{transform:translate(-50%,-50%) scale(.16);opacity:.95}to{transform:translate(-50%,-50%) scale(1.7);opacity:0}}\n@keyframes munbub-star{0%{transform:translate(-50%,-50%) scale(.3) rotate(-25deg);opacity:1}65%{opacity:1}100%{transform:translate(calc(-50% + var(--pop-x)),calc(-50% + var(--pop-y))) scale(.65) rotate(var(--pop-rot));opacity:0}}\n@media(max-width:1100px){\n html,body{max-width:100%;overflow-x:clip}\n #homeScreen .home-main,#workspace .work-main{box-sizing:border-box;min-width:0;width:100%;margin-inline:auto}\n #workspace .work-main{max-width:940px!important;padding-left:max(14px,env(safe-area-inset-left))!important;padding-right:max(14px,env(safe-area-inset-right))!important;padding-bottom:calc(112px + env(safe-area-inset-bottom))!important}\n #homeScreen .home-main{padding-left:max(12px,env(safe-area-inset-left))!important;padding-right:max(12px,env(safe-area-inset-right))!important;padding-bottom:calc(110px + env(safe-area-inset-bottom))!important}\n #workspace .panel,#workspace .view,#workspace .form-grid{min-width:0;max-width:100%}\n .mobile-bottom{box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom)!important}\n .mobile-bottom button{touch-action:manipulation;min-height:52px}\n}\n@media(min-width:601px) and (max-width:1100px){\n #homeScreen .home-card-grid,#homeScreen .home-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;max-width:900px}\n #homeScreen .home-card-grid .img-button:last-child,#homeScreen .home-actions .img-button:last-child{grid-column:auto;width:100%}\n #workspace .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}\n}\n@media(max-width:600px){\n #homeScreen .home-hero{height:clamp(112px,29vw,168px)}\n #homeScreen .home-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:440px}\n #homeScreen .home-card-grid .img-button:last-child{grid-column:1/-1;width:min(58%,215px);margin:auto}\n #homeScreen .home-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:440px}\n #homeScreen .home-actions .img-button:last-child{grid-column:1/-1;width:min(58%,215px);margin:auto}\n #workspace .form-grid,#workspace .option-list{grid-template-columns:minmax(0,1fr)!important}\n .application-topic-options{grid-template-columns:repeat(2,minmax(0,1fr))}\n .application-topic-option:last-child{grid-column:1/-1}\n .form-grid .application-topic-option{min-height:53px;font-size:14px!important}\n #workspace .work-main{padding-top:15px!important}\n #workspace .work-header{gap:8px}\n #workspace .work-header h1{font-size:clamp(19px,5vw,27px)}\n #workspace .panel{padding:clamp(12px,3.7vw,21px)}\n #workspace .option{min-width:0;min-height:62px;overflow-wrap:anywhere}\n}\n@media(max-width:360px){\n #applicationTopicWrap{padding:10px 8px}\n .application-topic-options{gap:7px}\n .form-grid .application-topic-option{font-size:12px!important;gap:3px!important;padding:6px 4px}\n .form-grid .application-topic-option .application-topic-icon{width:25px;height:25px;font-size:17px}\n}\n@media(max-height:530px) and (orientation:landscape) and (max-width:1100px){\n #homeScreen .home-main,#workspace .work-main{padding-top:8px!important}\n #homeScreen .home-main{padding-bottom:calc(75px + env(safe-area-inset-bottom))!important}\n #workspace .work-main{padding-bottom:calc(80px + env(safe-area-inset-bottom))!important}\n #homeScreen .home-hero{height:clamp(100px,28svh,155px)}\n .mobile-bottom button{min-height:43px}\n}\n@media(prefers-reduced-motion:reduce){\n .munbub-pop-ring,.munbub-pop-star{display:none!important;animation:none!important}\n .form-grid .application-topic-option{transition:none!important}\n}";
  document.head.append(v4);
- const reduceMotion=()=>window.matchMedia?.('(prefers-reduced-motion:reduce)')?.matches??false;
- const popTimers=new WeakMap();
- function visualTouch(e,button){
-  if(!button||button.disabled)return;
-  const box=button.getBoundingClientRect();
-  const x=Number.isFinite(e?.clientX)?e.clientX:box.left+box.width/2;
-  const y=Number.isFinite(e?.clientY)?e.clientY:box.top+box.height/2;
-  const old=popTimers.get(button);
-  if(old){clearTimeout(old.a);clearTimeout(old.b);}
-  button.style.setProperty('filter','brightness(1.12)','important');
-  if(!reduceMotion())button.style.setProperty('transform','scale(.93)','important');
-  const a=setTimeout(()=>{
-   if(!reduceMotion())button.style.setProperty('transform','scale(1.055)','important');
-   const b=setTimeout(()=>{button.style.removeProperty('transform');button.style.removeProperty('filter');popTimers.delete(button)},120);
-   popTimers.set(button,{a:null,b});
-  },85);
-  popTimers.set(button,{a,b:null});
-  if(e?.pointerType==='touch'&&!reduceMotion())try{navigator.vibrate?.(8)}catch(_){}
-  if(reduceMotion())return;
-  const ring=document.createElement('span');
-  ring.className='munbub-pop-ring';ring.style.left=x+'px';ring.style.top=y+'px';
-  document.body.append(ring);
-  setTimeout(()=>ring.remove(),510);
-  const symbols=['✦','✧','✦','✧','✦','✧'];
-  const palette=['#f8bc7e','#ffefb9','#e9958c','#f6d89e','#ffca84','#fff1d7'];
-  for(let i=0;i<symbols.length;i++){
-   const star=document.createElement('span');star.className='munbub-pop-star';star.textContent=symbols[i];
-   const angle=i*Math.PI/3+.25,dist=26+(i%3)*13;
-   star.style.left=x+'px';star.style.top=y+'px';star.style.color=palette[i];
-   star.style.setProperty('--pop-x',Math.round(Math.cos(angle)*dist)+'px');
-   star.style.setProperty('--pop-y',Math.round(Math.sin(angle)*dist-17)+'px');
-   star.style.setProperty('--pop-rot',((i%2)?-105:125)+'deg');
-   document.body.append(star);setTimeout(()=>star.remove(),670);
+
+ // V5 interaction layer. Earlier responsive rules are retained; all new
+ // behavior is registered here once, rather than stacking competing handlers.
+ const v5=document.createElement('style');
+ v5.id='munbub-interaction-v5';
+ v5.textContent=`
+ /* Selected menu: pressed/darker, not highlighted/brighter. */
+ .sidebar-nav .navbtn.active,.sidebar-nav .timed-nav.active{
+   filter:brightness(.66) saturate(.86) drop-shadow(0 2px 2px #1c1016)!important;
+   background:rgba(26,14,20,.21)!important;
+   box-shadow:inset 0 0 0 2px #efc99c7a!important;
+   transform:scale(.992)!important;
+   z-index:1;
+ }
+ .sidebar-nav .navbtn.active:hover{filter:brightness(.75) saturate(.9) drop-shadow(0 4px 3px #180c14)!important;transform:scale(1.02)!important}
+ /* Match all other menu buttons: settings now visibly grows on hover. */
+ @media(hover:hover) and (pointer:fine){
+  .sidebar-nav .navbtn[data-route="settings"]:not(.active):hover,
+  #homeScreen .sidebar-nav .navbtn[data-route="settings"]:hover,
+  #workspace .sidebar-nav .navbtn[data-route="settings"]:not(.active):hover{
+    transform:scale(1.065)!important;filter:brightness(1.13) drop-shadow(0 5px 5px #0007)!important;z-index:4;
   }
  }
+ /* Press animation also works on touchscreens (where :hover is unreliable). */
+ button.mb-pressing,.img-button.mb-pressing,.navbtn.mb-pressing,.application-topic-option.mb-pressing{
+   transform:scale(.955)!important;filter:brightness(1.16) saturate(1.06)!important;
+   transition:transform .10s cubic-bezier(.2,.8,.2,1),filter .10s ease!important;
+ }
+ .sidebar-nav .navbtn.active.mb-pressing{transform:scale(.965)!important;filter:brightness(.8)!important}
+ .mb-tap-burst{position:fixed;left:0;top:0;pointer-events:none!important;z-index:2147483000;width:0;height:0;contain:layout style;isolation:isolate}
+ .mb-tap-halo,.mb-tap-core,.mb-tap-spark{position:absolute;left:0;top:0;pointer-events:none;transform:translate(-50%,-50%)}
+ .mb-tap-halo{width:72px;height:72px;border-radius:50%;border:4px solid #ffe0ab;box-shadow:0 0 0 2px #995b53aa,0 0 20px #ffe4b177;animation:mb-halo .42s ease-out both}
+ .mb-tap-core{width:15px;height:15px;border-radius:50%;background:#fff8db;box-shadow:0 0 0 3px #f2af87a6;animation:mb-core .34s ease-out both}
+ .mb-tap-spark{width:9px;height:9px;background:var(--mb-spark-color,#f1b78b);border:1px solid #fff5d9;box-shadow:1px 1px 0 #71463a85;clip-path:polygon(50% 0,67% 33%,100% 50%,67% 67%,50% 100%,33% 67%,0 50%,33% 33%);animation:mb-spark .48s cubic-bezier(.15,.66,.3,1) both}
+ @keyframes mb-halo{0%{opacity:1;transform:translate(-50%,-50%) scale(.15)}65%{opacity:.8}100%{opacity:0;transform:translate(-50%,-50%) scale(1.65)}}
+ @keyframes mb-core{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.1)}}
+ @keyframes mb-spark{0%{opacity:1;transform:translate(-50%,-50%) scale(.3) rotate(0)}70%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--sx)),calc(-50% + var(--sy))) scale(.8) rotate(125deg)}}
+ /* Range-driven reading size: PNG menu labels are deliberately untouched. */
+ #workspace :is(.panel,.view){overflow-wrap:break-word}
+ #workspace .panel{font-size:calc(16px * var(--mb-text-scale,1))!important;line-height:1.55}
+ #workspace :is(.panel p,.lead,.history-item,.note-row,.feedback,.form-grid label,.quiz-meta,.app-caption,.prompt-desc,.empty){font-size:calc(15.5px * var(--mb-text-scale,1))!important;line-height:1.65!important}
+ #workspace :is(.panel h2,.panel h3){font-size:calc(24px * var(--mb-text-scale,1))!important;line-height:1.3!important}
+ #workspace .prompt{font-size:calc(clamp(25px,2.7vw,35px) * var(--mb-text-scale,1))!important;line-height:1.5!important}
+ #workspace .option{font-size:calc(19px * var(--mb-text-scale,1))!important;line-height:1.42!important;min-width:0;white-space:normal}
+ #workspace :is(.action,.go-home,.essay-form input,.form-grid input,.form-grid select,.search,.form-grid select option){font-size:calc(16px * var(--mb-text-scale,1))!important}
+ #workspace :is(.work-header h1,.summary,.fb-title){font-size:calc(26px * var(--mb-text-scale,1))!important}
+ #workspace :is(.history-item small,.note-row small){font-size:calc(13px * var(--mb-text-scale,1))!important}
+ .mb-font-range{margin:13px 0 17px;padding:14px 16px;background:#fff0de;border:2px solid #c49a80;border-radius:12px;color:#46302a}
+ .mb-font-range label{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;font-weight:900;align-items:center}
+ .mb-font-range output{font-variant-numeric:tabular-nums;font-weight:900;color:#66362f}
+ .mb-font-range input{display:block;width:100%;margin:13px 0 4px;accent-color:#8f6150;min-height:24px;touch-action:pan-x}
+ .mb-font-range .mb-font-preview{font-size:calc(15px * var(--mb-text-scale,1));margin:9px 0 0;color:#584036}
+ #fontNormal[aria-pressed=true],#fontLarge[aria-pressed=true]{background:#433039!important;color:#ffeed9!important;outline:2px solid #d5a988}
+ .mobile-bottom [data-route].active,.mobile-drawer [data-route].active{background:#3a2529!important;color:#ffe0b4!important;filter:brightness(.88)}
+ @media(max-width:600px){
+  #workspace .prompt{font-size:calc(clamp(22px,5.5vw,30px) * var(--mb-text-scale,1))!important}
+  #workspace .option{font-size:calc(17px * var(--mb-text-scale,1))!important}
+  .mb-font-range{padding:11px}
+ }
+ @media(prefers-reduced-motion:reduce){
+  .mb-tap-burst{display:none!important}
+  button.mb-pressing,.img-button.mb-pressing,.navbtn.mb-pressing{transition:none!important}
+ }`;
+ document.head.append(v5);
 
- let audioContext=null;
- const tap=()=>{try{
-  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
-  if(!audioContext)audioContext=new C();
-  if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
-  const t=audioContext.currentTime,osc=audioContext.createOscillator(),gain=audioContext.createGain();
-  osc.type='sine';osc.frequency.setValueAtTime(790,t);osc.frequency.exponentialRampToValueAtTime(530,t+.065);
-  gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.035,t+.008);gain.gain.exponentialRampToValueAtTime(.0001,t+.07);
-  osc.connect(gain).connect(audioContext.destination);osc.start(t);osc.stop(t+.082);
- }catch(_){}};
- document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('button,[role="button"],.application-topic-option');if(b&&!b.disabled){tap();visualTouch(e,b)}},{passive:true});
- document.addEventListener('keydown',e=>{if(e.repeat||!['Enter',' '].includes(e.key))return;const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled){tap();visualTouch(null,b)}});
+ const reduced=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+ const lastPointer=new WeakMap();
+ const pressTimeouts=new WeakMap();
+ const clickableSelector='button:not(:disabled),[role="button"],.application-topic-option,a[href],summary,input[type="checkbox"],input[type="radio"],select,input[type="range"]';
+ const clickableFor=e=>e?.target instanceof Element?e.target.closest(clickableSelector):null;
+ const pressable=el=>el.matches('button,.img-button,.navbtn,.application-topic-option,[role="button"]');
+ function burst(clientX,clientY){
+  if(reduced())return;
+  const burstEl=document.createElement('span');burstEl.className='mb-tap-burst';
+  burstEl.style.left=clientX+'px';burstEl.style.top=clientY+'px';
+  burstEl.innerHTML='<i class="mb-tap-halo"></i><i class="mb-tap-core"></i>';
+  const colors=['#fff0bf','#f5b891','#e7998c','#e6bb8d','#ffdf9a','#f3a99a'];
+  for(let i=0;i<6;i++){
+    const star=document.createElement('i');
+    star.className='mb-tap-spark';
+    const a=i*Math.PI/3-.35,dist=38+(i%2)*12;
+    star.style.setProperty('--sx',Math.round(Math.cos(a)*dist)+'px');
+    star.style.setProperty('--sy',Math.round(Math.sin(a)*dist-7)+'px');
+    star.style.setProperty('--mb-spark-color',colors[i]);
+    burstEl.append(star);
+  }
+  document.body.append(burstEl);
+  setTimeout(()=>burstEl.remove(),560);
+ }
+ function press(el){
+  if(!pressable(el))return;
+  clearTimeout(pressTimeouts.get(el));
+  el.classList.add('mb-pressing');
+  pressTimeouts.set(el,setTimeout(()=>el.classList.remove('mb-pressing'),155));
+ }
+ let ctx=null;
+ function tapSound(){
+  try{
+   const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+   if(!ctx)ctx=new C();
+   if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+   const now=ctx.currentTime,osc=ctx.createOscillator(),gain=ctx.createGain();
+   osc.type='sine';osc.frequency.setValueAtTime(740,now);osc.frequency.exponentialRampToValueAtTime(520,now+.068);
+   gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.028,now+.009);gain.gain.exponentialRampToValueAtTime(.0001,now+.077);
+   osc.connect(gain).connect(ctx.destination);osc.start(now);osc.stop(now+.082);
+  }catch(_){}
+ }
+ function showInteraction(el,x,y,source){
+  if(!el || el.matches?.(':disabled,[aria-disabled="true"]'))return;
+  press(el);
+  burst(x,y);
+  if(source!=='click')tapSound();
+  if(source==='touch'&&!reduced())try{navigator.vibrate?.(7)}catch(_){}
+ }
+ document.addEventListener('pointerdown',e=>{
+  if(e.button!==0 || !e.isPrimary)return;
+  const el=clickableFor(e);if(!el)return;
+  lastPointer.set(el,Date.now());
+  showInteraction(el,e.clientX,e.clientY,e.pointerType==='touch'?'touch':'pointer');
+ },{passive:true});
+ // Covers synthetic clicks, accessibility activation and touch-only browsers,
+ // without double-firing after pointerdown.
+ document.addEventListener('click',e=>{
+  const el=clickableFor(e);if(!el)return;
+  if(Date.now()-(lastPointer.get(el)||0)<500)return;
+  const rect=el.getBoundingClientRect();
+  showInteraction(el,rect.left+rect.width/2,rect.top+rect.height/2,'click');
+ });
+ document.addEventListener('keydown',e=>{
+  if(e.repeat||!['Enter',' '].includes(e.key))return;
+  const el=clickableFor(e);if(!el)return;
+  const rect=el.getBoundingClientRect();
+  showInteraction(el,rect.left+rect.width/2,rect.top+rect.height/2,'keyboard');
+ });
+
+ // Selected item follows the actual route, including timed/infinite sessions.
+ function actualRoute(){
+  const current=typeof section!=='undefined'?section:'home';
+  if(current!=='quiz')return current;
+  const cfg=typeof store!=='undefined'?store?.active?.cfg:null;
+  return cfg?.timed?'timed':cfg?.infinite?'infinite':(cfg?.category||'home');
+ }
+ function showSelected(route=actualRoute()){
+  document.querySelectorAll('.sidebar-nav [data-route],.mobile-bottom [data-route],.mobile-drawer [data-route]').forEach(el=>{
+   const on=el.dataset.route===route;
+   el.classList.toggle('active',on);
+   if(el.classList.contains('navbtn'))el.setAttribute('aria-current',on?'page':'false');
+  });
+ }
+ showSelected();
+ let fromSidebar=false;
+ document.addEventListener('pointerdown',e=>{
+  const nav=e.target instanceof Element?e.target.closest('.sidebar-nav [data-route]'):null;
+  if(nav && nav.dataset.route!=='home')showSelected(nav.dataset.route);
+ },{passive:true});
+ // The inline app explicitly calls scrollTo({top:0}) inside navigate().
+ // Block that *one* scroll request for left menu switches; preserve all
+ // ordinary scrolling and home/quiz navigation.
+ document.addEventListener('click',e=>{
+  const nav=e.target instanceof Element?e.target.closest('.sidebar-nav [data-route]'):null;
+  if(!nav || nav.dataset.route==='home')return;
+  fromSidebar=true;
+  queueMicrotask(()=>{fromSidebar=false});
+ },true);
+ if(typeof window.navigate==='function'){
+  const originalNavigate=window.navigate;
+  window.navigate=function(...args){
+   const keep=fromSidebar,priorY=window.scrollY,oldScroll=window.scrollTo;
+   if(keep){
+    window.scrollTo=function(...scrollArgs){
+     if(scrollArgs.length===1&&scrollArgs[0]&&typeof scrollArgs[0]==='object'&&scrollArgs[0].top===0)return;
+     return oldScroll.apply(window,scrollArgs);
+    };
+   }
+   try{return originalNavigate.apply(this,args)}
+   finally{
+    if(keep){
+     window.scrollTo=oldScroll;
+     requestAnimationFrame(()=>{
+      const maxY=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+      const desired=Math.min(priorY,maxY);
+      if(Math.abs(window.scrollY-desired)>6)oldScroll.call(window,{top:desired,behavior:'instant'});
+     });
+    }
+    showSelected();
+    boostHomeMusic();
+   }
+  };
+ }
+
+ // Font-size slider: 80-150%, retained per browser.
+ const small=document.getElementById('fontNormal');
+ const big=document.getElementById('fontLarge');
+ const fontKey='matchunbeom_font_scale_v2';
+ let range=null,number=null;
+ if(small && big && !document.getElementById('mbFontSizeRange')){
+  const wrap=document.createElement('div');
+  wrap.className='mb-font-range';
+  wrap.innerHTML='<label for="mbFontSizeRange"><span>글씨 크기 조절</span><output id="mbFontPercent" for="mbFontSizeRange">100%</output></label><input id="mbFontSizeRange" type="range" min="80" max="150" step="5" value="100" aria-label="글씨 크기 조절"><p class="mb-font-preview">미리보기 · 맞춤법 문제를 편하게 읽어 봐!</p>';
+  big.parentElement.insertAdjacentElement('afterend',wrap);
+  range=wrap.querySelector('input');
+  number=wrap.querySelector('output');
+ }else{range=document.getElementById('mbFontSizeRange');number=document.getElementById('mbFontPercent');}
+ function setTextScale(value){
+  const v=Math.max(80,Math.min(150,Math.round(Number(value)/5)*5 || 100));
+  document.documentElement.style.setProperty('--mb-text-scale',String(v/100));
+  if(range)range.value=String(v);
+  if(number)number.textContent=v+'%';
+  // Keep older two-button setting and previously saved preferences in sync.
+  document.body.classList.toggle('large-text',v>=120);
+  small?.setAttribute('aria-pressed',String(v===100));
+  big?.setAttribute('aria-pressed',String(v>=120));
+  try{localStorage.setItem(fontKey,String(v));localStorage.setItem('matchunbeom_large_font',v>=120?'1':'0')}catch(_){}
+ }
+ let initial=100;
+ try{const saved=Number(localStorage.getItem(fontKey));if(saved>=80&&saved<=150)initial=saved;else if(localStorage.getItem('matchunbeom_large_font')==='1')initial=125;}catch(_){}
+ setTextScale(initial);
+ range?.addEventListener('input',()=>setTextScale(range.value));
+ small?.addEventListener('click',()=>setTextScale(100));
+ big?.addEventListener('click',()=>setTextScale(125));
+
+ // Homepage track is 3x the base slider volume, capped at browser max 1.0.
+ function boostHomeMusic(){
+  try{
+   if(typeof bgmPlayer==='undefined')return;
+   const base=Number(document.getElementById('bgmVolume')?.value ?? 35)/100;
+   const home=typeof section!=='undefined' && section==='home';
+   bgmPlayer.volume=Math.max(0,Math.min(1,base*(home?3:1)));
+  }catch(_){}
+ }
+ if(typeof window.syncBgm==='function'){
+  const originalSync=window.syncBgm;
+  window.syncBgm=function(...args){
+   const result=originalSync.apply(this,args);
+   boostHomeMusic();
+   return result;
+  };
+ }
+ document.getElementById('bgmVolume')?.addEventListener('input',boostHomeMusic);
+ for(const type of ['pointerdown','keydown','visibilitychange'])document.addEventListener(type,boostHomeMusic);
+ const playerLabel=document.getElementById('bgmNowPlaying');
+ if(playerLabel){
+  const info=document.createElement('p');info.className='app-caption';
+  info.textContent='홈 배경음악은 설정 볼륨의 3배로 재생돼. (최대 100%)';
+  playerLabel.insertAdjacentElement('afterend',info);
+ }
+ boostHomeMusic();
 })();
