@@ -283,67 +283,8 @@
  small?.addEventListener('click',()=>setTextScale(100));
  big?.addEventListener('click',()=>setTextScale(125));
 
- // Homepage track is 3x the base slider volume, capped at browser max 1.0.
- function boostHomeMusic(){
-  try{
-   if(typeof bgmPlayer==='undefined')return;
-   const base=Number(document.getElementById('bgmVolume')?.value ?? 35)/100;
-   const home=typeof section!=='undefined' && section==='home';
-   bgmPlayer.volume=Math.max(0,Math.min(1,base*(home?3:1)));
-  }catch(_){}
- }
- if(typeof window.syncBgm==='function'){
-  const originalSync=window.syncBgm;
-  window.syncBgm=function(...args){
-   const result=originalSync.apply(this,args);
-   boostHomeMusic();
-   return result;
-  };
- }
- document.getElementById('bgmVolume')?.addEventListener('input',boostHomeMusic);
- // A browser may block unprompted audio. Try on load, then immediately on the
- // FIRST eligible user gesture, without forcing sound back on when it was disabled.
- let soundRetryRunning=false;
- function soundIsEnabled(){
-  if(document.querySelector('[aria-label="배경음악 켜기"]'))return false;
-  const musicButton=document.getElementById('bgmToggle');
-  if(musicButton && /음악 켜기|음악 재생/.test(musicButton.textContent||''))return false;
-  try{
-   if(typeof bgmPlayer==='undefined' || !bgmPlayer)return false;
-   if(bgmPlayer.muted)return false;
-   return true;
-  }catch(_){return false}
- }
- function activateMusic(){
-  if(soundRetryRunning||!soundIsEnabled())return;
-  try{
-   soundRetryRunning=true;
-   boostHomeMusic();
-   if(typeof bgmPlayer!=='undefined' && bgmPlayer.paused){
-    // The app's own sync function decides which music belongs to this screen.
-    if(typeof window.syncBgm==='function')window.syncBgm();
-    boostHomeMusic();
-    if(bgmPlayer.paused){
-     const attempt=bgmPlayer.play();
-     if(attempt&&typeof attempt.catch==='function')attempt.catch(()=>{});
-    }
-   }
-  }catch(_){}finally{soundRetryRunning=false}
- }
- for(const type of ['pointerdown','touchstart','click','keydown']){
-  document.addEventListener(type,activateMusic,{capture:true,passive:true});
- }
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)activateMusic()});
- window.addEventListener('pageshow',activateMusic);
- // If the browser grants autoplay, start without an extra click.
- activateMusic();
- const playerLabel=document.getElementById('bgmNowPlaying');
- if(playerLabel){
-  const info=document.createElement('p');info.className='app-caption';
-  info.textContent='홈 음악은 최대 3배 볼륨. 브라우저가 자동재생을 제한하면 첫 터치·키 입력에서 바로 재생돼.';
-  playerLabel.insertAdjacentElement('afterend',info);
- }
- boostHomeMusic();
+ // The single music controller manages volume, looping and playback; no legacy 3x boost.
+
 })();
 
 
