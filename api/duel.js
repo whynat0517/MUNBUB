@@ -125,8 +125,14 @@ export default async function handler(req,res){
    }
    // Do NOT immediately re-read the Blob and reject a successful write:
    // storage propagation/caching can briefly return an older guest value.
-   await writePrivate(progressPath(code,me.id),
-    {answered:0,score:0,correct:0,lastAt:null,answers:[]},{overwrite:true});
+   try{
+    await writePrivate(progressPath(code,me.id),
+     {answered:0,score:0,correct:0,lastAt:null,answers:[]},{overwrite:true});
+   }catch(e){
+    // Guest registration already succeeded; a delayed progress record must
+    // not turn a successful join into a misleading failure.
+    console.error('Duel guest progress init failed',e?.message);
+   }
    return res.status(200).json({code,joined:true});
   }
   if(body.action==='answer'){
