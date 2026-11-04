@@ -247,8 +247,23 @@
    if(ms<=0&&!busy)sendAnswer('');
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
- // Only one active status request; 2.6s avoids overlapping expensive Blob
- // calls and never polls while an answer is being sent.
- setInterval(()=>{if(dialog.open&&roomCode&&!document.hidden&&!busy)updateRoom()},2600);
+ // Adaptive polling: quick recovery when waiting for the opponent,
+ // but fewer Blob reads in lobby, while choosing an answer, and after results.
+ // pollBusy ensures there are never overlapping status requests.
+ function nextPollDelay(){
+  if(!dialog.open||!roomCode||document.hidden)return 4500;
+  if(phase==='opponent')return 950;
+  if(phase==='countdown'||phase==='feedback')return 1150;
+  if(phase==='question')return 1750;
+  if(phase==='waiting'||phase==='finished')return 2100;
+  if(phase==='results')return 9000;
+  return 2500;
+ }
+ async function backgroundPoll(){
+  if(dialog.open&&roomCode&&!document.hidden&&!busy)await updateRoom();
+  pollTimer=setTimeout(backgroundPoll,nextPollDelay());
+ }
+ let pollTimer=setTimeout(backgroundPoll,900);
+ window.addEventListener('pagehide',()=>clearTimeout(pollTimer),{once:true});
  setInterval(tick,210);
 })();
