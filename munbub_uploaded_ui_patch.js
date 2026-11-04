@@ -65,6 +65,9 @@
    "#homeScreen .mb-online-actions #mb-account-open.mb-account-logged{background-image:url(\"./ui-assets/login-account.webp\")!important;position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important}",
    "#homeScreen .mb-online-actions #mb-account-open.mb-account-logged .mb-account-name{position:absolute!important;z-index:2!important;display:block!important;left:13%!important;right:13%!important;top:50%!important;transform:translateY(-50%)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-align:center!important;color:#fff0d6!important;text-shadow:1px 2px #130a0b!important;font-weight:950!important;letter-spacing:-.035em!important;line-height:1.15!important;pointer-events:none!important}",
    "#homeScreen .mb-online-actions .mb-home-sound.muted:hover,#homeScreen .mb-online-actions .mb-home-sound.muted:focus-visible{filter:grayscale(.82) brightness(.52)!important}",
+   "#homeScreen .mb-online-actions .mb-home-sound:hover,#homeScreen .mb-online-actions .mb-home-sound:focus-visible{filter:none!important;transform:translateY(-2px) scale(1.025)!important}",
+   "#homeScreen .mb-online-actions .mb-home-sound:is(.muted,[aria-pressed='false']):hover,#homeScreen .mb-online-actions .mb-home-sound:is(.muted,[aria-pressed='false']):focus-visible{filter:grayscale(.82) brightness(.52)!important}",
+   "#homeScreen .mb-online-actions .mb-home-sound[aria-pressed='false']{filter:grayscale(.82) brightness(.52)!important}",
    "#bgmToggle[aria-pressed=\"false\"]:hover,#bgmToggle[aria-pressed=\"false\"]:focus-visible{filter:grayscale(.8) brightness(.6)!important}",
    "#homeScreen .mb-online-actions #mb-account-open.mb-account-logged:hover .mb-account-name{color:#fff0d6!important}",
    '@media(prefers-reduced-motion:reduce){#homeScreen .mb-online-actions button{transition:none!important}}'
