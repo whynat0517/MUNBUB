@@ -41,6 +41,15 @@
   '#mb-duel-dialog .mb-duel-option-list button:active{transform:scale(.97)}',
   '#mb-duel-dialog .mb-duel-clock{font-size:clamp(16px,2.2vw,25px);font-weight:1000;color:#74452c}',
   '#mb-duel-dialog .mb-duel-clock.low{color:#ae2939}',
+  '#mb-duel-dialog .mb-duel-clock.mb-duel-rival-fast{color:#c52839!important;animation:mb-duel-urgency .57s ease-in-out infinite alternate;transform-origin:left center}',
+  '@keyframes mb-duel-urgency{from{filter:brightness(1);transform:scale(1)}to{filter:brightness(1.3);transform:scale(1.045)}}',
+  '#mb-duel-dialog .mb-rival-alert{margin:9px 0;padding:9px 11px;border:2px solid #ac5c60;border-radius:10px;background:#ffdedc;color:#9c2535;font-weight:900;min-height:26px}',
+  '#mb-duel-dialog .mb-rival-alert[hidden]{display:none!important}',
+  '#mb-duel-dialog .mb-duel-config{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0}',
+  '#mb-duel-dialog .mb-duel-config label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:850;color:#52392b}',
+  '#mb-duel-dialog .mb-duel-config select{width:100%;min-width:0;min-height:43px;padding:8px;border:2px solid #977457;border-radius:9px;background:#fff8e8;color:#422924;font:inherit;font-weight:800}',
+  '@media(max-width:460px){#mb-duel-dialog .mb-duel-config{grid-template-columns:1fr 1fr}#mb-duel-dialog .mb-duel-config label:last-child{grid-column:1/-1}}',
+  '@media(prefers-reduced-motion:reduce){#mb-duel-dialog .mb-duel-clock.mb-duel-rival-fast{animation:none}}',
   '#mb-duel-dialog .mb-duel-result{margin-top:12px;padding:13px;border-radius:13px;border:3px solid #896848;font-size:clamp(16px,2.1vw,22px);font-weight:950}',
   '#mb-duel-dialog .mb-duel-result.good{background:#dff7d6;color:#205c37;border-color:#438e56}',
   '#mb-duel-dialog .mb-duel-result.bad{background:#ffe1dc;color:#96313a;border-color:#ad4b4f}',
@@ -58,7 +67,7 @@
   btn.addEventListener('click',openLobby);
  }
  // 1대1 대결은 홈 캐릭터 아래 버튼에서만 진입한다.
- let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null;
+ let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null,serverOffset=0;
  const currentRoomKey='mb_duel_last_room_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
  function showError(message){const place=statusEl();if(place)place.textContent=message;else renderNotice(message)}
@@ -81,8 +90,17 @@
  function showLobby(){
   roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';
   const last=localStorage.getItem(currentRoomKey)||'';
-  putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고, 똑같은 10문제로 대결해 봐! 맞춤법 5문제와 사자성어 5문제가 나와.</p><div class="mb-duel-actions"><button id="mb-duel-create" class="mb-duel-primary">➕ 새 대결방 만들기</button></div><label for="mb-duel-input"><strong>초대받은 방 코드</strong></label><input id="mb-duel-input" maxlength="8" autocomplete="off" placeholder="예: ABCD2345" value="'+esc(last)+'"><div class="mb-duel-actions"><button id="mb-duel-join">↪ 방 코드로 참가</button>'+(last?'<button id="mb-duel-return">최근 방 다시 보기</button>':'')+'</div><p class="mb-duel-note">로그인 계정이 필요해. 닉네임과 복구 코드로 로그인할 수 있어. 1대1 점수는 하드코어 온라인 랭킹에 합산되지 않아.</p><p id="mb-duel-info" role="status" class="mb-duel-status">방을 만들거나 참여해 줘.</p></div>');
-  dialog.querySelector('#mb-duel-create')?.addEventListener('click',()=>startAction('create'));
+  putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고 같은 문제로 대결해 봐! 방장이 문제 수와 시간, 유형을 정할 수 있어.</p>'+
+   '<form id="mb-duel-create-form"><div class="mb-duel-config">'+
+   '<label>문제 수<select id="mb-duel-count"><option value="5">5문제</option><option value="10" selected>10문제</option><option value="15">15문제</option><option value="20">20문제</option></select></label>'+
+   '<label>문제당 제한 시간<select id="mb-duel-seconds"><option value="10">10초</option><option value="15">15초</option><option value="25" selected>25초</option><option value="40">40초</option></select></label>'+
+   '<label>문제 유형<select id="mb-duel-type"><option value="mixed" selected>맞춤법 + 사자성어</option><option value="spelling">맞춤법만</option><option value="idiom">사자성어만</option></select></label>'+
+   '</div><button id="mb-duel-create" type="submit" class="mb-duel-primary">➕ 설정대로 대결방 만들기</button></form>'+
+   '<hr><label for="mb-duel-input"><strong>초대받은 방 코드</strong></label><input id="mb-duel-input" maxlength="8" autocomplete="off" placeholder="예: ABCD2345" value="'+esc(last)+'"><div class="mb-duel-actions"><button id="mb-duel-join">↪ 방 코드로 참가</button>'+(last?'<button id="mb-duel-return">최근 방 다시 보기</button>':'')+'</div><p class="mb-duel-note">닉네임·비밀번호 로그인 후 참가할 수 있어. 1대1 점수는 하드코어 랭킹에 합산되지 않아.</p><p id="mb-duel-info" role="status" class="mb-duel-status">새 방을 만들거나 친구의 코드를 입력해 줘.</p></div>');
+  dialog.querySelector('#mb-duel-create-form')?.addEventListener('submit',e=>{
+   e.preventDefault();
+   startAction('create',{count:Number($('mb-duel-count').value),seconds:Number($('mb-duel-seconds').value),type:$('mb-duel-type').value});
+  });
   dialog.querySelector('#mb-duel-join')?.addEventListener('click',()=>startAction('join',dialog.querySelector('#mb-duel-input')?.value));
   dialog.querySelector('#mb-duel-return')?.addEventListener('click',()=>enterRoom(last));
  }
@@ -116,7 +134,7 @@
   busy=true;showError(action==='create'?'대결방 생성 중...':'친구 방에 참가하는 중...');
   try{
    const code=String(value||'').trim().toUpperCase();
-   const result=await api(action==='create'?{action:'create'}:{action:'join',code});
+   const result=await api(action==='create'?{action:'create',settings:value}:{action:'join',code});
    await enterRoom(result.code);
   }catch(e){showError(e.message)}finally{busy=false}
  }
@@ -133,6 +151,8 @@
   pollBusy=true;
   try{
    const next=await api(null,roomCode);
+   if(!dialog.open||roomCode!==next.code)return;
+   if(Number.isFinite(next.serverNow))serverOffset=next.serverNow-Date.now();
    status=next;
    showGame();
   }catch(e){showError(e.message)}finally{pollBusy=false}
@@ -152,10 +172,31 @@
   for(let offset=0;choices.length<4&&offset<candidates.length;offset++)choices.push(candidates[(seed+offset*11)%candidates.length].answer);
   return choices.map((x,i)=>({x,index:(i*7+seed)%4})).sort((a,b)=>a.index-b.index).map(x=>x.x);
  }
- const remaining=()=>{if(!status?.ready||!status.turnReady||!status.turnStartsAt)return 0;return Math.max(0,25000-(Date.now()-status.turnStartsAt))};
+ const now=()=>Date.now()+serverOffset;
+ const count=()=>status?.settings?.count||status?.questionIds?.length||10;
+ const duration=()=>1000*(status?.settings?.seconds||25);
+ const remaining=()=>{
+  if(!status?.ready||!status.turnReady||!status.turnStartsAt)return 0;
+  const time=now();
+  const original=Math.max(0,time-status.turnStartsAt);
+  const extra=status.opponentAnsweredAt?Math.max(0,time-status.opponentAnsweredAt):0;
+  return Math.max(0,duration()-original-extra);
+ };
+ function updateOpponentSignal(){
+  if(!dialog.open||phase!=='question'||!status)return;
+  const flash=!!status.opponentAnswered;
+  const clock=dialog.querySelector('#mb-duel-clock');
+  clock?.classList.toggle('mb-duel-rival-fast',flash);
+  const notice=dialog.querySelector('#mb-duel-rival-notice');
+  if(notice){
+   notice.hidden=!flash;
+   if(flash&&notice.textContent!=='⚡ 상대가 먼저 답했어! 남은 시간이 2배 빠르게 줄어들어!')
+    notice.textContent='⚡ 상대가 먼저 답했어! 남은 시간이 2배 빠르게 줄어들어!';
+  }
+ }
  function scoreboard(){
   return '<div class="mb-duel-scoreboard">'+(status?.players||[]).map(p=>
-   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+'<strong class="mb-duel-score-value">'+p.score+'점</strong><small class="mb-duel-progress">정답 '+p.correct+' · '+p.answered+'/10</small></div>').join('')+'</div>';
+   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+'<strong class="mb-duel-score-value">'+p.score+'점</strong><small class="mb-duel-progress">정답 '+p.correct+' · '+p.answered+'/'+count()+'</small></div>').join('')+'</div>';
  }
  function refreshScoreboard(){
   // Never replace the active question merely because the opponent scored.
@@ -165,8 +206,9 @@
    const points=card.querySelector('.mb-duel-score-value');
    const progress=card.querySelector('.mb-duel-progress');
    if(points)points.textContent=p.score+'점';
-   if(progress)progress.textContent='정답 '+p.correct+' · '+p.answered+'/10';
+   if(progress)progress.textContent='정답 '+p.correct+' · '+p.answered+'/'+count();
   }
+  updateOpponentSignal();
  }
  function showGame(){
   if(!dialog.open||!roomCode||!status)return;
@@ -179,13 +221,16 @@
   const newPhase=!status.ready?'waiting'
    :status.finished?'results'
    :Date.now()<feedbackUntil?'feedback'
-   :qidx>=10?'finished'
+   :qidx>=count()?'finished'
    :!unlocked?'opponent'
-   :Date.now()<status.turnStartsAt?'countdown':'question';
+   :now()<status.turnStartsAt?'countdown':'question';
   const viewKey=newPhase+'|'+qidx;
   if(viewKey===lastViewKey){refreshScoreboard();return;}
   lastViewKey=viewKey;phase=newPhase;
-  let html='<div class="mb-duel-panel"><p>친구 초대 코드 <strong class="mb-duel-code" id="mb-duel-code">'+esc(roomCode)+'</strong> <button id="mb-duel-copy" type="button">복사</button></p>';
+  const options=status.settings||{count:count(),seconds:25,type:'mixed'};
+  const typeLabel={mixed:'맞춤법+사자성어',spelling:'맞춤법만',idiom:'사자성어만'};
+  let html='<div class="mb-duel-panel"><p>친구 초대 코드 <strong class="mb-duel-code" id="mb-duel-code">'+esc(roomCode)+'</strong> <button id="mb-duel-copy" type="button">복사</button></p>'+
+   '<p class="mb-duel-note">⚙ '+count()+'문제 · 문제당 '+options.seconds+'초 · '+esc(typeLabel[options.type]||'혼합')+'</p>';
   html+=scoreboard();
   if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
   if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 상대가 현재 문제를 제출할 때까지 대기 중이야. 둘 다 풀어야 다음 문제로 넘어가!</p><p class="mb-duel-note">상대방 진행 상황은 위 점수판에서 확인해 줘.</p>';
@@ -196,7 +241,9 @@
    else{
     const title=q.type==='idiom'?'📖 다음 뜻에 해당하는 사자성어를 골라 줘.':'✏️ 빈칸에 들어갈 맞는 표현을 골라 줘.';
     const question=q.type==='idiom'?q.meaning:q.prompt;
-    html+='<p><strong>문제 '+(qidx+1)+' / 10</strong> · '+(q.type==='idiom'?'사자성어':'프린트 맞춤법')+'</p><p id="mb-duel-clock" class="mb-duel-clock">⏱ 25.0초</p><h3>'+esc(title)+'</h3><p style="font-size:clamp(17px,2.1vw,23px);font-weight:900">'+esc(question)+'</p><div class="mb-duel-option-list">'+opts(q,qidx).map(value=>'<button type="button" data-duel-answer="'+esc(value)+'">'+esc(value)+'</button>').join('')+'</div><p class="mb-duel-note">빠르게 정답을 고를수록 최대 10점. 오답·시간초과는 0점!</p>';
+    html+='<p><strong>문제 '+(qidx+1)+' / '+count()+'</strong> · '+(q.type==='idiom'?'사자성어':'프린트 맞춤법')+'</p><p id="mb-duel-clock" class="mb-duel-clock">⏱ '+(duration()/1000).toFixed(1)+'초</p>'+
+    '<p id="mb-duel-rival-notice" role="status" aria-live="polite" class="mb-rival-alert" hidden></p>'+
+    '<h3>'+esc(title)+'</h3><p style="font-size:clamp(17px,2.1vw,23px);font-weight:900">'+esc(question)+'</p><div class="mb-duel-option-list">'+opts(q,qidx).map(value=>'<button type="button" data-duel-answer="'+esc(value)+'">'+esc(value)+'</button>').join('')+'</div><p class="mb-duel-note">빠르게 맞힐수록 최대 10점. 상대가 먼저 제출하면 남은 시간은 2배 속도로 감소!</p>';
    }
   }
   if(newPhase==='feedback'){const good=feedback?.correct;html+='<p class="mb-duel-result '+(good?'good':'bad')+'">'+(good?'✔ 정답! +'+feedback.points+'점':'✖ 아쉬워! 0점')+'</p><p>다음 문제로 넘어가는 중...</p>'}
@@ -209,6 +256,7 @@
   }
   html+='<div class="mb-duel-actions"><button id="mb-duel-new" type="button">새 대결 / 코드 입력</button></div><p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
   putHTML(html);
+  updateOpponentSignal();
   dialog.querySelector('#mb-duel-copy')?.addEventListener('click',async()=>{
    try{await navigator.clipboard.writeText(roomCode);showError('방 코드가 복사됐어.')}catch(_){showError('복사가 제한됐어. 위 코드를 직접 알려 줘.')}
   });
@@ -220,7 +268,7 @@
   const me=status.players.find(x=>x.id===status.me);
   const opponent=status.players.find(x=>x.id!==status.me);
   if(!me||!opponent||me.answered>opponent.answered||
-     me.answered>=10||Date.now()<status.turnStartsAt)return;
+     me.answered>=count()||now()<status.turnStartsAt)return;
   busy=true;
   dialog.querySelectorAll('[data-duel-answer]').forEach(b=>b.disabled=true);
   try{
@@ -239,12 +287,13 @@
  function tick(){
   if(!dialog.open||!roomCode||!status||document.hidden)return;
   if(phase==='countdown'){
-   const left=Math.max(0,Math.ceil((status.startsAt-Date.now())/1000));
+   const left=Math.max(0,Math.ceil((status.turnStartsAt-now())/1000));
    const el=dialog.querySelector('#mb-duel-countdown');if(el)el.textContent='⚔ 시작까지 '+left+'초';
    if(left<=0){lastViewKey='';showGame()}
   }else if(phase==='question'){
    const ms=remaining(),el=dialog.querySelector('#mb-duel-clock');
-   if(el){el.textContent='⏱ '+(ms/1000).toFixed(1)+'초';el.classList.toggle('low',ms<7000)}
+   if(el){el.textContent='⏱ '+(ms/1000).toFixed(1)+'초';el.classList.toggle('low',ms<7000);el.classList.toggle('mb-duel-rival-fast',!!status.opponentAnswered)}
+   updateOpponentSignal();
    if(ms<=0&&!busy)sendAnswer('');
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
@@ -255,7 +304,7 @@
   if(!dialog.open||!roomCode||document.hidden)return 4500;
   if(phase==='opponent')return 950;
   if(phase==='countdown'||phase==='feedback')return 1150;
-  if(phase==='question')return 1750;
+  if(phase==='question')return 950;
   if(phase==='waiting'||phase==='finished')return 2100;
   if(phase==='results')return 9000;
   return 2500;
