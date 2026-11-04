@@ -26,62 +26,27 @@
  const stage=document.querySelector('#homeScreen .mb-mascot-stage');
  const onlineRow=document.querySelector('#homeScreen .mb-online-actions');
  if(stage && onlineRow)stage.append(onlineRow);
- // Move the original hard button to the main left navigation, and mirror it
- // across the separate learning/mobile sidebars.
+ // Move one ORIGINAL hardcore mode button to the home right column.
+ // It keeps the existing unlock logic and the same route, without duplicates.
  const primary=document.querySelector('.mb-hard-button');
- const hardButtons=[];
- document.querySelectorAll('.sidebar-nav,.mobile-drawer').forEach(sidebar=>{
-  if(sidebar.querySelector('[data-route="hard"]'))return;
-  const anchor=sidebar.querySelector('[data-route="timed"]')||sidebar.querySelector('[data-route="infinite"]');
-  if(!anchor)return;
-  const button=hardButtons.length===0 && primary?primary:document.createElement('button');
-  button.type='button';
-  const wasLocked=button.classList.contains('locked');
-  button.className='navbtn mb-hard-nav'+(wasLocked?' locked':'');
-  button.dataset.route='hard';
-  button.setAttribute('aria-label','하드코어 모드');
-  button.title='하드코어 모드';
-  if(button!==primary && primary){
-   button.innerHTML=primary.innerHTML;
-   button.classList.toggle('locked',primary.classList.contains('locked'));
-  }
-  anchor.after(button);
-  hardButtons.push(button);
- });
-
- // Swap to the two uploaded pixel-art buttons without rewriting existing click handlers.
- const imageScript=document.createElement('script');
- imageScript.src='./hardcore_image_assets.js';
- imageScript.id='mb-hardcore-image-loader';
- imageScript.onload=()=>{
-  const art=window.__mbHardImages;
-  if(!art?.unlocked||!art?.locked)return;
-  const artwork=document.createElement('style');
-  artwork.id='mb-hardcore-artwork';
-  artwork.textContent=[
-   '.sidebar-nav .mb-hard-nav,.mobile-drawer .mb-hard-nav{display:block!important;position:relative!important;box-sizing:border-box!important;min-height:0!important;height:auto!important;aspect-ratio:256/85!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent url("'+art.unlocked+'") center/100% 100% no-repeat!important;box-shadow:none!important;color:transparent!important;font-size:0!important;line-height:0!important;text-shadow:none!important;image-rendering:pixelated!important;overflow:visible!important;cursor:pointer!important}',
-   '.sidebar-nav .mb-hard-nav small,.mobile-drawer .mb-hard-nav small{display:none!important}',
-   '.sidebar-nav .mb-hard-nav.locked,.mobile-drawer .mb-hard-nav.locked{background-image:url("'+art.locked+'")!important;filter:brightness(.42) grayscale(.17)!important;opacity:1!important}',
-   '.sidebar-nav .mb-hard-nav:not(.locked):hover,.mobile-drawer .mb-hard-nav:not(.locked):hover{transform:translateY(-2px) scale(1.035)!important;filter:brightness(1.12)!important}',
-   '.sidebar-nav .mb-hard-nav.active:not(.locked),.mobile-drawer .mb-hard-nav.active:not(.locked){background-image:url("'+art.unlocked+'")!important;filter:brightness(.81)!important;outline:0!important;transform:scale(.98)!important}',
-   '.sidebar-nav .mb-hard-nav.locked.active,.mobile-drawer .mb-hard-nav.locked.active{filter:brightness(.42) grayscale(.17)!important;outline:2px dashed #b88765!important;outline-offset:1px!important}',
-   '@media(max-width:700px){.sidebar-nav .mb-hard-nav,.mobile-drawer .mb-hard-nav{min-height:0!important;aspect-ratio:256/85!important}}'
-  ].join('\n');
-  document.head.append(artwork);
- };
- imageScript.onerror=()=>console.warn('Hardcore artwork could not load.');
- document.body.append(imageScript);
+ const rightColumn=document.querySelector('#homeScreen .mb-dashboard-left');
+ if(primary && rightColumn){
+  const locked=primary.classList.contains('locked');
+  primary.className='mb-hard-button mb-hard-feature'+(locked?' locked':'');
+  primary.dataset.route='hard';
+  primary.setAttribute('aria-label','하드코어 모드');
+  primary.title='하드코어 모드';
+  rightColumn.append(primary);
+  primary.addEventListener('click',event=>{
+   event.preventDefault();
+   event.stopImmediatePropagation();
+   window.openModeSetup?.('hard');
+  },true);
+ }
+ document.querySelectorAll('.sidebar-nav [data-route="hard"],.mobile-drawer [data-route="hard"]').forEach(el=>{if(el!==primary)el.remove()});
+ style.textContent+='\n'+"#homeScreen .mb-dashboard-left>.mb-hard-feature{display:block!important;position:relative!important;flex:none!important;order:3!important;align-self:center!important;box-sizing:border-box!important;width:100%!important;max-width:550px!important;height:auto!important;min-height:0!important;aspect-ratio:1024/341!important;border:0!important;border-radius:0!important;padding:0!important;margin:clamp(6px,.9vw,11px) auto 0!important;background:transparent url(\"./ui-assets/hardcore-feature.webp\") center/contain no-repeat!important;box-shadow:none!important;color:transparent!important;font-size:0!important;line-height:0!important;text-shadow:none!important;overflow:visible!important;cursor:pointer!important;transition:transform .15s,filter .15s!important}\n#homeScreen .mb-dashboard-left>.mb-hard-feature small{display:none!important}\n#homeScreen .mb-dashboard-left>.mb-hard-feature.locked{filter:brightness(.44) grayscale(.17)!important}\n#homeScreen .mb-dashboard-left>.mb-hard-feature.locked:hover{filter:brightness(.44) grayscale(.17)!important;transform:translateY(-1px)!important}\n#homeScreen .mb-dashboard-left>.mb-hard-feature:not(.locked):hover{filter:brightness(1.09)!important;transform:translateY(-3px) scale(1.025)!important}\n#homeScreen .mb-dashboard-left>.mb-hard-feature:not(.locked):active{filter:brightness(.88)!important;transform:translateY(1px) scale(.99)!important}\n#homeScreen .mb-dashboard-left>.home-hero{height:clamp(133px,17vw,218px)!important}\n#homeScreen .mb-dashboard-left{gap:clamp(5px,.65vw,9px)!important}\n#homeScreen .mb-mascot-stage>.hero-character{max-height:clamp(255px,30vw,346px)!important}\n#homeScreen .mb-home-dashboard{gap:clamp(12px,1.2vw,18px)!important;margin-bottom:clamp(4px,.8vw,10px)!important}\n@media(max-width:700px){#homeScreen .mb-dashboard-left>.mb-hard-feature{width:100%!important;margin:6px auto!important;aspect-ratio:1024/341!important}#homeScreen .mb-dashboard-left>.home-hero{height:clamp(110px,30vw,168px)!important}}";
  // Hide the legacy local ranking entirely; only live server ranking remains.
  document.querySelectorAll('#mb-hard-account').forEach(el=>el.remove());
- function syncHard(){
-  if(!primary)return;
-  for(const btn of hardButtons){
-   if(btn===primary)continue;
-   btn.innerHTML=primary.innerHTML;
-   btn.classList.toggle('locked',primary.classList.contains('locked'));
-  }
- }
- if(primary)new MutationObserver(syncHard).observe(primary,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
  let selected='home';
  const tracked=new Set(['home','spelling','idiom','application','infinite','timed','hard','duel','mistakes','history','settings']);
  function paint(){
@@ -91,6 +56,7 @@
    btn.setAttribute('aria-current',active?'page':'false');
    if(btn.dataset.route==='hard')btn.setAttribute('aria-pressed',String(active));
   }
+  if(primary)primary.classList.toggle('active',selected==='hard');
  }
  function selectRoute(route){
   if(tracked.has(route))selected=route;
