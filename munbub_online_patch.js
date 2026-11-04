@@ -71,11 +71,11 @@
   });
  }
  function leaderboard(){
-  open('<h2>🏆 온라인 하드 랭킹</h2><p class="mb-tip">서버에서 정답과 답변 시간을 다시 계산하며 계정별 최고 점수만 표시해.</p><div id="mb-online-list">랭킹을 불러오는 중...</div>');
+  open('<h2 class="mb-ranking-heading">🏆 온라인 하드 랭킹</h2><p class="mb-tip">서버에서 정답과 답변 시간을 계산하며 계정별 최고 점수만 표시해.</p><div class="mb-ranking-board"><div id="mb-online-list" class="mb-ranking-rows" role="status">랭킹을 불러오는 중...</div></div>');
   api('/api/leaderboard').then(x=>{
    const el=$('mb-online-list');if(!el)return;
    const list=Array.isArray(x.scores)?x.scores:[];
-   el.innerHTML=list.length?'<table><tr><th>#</th><th>닉네임</th><th>점수</th><th>정답</th></tr>'+list.slice(0,30).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.name)+'</td><td>'+Math.max(0,Number(r.score)||0)+'</td><td>'+Math.max(0,Number(r.correct)||0)+'</td></tr>').join('')+'</table>':'<p>아직 온라인 기록이 없어. 첫 하드모드 기록을 남겨 봐!</p>';
+   el.innerHTML=list.length?list.slice(0,30).map((r,i)=>'<div class="mb-board-row"><span>'+(i+1)+'</span><span>'+esc(r.name)+'</span><span>'+Math.max(0,Number(r.score)||0)+'</span></div>').join(''):'<p class="mb-board-empty">아직 온라인 기록이 없어. 첫 하드모드 기록을 남겨 봐!</p>';
   }).catch(e=>{if($('mb-online-list'))$('mb-online-list').textContent=e.message});
  }
  document.addEventListener('click',event=>{
