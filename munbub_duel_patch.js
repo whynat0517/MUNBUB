@@ -341,7 +341,8 @@
   busy=true;
   dialog.querySelectorAll('[data-duel-answer]').forEach(b=>b.disabled=true);
   try{
-   const out=await api({action:'answer',code:roomCode,index:me.answered,answer});
+   const out=await api({action:'answer',code:roomCode,index:me.answered,answer,
+    answerTicket:status.answerTicket||undefined});
    feedback=out;feedbackUntil=Date.now()+1050;lastViewKey='';
    // Use the server response for the local score immediately, no extra round-trip.
    me.answered=out.index+1;
