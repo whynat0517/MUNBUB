@@ -26,31 +26,48 @@
  api('/api/account').then(x=>{me=x.loggedIn?x:null;refreshButtons()}).catch(()=>refreshButtons());
  function account(){
   if(me){
-   open('<h2>👤 온라인 계정</h2><p><strong>'+esc(me.name)+'</strong> 님 로그인 중</p><p class="mb-tip">복구 코드는 본인만 보관해 줘. 다른 기기에서 로그인할 때 필요해.</p><button id="mb-online-logout">로그아웃</button>');
+   if(me.needsPassword){
+    open('<h2>🔐 기존 계정 전환</h2><p>이 계정은 복구 코드 방식으로 만들어졌어. 이제 닉네임과 비밀번호로 로그인할 수 있게 변경해 줘.</p><form id="mb-account-upgrade"><label>사용할 닉네임<input id="mb-upgrade-name" maxlength="12" autocomplete="username" value="'+esc(me.name)+'" required></label><label>새 비밀번호 (8자 이상)<input id="mb-upgrade-pass" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></label><button type="submit">🔐 비밀번호 계정으로 전환</button></form><p id="mb-upgrade-message" role="status"></p><button id="mb-online-logout" type="button">로그아웃</button>');
+    $('mb-account-upgrade')?.addEventListener('submit',async ev=>{
+     ev.preventDefault();
+     const msg=$('mb-upgrade-message');
+     msg.textContent='계정 전환 중...';
+     try{
+      me=await api('/api/account',{action:'upgrade',name:$('mb-upgrade-name').value,password:$('mb-upgrade-pass').value});
+      refreshButtons();modal.close();
+     }catch(e){msg.textContent=e.message}
+    });
+   }else{
+    open('<h2>👤 온라인 계정</h2><p><strong>'+esc(me.name)+'</strong> 님, 닉네임과 비밀번호로 로그인 중이야.</p><p class="mb-tip">비밀번호를 다른 사람에게 알려 주지 마. 재설정 기능은 아직 준비되지 않았어.</p><button id="mb-online-logout">로그아웃</button>');
+   }
    $('mb-online-logout')?.addEventListener('click',async()=>{try{await api('/api/account',{action:'logout'});me=null;refreshButtons();modal.close()}catch(e){alert(e.message)}});
    return;
   }
-  open('<h2>👤 닉네임 계정</h2><p class="mb-tip">이메일이나 비밀번호는 받지 않아. 다른 기기에서 로그인하려면 발급받은 복구 코드를 안전하게 보관해야 해.</p><label>새 닉네임<input id="mb-new-name" maxlength="12" placeholder="2~12자"></label><button id="mb-create-account">새 계정 만들기</button><hr><label>기존 계정 복구 코드<input id="mb-recovery-code" autocomplete="off" spellcheck="false" placeholder="복구 코드 입력"></label><button id="mb-login-account">코드로 로그인</button><p id="mb-account-error" role="status"></p>');
+  open('<h2>👤 맛춘범 로그인</h2><p class="mb-tip">닉네임과 비밀번호로 로그인해. 닉네임은 다른 사람과 중복할 수 없어.</p><form id="mb-login-form"><label>닉네임<input id="mb-login-name" maxlength="12" autocomplete="username" required></label><label>비밀번호<input id="mb-login-password" type="password" autocomplete="current-password" maxlength="72" required></label><button type="submit">🔓 로그인</button></form><hr><h3>새 계정 만들기</h3><form id="mb-register-form"><label>새 닉네임 (2~12자)<input id="mb-new-name" maxlength="12" minlength="2" autocomplete="off" required></label><label>비밀번호 (8자 이상)<input id="mb-new-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></label><label>비밀번호 확인<input id="mb-new-password-check" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></label><button type="submit">➕ 계정 만들기</button></form><details><summary style="cursor:pointer;margin-top:10px;font-weight:800">이전 복구 코드 계정으로 로그인</summary><p class="mb-tip">예전에 만든 계정은 기존 복구 코드로 들어간 뒤 새 비밀번호를 설정할 수 있어.</p><form id="mb-legacy-form"><input id="mb-legacy-code" autocomplete="off" spellcheck="false" placeholder="예전 복구 코드" required><button type="submit">기존 계정 열기</button></form></details><p id="mb-account-error" role="status" aria-live="polite"></p>');
   const msg=$('mb-account-error');
-  $('mb-create-account')?.addEventListener('click',async()=>{
-   msg.textContent='계정 생성 중...';
-   try{
-    const x=await api('/api/account',{action:'register',name:$('mb-new-name').value});
-    me=x;refreshButtons();
-    try{localStorage.setItem('mb_local_player_v1',JSON.stringify({name:x.name}))}catch(_){}
-    open('<h2>✅ 온라인 계정 생성</h2><p>복구 코드는 한 번만 표시돼. 다른 사람에게 공유하지 말고 직접 보관해 줘.</p><textarea id="mb-new-code" rows="3" readonly>'+esc(x.recoveryCode)+'</textarea><p class="mb-tip">분실하면 다른 기기에서 이 계정으로 로그인할 수 없어.</p><button id="mb-copy-code">코드 복사</button><button id="mb-accept-account">확인</button>');
-    $('mb-copy-code')?.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(x.recoveryCode)}catch(_){$('mb-new-code')?.select()}});
-    $('mb-accept-account')?.addEventListener('click',()=>modal.close());
-   }catch(e){msg.textContent=e.message}
+  function savePlayer(x){
+   me=x;refreshButtons();
+   try{localStorage.setItem('mb_local_player_v1',JSON.stringify({name:x.name}))}catch(_){}
+   modal.close();
+  }
+  $('mb-login-form')?.addEventListener('submit',async e=>{
+   e.preventDefault();msg.textContent='로그인 중...';
+   try{savePlayer(await api('/api/account',{action:'login',name:$('mb-login-name').value,password:$('mb-login-password').value}))}
+   catch(err){msg.textContent=err.message}
   });
-  $('mb-login-account')?.addEventListener('click',async()=>{
-   msg.textContent='로그인 중...';
+  $('mb-register-form')?.addEventListener('submit',async e=>{
+   e.preventDefault();
+   if($('mb-new-password').value!==$('mb-new-password-check').value){msg.textContent='비밀번호 확인이 일치하지 않아.';return}
+   msg.textContent='닉네임 중복 확인 및 계정 생성 중...';
+   try{savePlayer(await api('/api/account',{action:'register',name:$('mb-new-name').value,password:$('mb-new-password').value}))}
+   catch(err){msg.textContent=err.message}
+  });
+  $('mb-legacy-form')?.addEventListener('submit',async e=>{
+   e.preventDefault();msg.textContent='기존 계정 확인 중...';
    try{
-    const x=await api('/api/account',{action:'login',code:$('mb-recovery-code').value});
-    me=x;refreshButtons();
-    try{localStorage.setItem('mb_local_player_v1',JSON.stringify({name:x.name}))}catch(_){}
-    modal.close();
-   }catch(e){msg.textContent=e.message}
+    const legacy=await api('/api/account',{action:'recovery',code:$('mb-legacy-code').value});
+    me=legacy;refreshButtons();account();
+   }catch(err){msg.textContent=err.message}
   });
  }
  function leaderboard(){
