@@ -55,17 +55,22 @@
  }
  const scene=$('#mb-night-scene');
  const tileWidth=4344,tileHeight=724,speed=130;
- let offset=0,last=0,lastPaint=0;
+ let offset=0,last=0,lastPaint=0,accumulated=0;
  function tick(ms){
   const dt=last?Math.min(.06,(ms-last)/1000):0;
   last=ms;
   const stop=document.hidden||reduced?.matches||!!$('#mb-duel-dialog')?.open;
-  if(!stop&&ms-lastPaint>30){
-   lastPaint=ms;
-   const visualHeight=window.innerHeight||724;
-   const period=tileWidth*visualHeight/tileHeight;
-   offset=(offset+speed*dt)%period;
-   scene.style.backgroundPositionX=(-offset)+'px';
+  if(stop){accumulated=0;lastPaint=ms}
+  else{
+   accumulated+=dt;
+   if(ms-lastPaint>30){
+    lastPaint=ms;
+    const visualHeight=window.innerHeight||724;
+    const period=tileWidth*visualHeight/tileHeight;
+    offset=(offset+speed*accumulated)%period;
+    accumulated=0;
+    scene.style.backgroundPositionX=(-offset)+'px';
+   }
   }
   requestAnimationFrame(tick);
  }
