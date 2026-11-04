@@ -91,11 +91,23 @@
  window.__mbSelectedMenu=()=>selected;
  window.__mbMarkRoute=selectRoute;
  paint();
- // The online duel is an independent overlay; no changes to existing quiz banks.
- if(!document.getElementById('mb-duel-loader')){
+ // Install the latest workbook BEFORE the duel captures its question MAP.
+ // An onload dependency ensures both clients share the exact 100 idiom answers.
+ function loadDuel(){
+  if(document.getElementById('mb-duel-loader'))return;
   const duelScript=document.createElement('script');
   duelScript.id='mb-duel-loader';duelScript.src='./munbub_duel_patch.js';
   document.body.append(duelScript);
+ }
+ if(!document.getElementById('mb-idiom-100-loader')){
+  const bankScript=document.createElement('script');
+  bankScript.id='mb-idiom-100-loader';bankScript.src='./munbub_idiom_bank_100.js';
+  bankScript.onload=()=>{
+   if(window.__mbIdiomBank100?.count===100)loadDuel();
+   else console.error('사자성어 100개를 로드하지 못해 대전 시작을 중단했어.');
+  };
+  bankScript.onerror=()=>console.error('최신 사자성어 파일을 다운로드하지 못했어.');
+  document.body.append(bankScript);
  }
  // Load the illustrated atlas once, then the UI image replacement.
  if(!document.getElementById('mb-ui-atlas-loader')){
