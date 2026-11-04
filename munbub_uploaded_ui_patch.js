@@ -81,7 +81,13 @@
    sound.className='mb-home-sound';sound.type='button';sound.title='음악 켜기 / 끄기';
    sound.setAttribute('aria-label','배경음악 켜기 또는 끄기');
    row.append(sound);
-   sound.addEventListener('click',()=>document.getElementById('bgmToggle')?.click());
+   sound.addEventListener('click',event=>{
+    // Avoid sending a synthetic click to the hidden Settings button: its
+    // global click ripple used to flash in the top-left corner.
+    event.stopPropagation();
+    if(typeof window.toggleBgm==='function')window.toggleBgm();
+    else if(typeof toggleBgm==='function')toggleBgm();
+   });
    function updateSound(){
     const bgm=$('bgmToggle');
     if(!bgm)return;
