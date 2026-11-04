@@ -1,7 +1,7 @@
 /* Private invite-code 1v1 quiz. Neither player's records overwrite the other's. */
 import { randomBytes, randomInt } from 'node:crypto';
 import { list, put } from '@vercel/blob';
-import { configured, noCache, sameOrigin, session, readPrivate, answerCorrect, duelQuestionIds } from '../lib/mb-server.js';
+import { configured, noCache, sameOrigin, session, readPrivate, writePrivate, answerCorrect, duelQuestionIds } from '../lib/mb-server.js';
 
 const PREFIX='duels/';
 const MAX_QUESTIONS=10;
@@ -13,6 +13,7 @@ const codeNew=()=>Array.from(randomBytes(8),v=>CHARS[v%CHARS.length]).join('');
 const roomPath=c=>PREFIX+c+'/room.json';
 const guestPath=c=>PREFIX+c+'/guest.json';
 const stepPath=(c,id,index)=>PREFIX+c+'/steps/'+id+'/'+index+'.json';
+const progressPath=(c,id)=>PREFIX+c+'/progress/'+id+'.json';
 const hasExpired=room=>!room||!Number.isFinite(room.expiresAt)||room.expiresAt<Date.now();
 
 function pickQuestions(){
@@ -28,23 +29,25 @@ async function state(c,room,guest,me){
  const isMember=members.some(x=>x.id===me.id);
  if(!isMember)return null;
  const records=await Promise.all(members.map(async member=>{
-  const paths=await list({prefix:PREFIX+c+'/steps/'+member.id+'/',limit:20});
-  const sorted=paths.blobs.filter(b=>/^([0-9]+)\.json$/.test(b.pathname.split('/').at(-1)))
-    .sort((a,b)=>Number(a.pathname.split('/').at(-1).split('.')[0])-Number(b.pathname.split('/').at(-1).split('.')[0]));
-  const entries=(await Promise.all(sorted.slice(0,MAX_QUESTIONS).map(async b=>{
-   try{return await readPrivate(b.pathname)}catch{return null}
-  }))).filter(x=>x && Number.isInteger(x.index)&&Number.isInteger(x.points));
-  const unique=new Map();
-  for(const item of entries)if(!unique.has(item.index))unique.set(item.index,item);
-  const ordered=[...unique.values()].sort((a,b)=>a.index-b.index);
+  // One fresh progress read per player replaces 2 list operations and up to 20
+  // per-answer downloads on every poll. Legacy in-progress rooms use fallback.
+  let summary=await readPrivate(progressPath(c,member.id),{fresh:true});
+  if(!summary){
+   const paths=await list({prefix:PREFIX+c+'/steps/'+member.id+'/',limit:20});
+   const entries=(await Promise.all(paths.blobs.slice(0,MAX_QUESTIONS).map(b=>readPrivate(b.pathname).catch(()=>null)))).filter(x=>x&&Number.isInteger(x.index));
+   const ordered=[...new Map(entries.map(e=>[e.index,e])).values()].sort((a,b)=>a.index-b.index);
+   summary={answered:ordered.length,correct:ordered.reduce((n,x)=>n+(x.correct?1:0),0),
+    score:ordered.reduce((n,x)=>n+x.points,0),lastAt:ordered.at(-1)?.at||null,
+    answers:ordered.map(x=>({index:x.index,correct:x.correct,points:x.points}))};
+  }
   return {
    id:member.id,name:member.name,
-   answered:ordered.length,
-   correct:ordered.reduce((n,x)=>n+(x.correct?1:0),0),
-   score:ordered.reduce((n,x)=>n+x.points,0),
-   finished:ordered.length===MAX_QUESTIONS,
-   lastAt:ordered.at(-1)?.at||null,
-   answers:member.id===me.id?ordered.map(x=>({index:x.index,correct:x.correct,points:x.points})):undefined
+   answered:summary.answered||0,
+   correct:summary.correct||0,
+   score:summary.score||0,
+   finished:(summary.answered||0)>=MAX_QUESTIONS,
+   lastAt:summary.lastAt||null,
+   answers:member.id===me.id?summary.answers||[]:undefined
   };
  }));
  return {code:c,hostName:room.hostName,guestName:guest?.name||null,
@@ -112,12 +115,12 @@ export default async function handler(req,res){
    if(Date.now()<start)return sendError(res,409,'대결 시작 신호를 기다려 줘.');
    const path=stepPath(code,me.id,index);
    if(await readPrivate(path))return sendError(res,409,'이미 제출한 문제야.');
+   const previousProgress=await readPrivate(progressPath(code,me.id),{fresh:true});
    let began=start;
    if(index>0){
-    const previous=await readPrivate(stepPath(code,me.id,index-1));
-    if(!previous)return sendError(res,409,'이전 문제부터 풀어 줘.');
-    began=previous.at;
-   }
+    if(previousProgress?.answered!==index)return sendError(res,409,'이전 문제부터 풀어 줘.');
+    began=previousProgress.lastAt;
+   }else if(previousProgress?.answered>0)return sendError(res,409,'이미 대결이 시작됐어.');
    const answer=String(body.answer??'');
    if(answer.length>100)return sendError(res,400,'답변이 너무 길어.');
    const correct=answerCorrect(qid,answer);
@@ -127,6 +130,19 @@ export default async function handler(req,res){
    const entry={index,qid,correct,points,at,elapsed};
    try{await put(path,JSON.stringify(entry),{access:'private',addRandomSuffix:false,contentType:'application/json'})}
    catch(e){return sendError(res,409,'이미 제출되었어. 상태를 새로고침해 줘.')}
+   // A compact per-player snapshot makes polling O(2) instead of O(20).
+   const next={
+    answered:index+1,
+    score:(previousProgress?.score||0)+points,
+    correct:(previousProgress?.correct||0)+(correct?1:0),
+    lastAt:at,
+    answers:[...(previousProgress?.answers||[]),{index,correct,points}]
+   };
+   try{await writePrivate(progressPath(code,me.id),next,{overwrite:!!previousProgress})}
+   catch(e){
+    // The immutable answer survives even when the read model needs repair.
+    console.error('Duel progress snapshot failed',e?.name);
+   }
    return res.status(200).json({accepted:true,index,correct,points,elapsed,finished:index===MAX_QUESTIONS-1});
   }
   return sendError(res,400,'알 수 없는 대결 요청이야.');
