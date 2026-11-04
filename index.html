@@ -342,6 +342,14 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
           <label>문제 종류<select id="categorySelect"><option value="spelling">맞춤법 · 프린트 문제</option><option value="idiom">사자성어</option><option value="application">응용문제</option><option value="all">전체 혼합</option></select></label>
           <label>문제 수<select id="countSelect"><option value="10">10문항</option><option value="20">20문항</option><option value="30">30문항</option><option value="all">전부</option></select></label>
           <label id="styleWrap">사자성어 답안 방식<select id="styleSelect"><option value="mixed">객관식 + 서술형</option><option value="choice">객관식</option><option value="text">서술형</option></select></label>
+          <fieldset id="applicationTopicWrap" class="application-topic-wrap" hidden>
+            <legend>응용문제 분야 선택</legend>
+            <div class="application-topic-options" role="radiogroup" aria-label="응용문제 분야">
+              <label class="application-topic-option"><input type="radio" name="applicationTopic" value="spelling" checked><span class="application-topic-icon" aria-hidden="true">✎</span><span>맞춤법 응용</span></label>
+              <label class="application-topic-option"><input type="radio" name="applicationTopic" value="idiom"><span class="application-topic-icon" aria-hidden="true">四</span><span>사자성어 응용</span></label>
+              <label class="application-topic-option"><input type="radio" name="applicationTopic" value="all"><span class="application-topic-icon" aria-hidden="true">✦</span><span>둘 다 섞기</span></label>
+            </div>
+          </fieldset>
           <label id="subtypeWrap">응용문제 유형<select id="subtypeSelect"><option value="">전체 유형</option></select></label>
           <label class="field-check"><input type="checkbox" id="infiniteCheck">무한모드 · 계속 출제</label>
           <label class="field-check"><input type="checkbox" id="timedCheck">⏱ 시간제한 모드 (시간 안에 최대한 많이 맞히기)</label>
@@ -422,7 +430,16 @@ function shuffle(input){let arr=[...input];for(let i=arr.length-1;i>0;i--){let j
 function correctOf(q){return q.type==='idiom'?[q.answer]:q.answers||[]}
 function categoryLabel(type){return ({spelling:'맞춤법',idiom:'사자성어',application:'응용문제',all:'전체 혼합'})[type]||'학습'}
 function norm(text,q){let s=String(text??'').normalize('NFC').trim().replace(/[·.,!?！。'"“”‘’()]/g,'');return q.type==='idiom'?s.replace(/\s/g,''):s.replace(/\s+/g,' ')}
-function getPool(cfg){let arr=cfg.category==='all'?ALL:BANK[({spelling:'spelling',idiom:'idioms',application:'applications'})[cfg.category]]||[];if(cfg.category==='application'&&cfg.subtype)arr=arr.filter(q=>q.subtype===cfg.subtype);if(cfg.onlyWrong)arr=arr.filter(q=>store.mistakes[q.id]);return arr}
+function getPool(cfg){
+ let arr=cfg.category==='all'?ALL:BANK[({spelling:'spelling',idiom:'idioms',application:'applications'})[cfg.category]]||[];
+ if(cfg.category==='application'){
+  if(cfg.applicationTopic==='idiom')arr=arr.filter(q=>q.subtype==='사자성어 활용');
+  else if(cfg.applicationTopic==='spelling')arr=arr.filter(q=>q.subtype!=='사자성어 활용');
+  if(cfg.subtype)arr=arr.filter(q=>q.subtype===cfg.subtype);
+ }
+ if(cfg.onlyWrong)arr=arr.filter(q=>store.mistakes[q.id]);
+ return arr;
+}
 const synonymGroups=[['일거양득','일석이조'],['막상막하','난형난제'],['진퇴양난','진퇴유곡'],['고립무원','사고무친'],['분기탱천','비분강개']];
 function distractors(answer){let notAllowed=new Set([answer]);for(let g of synonymGroups)if(g.includes(answer))g.forEach(x=>notAllowed.add(x));let pool=BANK.idioms.filter(q=>!notAllowed.has(q.answer));return shuffle(pool).slice(0,3).map(q=>q.answer)}
 function itemFor(q,cfg){
@@ -474,19 +491,31 @@ function navigate(route){
  syncBgm();window.scrollTo({top:0,behavior:'instant'});
 }
 function renderSetup(type){
- let select=$('categorySelect');select.value=type;$('subtypeWrap').hidden=type!=='application';$('styleWrap').hidden=type==='spelling';$('setupHint').textContent=type==='spelling'?'기본 맞춤법 문제는 네가 준 프린트에 실린 문항만 출제돼.':type==='idiom'?'뜻을 보고 사자성어를 고르거나 직접 써 봐.':'빈칸, 문장 판단, 직접 고치기, 사자성어 활용 문제를 풀어 봐.';
+ let select=$('categorySelect');select.value=type;$('subtypeWrap').hidden=type!=='application';$('applicationTopicWrap').hidden=type!=='application';$('styleWrap').hidden=type==='spelling';$('setupHint').textContent=type==='spelling'?'기본 맞춤법 문제는 네가 준 프린트에 실린 문항만 출제돼.':type==='idiom'?'뜻을 보고 사자성어를 고르거나 직접 써 봐.':'맞춤법 또는 사자성어 응용을 선택해 문장 완성·판별·활용 문제를 풀어 봐.';
  $('timedCheck').checked=false;$('timeLimitWrap').hidden=true;$('infiniteCheck').checked=false;let notice=$('resumeNotice');notice.hidden=!store.active;
  if(store.active)notice.innerHTML=`<h3>풀던 문제가 있어</h3><p>${escapeHTML(categoryLabel(store.active.cfg?.category))} · ${store.active.answeredCount||0}문제 풀이 중</p><button type="button" class="action" id="resumeBtn">이어서 풀기</button>`;
  if(store.active)$('resumeBtn').addEventListener('click',()=>navigate('quiz'));
  updateSetupCount();
 }
 function updateSetupCount(){
- let cfg=readConfig(),pool=getPool(cfg);
+ let cfg=readConfig();
+ const isApplication=cfg.category==='application';
+ $('applicationTopicWrap').hidden=!isApplication;
+ $('subtypeWrap').hidden=!isApplication;
+ $('styleWrap').hidden=cfg.category==='spelling'||isApplication;
+ for(const option of $('subtypeSelect').options){
+  if(!option.value)continue;
+  const compatible=!isApplication||cfg.applicationTopic==='all'||(cfg.applicationTopic==='idiom'?option.value==='사자성어 활용':option.value!=='사자성어 활용');
+  option.disabled=!compatible;option.hidden=!compatible;
+ }
+ if(isApplication&&$('subtypeSelect').selectedOptions[0]?.disabled){
+  $('subtypeSelect').value='';cfg.subtype='';
+ }
+ const pool=getPool(cfg);
  $('availableCount').textContent=`출제 가능한 문제 ${pool.length}개`;
- $('subtypeWrap').hidden=cfg.category!=='application';$('styleWrap').hidden=cfg.category==='spelling'||cfg.category==='application';
  $('startBtn').disabled=pool.length===0;
 }
-function readConfig(){return {category:$('categorySelect').value,style:$('styleSelect').value,subtype:$('categorySelect').value==='application'?$('subtypeSelect').value:'',count:$('countSelect').value,infinite:$('infiniteCheck').checked,onlyWrong:$('wrongOnlyCheck').checked,timed:$('timedCheck').checked,timeSeconds:Number($('timeSecondsSelect').value)||120}}
+function readConfig(){return {category:$('categorySelect').value,applicationTopic:$('categorySelect').value==='application'?(document.querySelector('input[name="applicationTopic"]:checked')?.value||'spelling'):'',style:$('styleSelect').value,subtype:$('categorySelect').value==='application'?$('subtypeSelect').value:'',count:$('countSelect').value,infinite:$('infiniteCheck').checked,onlyWrong:$('wrongOnlyCheck').checked,timed:$('timedCheck').checked,timeSeconds:Number($('timeSecondsSelect').value)||120}}
 function startSession(cfg,idsOverride){
  cfg={...cfg,timed:!!cfg.timed,timeSeconds:[60,120,180,300].includes(Number(cfg.timeSeconds))?Number(cfg.timeSeconds):120};
  if(cfg.timed){cfg.infinite=true;cfg.count='all';}
@@ -511,7 +540,7 @@ function renderQuestion(){
   finishSession();return;
  }
  const q=MAP.get(item.id);if(!q){a.index++;persist();renderQuestion();return}
- $('quizCategory').textContent=categoryLabel(q.type)+(q.type==='spelling'?' · 프린트 '+escapeHTML(q.source||'')+'번':'');
+ $('quizCategory').textContent=q.type==='application'?'응용문제 · '+(q.subtype==='사자성어 활용'?'사자성어':'맞춤법'):categoryLabel(q.type)+(q.type==='spelling'?' · 프린트 '+escapeHTML(q.source||'')+'번':'');
  $('quizPosition').textContent=a.cfg.timed?`${a.answeredCount+1}번째 · 시간제한`:a.cfg.infinite?`${a.answeredCount+1}번째 · 무한모드`:`${a.index+1} / ${a.queue.length}`;
  $('quizFill').style.width=(a.cfg.infinite?Math.round(a.index/Math.max(1,a.queue.length)*100):Math.round(a.index/Math.max(1,a.queue.length)*100))+'%';
  $('quizType').textContent=q.type==='idiom'?(item.form==='text'?'사자성어 · 서술형':'사자성어 · 객관식'):q.type==='spelling'?'기본 맞춤법':'응용 · '+(q.subtype||'실전');
@@ -584,6 +613,7 @@ function updateTimer(){if(!store.active||section!=='quiz'||document.hidden)retur
 document.addEventListener('click',event=>{let target=event.target.closest('[data-route]');if(!target)return;event.preventDefault();navigate(target.dataset.route)});
 $('moreBtn').addEventListener('click',()=>{let drawer=$('mobileDrawer');drawer.hidden=!drawer.hidden;$('moreBtn').setAttribute('aria-expanded',String(!drawer.hidden))});
 $('categorySelect').addEventListener('change',()=>{selectedCategory=$('categorySelect').value;updateSetupCount()});
+document.querySelectorAll('input[name="applicationTopic"]').forEach(radio=>radio.addEventListener('change',()=>{$('subtypeSelect').value='';updateSetupCount()}));
 $('styleSelect').addEventListener('change',updateSetupCount);
 $('subtypeSelect').addEventListener('change',updateSetupCount);
 $('wrongOnlyCheck').addEventListener('change',updateSetupCount);

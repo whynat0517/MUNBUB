@@ -40,6 +40,48 @@
    if(typeof window.startSession==='function')window.startSession({category:'all',style:'mixed',count:'all',infinite:true,onlyWrong:false,timed:true,timeSeconds:seconds});
   }else if(e.target.closest?.('.munbub-timed-close'))dialog.close();
  });
+
+ // A single extra style layer follows the existing responsive patch (no duplicated overrides).
+ const v4=document.createElement('style');
+ v4.id='munbub-application-touch-v4';
+ v4.textContent="\n/* v4: application-topic choices, Candy-pop touch response and viewport-safe layouts */\n#applicationTopicWrap{grid-column:1/-1;min-width:0;margin:0;padding:13px 14px 15px;border:3px solid #a77562;border-radius:15px;background:#fff0dc;box-shadow:inset 0 0 0 3px #ffe8cb,0 4px 0 #d3ae96}\n#applicationTopicWrap legend{padding:0 10px;color:#54332b;font-weight:950;font-size:clamp(14px,1.6vw,18px)}\n.application-topic-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}\n.form-grid .application-topic-option{position:relative;display:flex!important;flex-direction:row!important;justify-content:center;align-items:center;gap:6px!important;text-align:center;min-width:0;min-height:60px;padding:8px 7px;cursor:pointer;user-select:none;-webkit-user-select:none;border:2px solid #b98c75;border-radius:11px;background:#fae5ca;box-shadow:0 4px 0 #9d6c58,inset 0 2px #fff7e6;color:#49312e;font-size:clamp(12px,1.25vw,16px)!important;font-weight:900;line-height:1.25;word-break:keep-all;touch-action:manipulation;transition:background .14s,box-shadow .14s,filter .14s,transform .14s}\n.form-grid .application-topic-option input[type=radio]{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important;margin:0!important;padding:0!important;z-index:1}\n.form-grid .application-topic-option .application-topic-icon{display:inline-grid;place-items:center;flex:none;width:30px;height:30px;border-radius:8px;background:#f5cba4;color:#603c33;font-size:20px;line-height:1;font-weight:900}\n.form-grid .application-topic-option:has(input:checked){background:#3e292e;color:#ffe7cb;box-shadow:0 4px 0 #1c1216,inset 0 0 0 2px #efc69e;border-color:#f0bf8f}\n.form-grid .application-topic-option:has(input:checked) .application-topic-icon{background:#f9d3ac;color:#3f292a}\n.form-grid .application-topic-option:has(input:focus-visible){outline:4px solid #e28b5a;outline-offset:4px}\n@media(hover:hover){.form-grid .application-topic-option:hover{filter:brightness(1.06);transform:translateY(-2px)}}\n.munbub-pop-ring,.munbub-pop-star{position:fixed;left:0;top:0;pointer-events:none!important;z-index:2147483000;will-change:transform,opacity;transform:translate(-50%,-50%)}\n.munbub-pop-ring{width:54px;height:54px;border-radius:50%;border:5px solid #ffe3a1;box-shadow:0 0 0 3px #9f5a56,0 0 13px #ffc87a88;animation:munbub-ring .40s ease-out forwards}\n.munbub-pop-star{font-size:clamp(15px,2.5vw,25px);line-height:1;font-weight:900;text-shadow:1px 2px 0 #4c2826;animation:munbub-star .54s cubic-bezier(.1,.74,.4,1) forwards}\n@keyframes munbub-ring{from{transform:translate(-50%,-50%) scale(.16);opacity:.95}to{transform:translate(-50%,-50%) scale(1.7);opacity:0}}\n@keyframes munbub-star{0%{transform:translate(-50%,-50%) scale(.3) rotate(-25deg);opacity:1}65%{opacity:1}100%{transform:translate(calc(-50% + var(--pop-x)),calc(-50% + var(--pop-y))) scale(.65) rotate(var(--pop-rot));opacity:0}}\n@media(max-width:1100px){\n html,body{max-width:100%;overflow-x:clip}\n #homeScreen .home-main,#workspace .work-main{box-sizing:border-box;min-width:0;width:100%;margin-inline:auto}\n #workspace .work-main{max-width:940px!important;padding-left:max(14px,env(safe-area-inset-left))!important;padding-right:max(14px,env(safe-area-inset-right))!important;padding-bottom:calc(112px + env(safe-area-inset-bottom))!important}\n #homeScreen .home-main{padding-left:max(12px,env(safe-area-inset-left))!important;padding-right:max(12px,env(safe-area-inset-right))!important;padding-bottom:calc(110px + env(safe-area-inset-bottom))!important}\n #workspace .panel,#workspace .view,#workspace .form-grid{min-width:0;max-width:100%}\n .mobile-bottom{box-sizing:border-box;padding-bottom:env(safe-area-inset-bottom)!important}\n .mobile-bottom button{touch-action:manipulation;min-height:52px}\n}\n@media(min-width:601px) and (max-width:1100px){\n #homeScreen .home-card-grid,#homeScreen .home-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important;max-width:900px}\n #homeScreen .home-card-grid .img-button:last-child,#homeScreen .home-actions .img-button:last-child{grid-column:auto;width:100%}\n #workspace .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}\n}\n@media(max-width:600px){\n #homeScreen .home-hero{height:clamp(112px,29vw,168px)}\n #homeScreen .home-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:440px}\n #homeScreen .home-card-grid .img-button:last-child{grid-column:1/-1;width:min(58%,215px);margin:auto}\n #homeScreen .home-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:440px}\n #homeScreen .home-actions .img-button:last-child{grid-column:1/-1;width:min(58%,215px);margin:auto}\n #workspace .form-grid,#workspace .option-list{grid-template-columns:minmax(0,1fr)!important}\n .application-topic-options{grid-template-columns:repeat(2,minmax(0,1fr))}\n .application-topic-option:last-child{grid-column:1/-1}\n .form-grid .application-topic-option{min-height:53px;font-size:14px!important}\n #workspace .work-main{padding-top:15px!important}\n #workspace .work-header{gap:8px}\n #workspace .work-header h1{font-size:clamp(19px,5vw,27px)}\n #workspace .panel{padding:clamp(12px,3.7vw,21px)}\n #workspace .option{min-width:0;min-height:62px;overflow-wrap:anywhere}\n}\n@media(max-width:360px){\n #applicationTopicWrap{padding:10px 8px}\n .application-topic-options{gap:7px}\n .form-grid .application-topic-option{font-size:12px!important;gap:3px!important;padding:6px 4px}\n .form-grid .application-topic-option .application-topic-icon{width:25px;height:25px;font-size:17px}\n}\n@media(max-height:530px) and (orientation:landscape) and (max-width:1100px){\n #homeScreen .home-main,#workspace .work-main{padding-top:8px!important}\n #homeScreen .home-main{padding-bottom:calc(75px + env(safe-area-inset-bottom))!important}\n #workspace .work-main{padding-bottom:calc(80px + env(safe-area-inset-bottom))!important}\n #homeScreen .home-hero{height:clamp(100px,28svh,155px)}\n .mobile-bottom button{min-height:43px}\n}\n@media(prefers-reduced-motion:reduce){\n .munbub-pop-ring,.munbub-pop-star{display:none!important;animation:none!important}\n .form-grid .application-topic-option{transition:none!important}\n}";
+ document.head.append(v4);
+ const reduceMotion=()=>window.matchMedia?.('(prefers-reduced-motion:reduce)')?.matches??false;
+ const popTimers=new WeakMap();
+ function visualTouch(e,button){
+  if(!button||button.disabled)return;
+  const box=button.getBoundingClientRect();
+  const x=Number.isFinite(e?.clientX)?e.clientX:box.left+box.width/2;
+  const y=Number.isFinite(e?.clientY)?e.clientY:box.top+box.height/2;
+  const old=popTimers.get(button);
+  if(old){clearTimeout(old.a);clearTimeout(old.b);}
+  button.style.setProperty('filter','brightness(1.12)','important');
+  if(!reduceMotion())button.style.setProperty('transform','scale(.93)','important');
+  const a=setTimeout(()=>{
+   if(!reduceMotion())button.style.setProperty('transform','scale(1.055)','important');
+   const b=setTimeout(()=>{button.style.removeProperty('transform');button.style.removeProperty('filter');popTimers.delete(button)},120);
+   popTimers.set(button,{a:null,b});
+  },85);
+  popTimers.set(button,{a,b:null});
+  if(e?.pointerType==='touch'&&!reduceMotion())try{navigator.vibrate?.(8)}catch(_){}
+  if(reduceMotion())return;
+  const ring=document.createElement('span');
+  ring.className='munbub-pop-ring';ring.style.left=x+'px';ring.style.top=y+'px';
+  document.body.append(ring);
+  setTimeout(()=>ring.remove(),510);
+  const symbols=['✦','✧','✦','✧','✦','✧'];
+  const palette=['#f8bc7e','#ffefb9','#e9958c','#f6d89e','#ffca84','#fff1d7'];
+  for(let i=0;i<symbols.length;i++){
+   const star=document.createElement('span');star.className='munbub-pop-star';star.textContent=symbols[i];
+   const angle=i*Math.PI/3+.25,dist=26+(i%3)*13;
+   star.style.left=x+'px';star.style.top=y+'px';star.style.color=palette[i];
+   star.style.setProperty('--pop-x',Math.round(Math.cos(angle)*dist)+'px');
+   star.style.setProperty('--pop-y',Math.round(Math.sin(angle)*dist-17)+'px');
+   star.style.setProperty('--pop-rot',((i%2)?-105:125)+'deg');
+   document.body.append(star);setTimeout(()=>star.remove(),670);
+  }
+ }
+
  let audioContext=null;
  const tap=()=>{try{
   const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
@@ -50,6 +92,6 @@
   gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.035,t+.008);gain.gain.exponentialRampToValueAtTime(.0001,t+.07);
   osc.connect(gain).connect(audioContext.destination);osc.start(t);osc.stop(t+.082);
  }catch(_){}};
- document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled)tap()},{passive:true});
- document.addEventListener('keydown',e=>{if(e.repeat||!['Enter',' '].includes(e.key))return;const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled)tap()});
+ document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('button,[role="button"],.application-topic-option');if(b&&!b.disabled){tap();visualTouch(e,b)}},{passive:true});
+ document.addEventListener('keydown',e=>{if(e.repeat||!['Enter',' '].includes(e.key))return;const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled){tap();visualTouch(null,b)}});
 })();
