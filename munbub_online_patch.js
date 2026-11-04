@@ -53,13 +53,8 @@
    }catch(e){msg.textContent=e.message}
   });
  }
- function localTable(){
-  let list=[];try{list=JSON.parse(localStorage.getItem('mb_local_hard_scores_v1')||'[]')}catch(_){}
-  if(!Array.isArray(list))list=[];
-  return '<table><tr><th>#</th><th>닉네임</th><th>점수</th></tr>'+list.sort((a,b)=>(Number(b.score)||0)-(Number(a.score)||0)).slice(0,5).map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r.name)+'</td><td>'+Math.max(0,Number(r.score)||0)+'</td></tr>').join('')+'</table>';
- }
  function leaderboard(){
-  open('<h2>🏆 온라인 하드 랭킹</h2><p class="mb-tip">서버에서 정답과 답변 시간을 다시 계산하며 계정별 최고 점수만 표시해.</p><div id="mb-online-list">랭킹을 불러오는 중...</div><h3>내 기기 랭킹</h3>'+localTable());
+  open('<h2>🏆 온라인 하드 랭킹</h2><p class="mb-tip">서버에서 정답과 답변 시간을 다시 계산하며 계정별 최고 점수만 표시해.</p><div id="mb-online-list">랭킹을 불러오는 중...</div>');
   api('/api/leaderboard').then(x=>{
    const el=$('mb-online-list');if(!el)return;
    const list=Array.isArray(x.scores)?x.scores:[];
