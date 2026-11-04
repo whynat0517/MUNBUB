@@ -36,7 +36,8 @@
   if(!anchor)return;
   const button=hardButtons.length===0 && primary?primary:document.createElement('button');
   button.type='button';
-  button.className='navbtn mb-hard-nav';
+  const wasLocked=button.classList.contains('locked');
+  button.className='navbtn mb-hard-nav'+(wasLocked?' locked':'');
   button.dataset.route='hard';
   button.setAttribute('aria-label','하드코어 모드');
   button.title='하드코어 모드';
