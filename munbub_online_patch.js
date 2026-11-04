@@ -34,7 +34,9 @@
     span.textContent=me.name;
     btn.append(span);
     const fit=()=>{
-     if(!btn.isConnected)return;
+     // The home screen may be hidden while solving a quiz; don't refit
+     // the nickname at zero width and flash tiny text when returning home.
+     if(!btn.isConnected||btn.clientWidth<60)return;
      const width=Math.max(70,btn.clientWidth*.72);
      const cv=document.createElement('canvas'),ctx=cv.getContext('2d');
      let px=Math.min(28,Math.max(13,btn.clientWidth*.16));
