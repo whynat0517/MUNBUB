@@ -311,12 +311,12 @@
 })();
 
 
-/* Mascot v3: restore compact home buttons, layer scaled character behind them,
+/* Mascot v4: restore compact home buttons, layer scaled character behind them,
    vary character motion and banter while keeping timer and quiz controls intact. */
 (()=>{
  'use strict';
- if(window.__munbubMascotV3)return;
- window.__munbubMascotV3=true;
+ if(window.__munbubMascotV4)return;
+ window.__munbubMascotV4=true;
  const imgSource='./ui-assets/mascot-character.png';
  const home=document.getElementById('homeScreen');
  const main=home?.querySelector('.home-main');
@@ -340,15 +340,15 @@
  bubble.textContent='국어 공부하러 왔어? 나도 퇴근 못 했어. 📚';
  main.append(bubble);
  const style=document.createElement('style');
- style.id='mb-mascot-v3-single-layer';
+ style.id='mb-mascot-v4-single-layer';
  style.textContent=[
   '/* Restore the original compact home button ordering; do not change the buttons or their click handlers. */',
   '#homeScreen .home-main{position:relative!important;isolation:isolate;overflow:visible!important}',
   '#homeScreen .home-hero{height:clamp(115px,12.5vw,192px)!important;min-height:0!important;max-height:none!important;overflow:visible!important;z-index:1}',
   '#homeScreen .home-main>.home-hero,#homeScreen .home-main>.progress-panel,#homeScreen .home-main>.resume-group,#homeScreen .home-main>.timed-home-wrap,#homeScreen .home-main>.home-card-grid,#homeScreen .home-main>.home-actions,#homeScreen .home-main>.home-foot{position:relative;z-index:2}',
-  '#homeScreen .home-main>img.hero-character.mb-mascot-animated{position:absolute!important;z-index:1!important;top:clamp(155px,20vw,280px)!important;right:clamp(-16px,1.5vw,22px)!important;bottom:auto!important;left:auto!important;height:clamp(258.75px,28.125vw,432px)!important;width:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center bottom!important;image-rendering:pixelated;transform-origin:50% 90%;cursor:pointer;pointer-events:auto;filter:drop-shadow(7px 10px 4px #1a111859);animation:mb-mascot-idle-v3 4.8s ease-in-out infinite}',
+  '#homeScreen .home-main>img.hero-character.mb-mascot-animated{position:absolute!important;z-index:1!important;top:clamp(16px,3vw,45px)!important;right:clamp(-10px,1vw,16px)!important;bottom:auto!important;left:auto!important;height:clamp(345px,37.5vw,576px)!important;width:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center bottom!important;image-rendering:pixelated;transform-origin:50% 90%;cursor:pointer;pointer-events:auto;filter:drop-shadow(7px 10px 4px #1a111859);animation:mb-mascot-idle-v3 4.8s ease-in-out infinite}',
   '#homeScreen .home-main>img.hero-character.mb-mascot-animated:focus-visible{outline:3px dashed #fce1ae;outline-offset:5px;border-radius:8px}',
-  '#homeScreen .home-main>.mb-home-speech{position:absolute!important;z-index:3;top:clamp(10px,3vw,34px);right:clamp(8px,3vw,40px);width:clamp(150px,22vw,250px);max-width:42%;min-height:55px;box-sizing:border-box;padding:10px 13px;border:3px solid #4b292b;border-radius:16px;background:#ffecd1;color:#3e2523;font-size:clamp(12px,1.2vw,16px);line-height:1.35;font-weight:850;text-align:center;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a;pointer-events:none;word-break:keep-all}',
+  '#homeScreen .home-main>.mb-home-speech{position:absolute!important;z-index:3;top:clamp(65px,7vw,96px);right:clamp(290px,33vw,485px);width:clamp(150px,22vw,250px);max-width:42%;min-height:55px;box-sizing:border-box;padding:10px 13px;border:3px solid #4b292b;border-radius:16px;background:#ffecd1;color:#3e2523;font-size:clamp(12px,1.2vw,16px);line-height:1.35;font-weight:850;text-align:center;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a;pointer-events:none;word-break:keep-all}',
   '#homeScreen .home-main>.mb-home-speech.mb-speech-pop{animation:mb-speech-pop .35s ease both}',
   '/* Timed button retains its real PNG as an img, not an empty active-state background. */',
   '.sidebar-nav .navbtn.timed-nav{display:block!important;min-height:0!important;height:auto!important;aspect-ratio:420/122!important;background:none!important;overflow:visible!important;line-height:0!important}',
@@ -385,9 +385,9 @@
   '#homeScreen .hero-character.mb-motion-surprise,#workspace .mb-mascot-button.mb-motion-surprise img{animation:mb-act-surprise .73s ease 1 both!important}',
   '#homeScreen .hero-character.mb-motion-sway,#workspace .mb-mascot-button.mb-motion-sway img{animation:mb-act-sway .85s ease 1 both!important}',
   '#homeScreen .hero-character.mb-motion-stretch,#workspace .mb-mascot-button.mb-motion-stretch img{animation:mb-act-stretch 1.1s ease 1 both!important}',
-  '@media(max-width:1100px){#homeScreen .home-hero{height:clamp(130px,23vw,220px)!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{height:clamp(247.5px,31.5vw,382.5px)!important;top:clamp(150px,24vw,235px)!important}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr) minmax(160px,205px)}#workspace .mb-mascot-button{height:190px}}',
-  '@media(max-width:700px){#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(145px,33vw,210px)!important;height:clamp(247.5px,75vw,382.5px)!important}#homeScreen .home-main>.mb-home-speech{width:38%;max-width:160px;top:8px;right:4px;padding:7px;font-size:12px;line-height:1.32;border-width:2px}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr);gap:10px}#workspace .mb-quiz-companion{order:-1;position:static;flex-direction:row;align-items:center;justify-content:center;padding:8px 5px;gap:12px}#workspace .mb-mascot-button{height:118px;width:115px}#workspace .mb-quiz-speech{flex:1;min-height:77px;text-align:left;font-size:14px}#workspace .mb-quiz-speech::before{left:-11px;top:calc(50% - 9px);border-top:none;border-left:3px solid #4b292b;border-bottom:3px solid #4b292b}#workspace .mb-quiz-hint{display:none}}',
-  '@media(max-width:600px){#homeScreen .home-hero{height:clamp(120px,31vw,185px)!important}#homeScreen .hero-scroll{left:0!important;top:5%!important;width:62%!important;max-height:125px!important;z-index:4!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(138px,38vw,200px)!important;height:clamp(247.5px,75vw,382.5px)!important}#workspace .mb-quiz-companion{gap:8px}#workspace .mb-mascot-button{height:102px;width:100px}#workspace .mb-quiz-speech{padding:10px;min-height:66px}}',
+  '@media(max-width:1100px){#homeScreen .home-hero{height:clamp(130px,23vw,220px)!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{height:clamp(330px,42vw,510px)!important;top:clamp(22px,5vw,65px)!important}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr) minmax(160px,205px)}#workspace .mb-mascot-button{height:190px}}',
+  '@media(max-width:700px){#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(35px,8vw,75px)!important;height:clamp(330px,90vw,510px)!important}#homeScreen .home-main>.mb-home-speech{width:38%;max-width:160px;top:clamp(98px,25vw,140px);left:8px;right:auto;padding:7px;font-size:12px;line-height:1.32;border-width:2px}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr);gap:10px}#workspace .mb-quiz-companion{order:-1;position:static;flex-direction:row;align-items:center;justify-content:center;padding:8px 5px;gap:12px}#workspace .mb-mascot-button{height:118px;width:115px}#workspace .mb-quiz-speech{flex:1;min-height:77px;text-align:left;font-size:14px}#workspace .mb-quiz-speech::before{left:-11px;top:calc(50% - 9px);border-top:none;border-left:3px solid #4b292b;border-bottom:3px solid #4b292b}#workspace .mb-quiz-hint{display:none}}',
+  '@media(max-width:600px){#homeScreen .home-hero{height:clamp(120px,31vw,185px)!important}#homeScreen .hero-scroll{left:0!important;top:5%!important;width:62%!important;max-height:125px!important;z-index:4!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(42px,10vw,82px)!important;height:clamp(330px,90vw,510px)!important}#workspace .mb-quiz-companion{gap:8px}#workspace .mb-mascot-button{height:102px;width:100px}#workspace .mb-quiz-speech{padding:10px;min-height:66px}}',
   '@media(prefers-reduced-motion:reduce){#homeScreen .home-main>img.hero-character.mb-mascot-animated,#homeScreen .home-main>img.hero-character[class*="mb-motion-"],#workspace .mb-mascot-button img,#workspace .mb-mascot-button[class*="mb-motion-"] img,#homeScreen .mb-home-speech{animation:none!important;transform:none!important}}'
  ].join('\n');
  document.head.append(style);
@@ -477,6 +477,115 @@
   '학습 모드 ON! 농담 모드도 ON!',
   '자, 집중! 내가 떠드는 사이 문제 도망간다.'
  ];
+
+ homeLines.push(
+  '야 잠깐만, 공부 버튼 눌렀으면 이제 도망 못 가 ㅋㅋ',
+  '문제들 긴장해라. 오늘 퀴즈판 주인은 우리다.',
+  '틀리면? 웃고 다시 풀면 됨. 국어는 리스폰 가능!',
+  '내가 봤는데 이 문제 출제자 좀 장난꾸러기임.',
+  '오늘 목표는 만점. 현실 목표는 어제보다 한 문제 더!',
+  '아 ㅋㅋ 띄어쓰기가 왜 사람을 띄엄띄엄 보냐고.',
+  '정답을 맞히는 게 일이면 난 지금 야근 중.',
+  '문법 지옥 입구입니다. 출구는 정답 옆.',
+  '잠깐, 책상 위 간식부터 확인하고 갑시다.',
+  '사자성어 공부 중인 사자는 지금 동물원에 없습니다.',
+  '문제가 어렵다고? 나도 어렵다. 일단 같이 읽자.',
+  '나랑 눈 마주쳤지? 그럼 문제 하나 더.',
+  '성적을 높이는 비법: 틀린 문제를 다시 보면 된다. 진짜로.',
+  '이 프로그램 이름 맛춘범인데 난 아직도 맞춤법 검사기 켬.',
+  '오늘도 국어와 한판 뜨는 중. 파이팅이다!',
+  '국어는 국어인데 왜 영어보다 긴장되냐.',
+  '정답의 기운이 느껴진다… 아니면 배고파서 그럴 수도.',
+  '너 지금 문제 대신 내 대사 읽고 있지 ㅋㅋ',
+  '어허! 집중력 탈주했다. 잡아와!',
+  '이 정도 공부했으면 내 머리에서도 연기가 난다.',
+  '문제 하나 틀리면 다음 문제 하나 맞혀 버리면 되지.',
+  '띄어쓰기는 거리 두기지만 공부는 몰입하기.',
+  '맞춤법이 자꾸 틀리면? 어쩔 수 없지, 연습이지!',
+  '나 사실 캐릭터가 아니라 퀴즈판 감시자임. 농담임.',
+  '지금 포기하면 드립만 남고 점수는 안 남아.',
+  '점수보다 중요한 건 오늘 배운 하나!',
+  '문제에 함정 있으면 나한테도 알려 줘. 내가 못 봄.',
+  '오답 노트가 곧 보스 공략집이다!',
+  '오늘만큼은 맞춤법 마스터가 되어 보자.',
+  '공부하다 졸리면 물 한 잔 마시고 다시 오자.',
+  '와, 아직도 공부 중? 집중력 인정.',
+  '한글이 이렇게 어려울 줄 세종대왕도 예상하셨을까?',
+  'ㅋㅋㅋ 정답 고르는 모습이 아주 진지한데?',
+  '이거 풀면 내가 업적 하나 줄지도? 🏆',
+  '퀴즈왕의 탄생을 실시간으로 목격하는 중.',
+  '마지막 한 문제만! 이 말이 제일 무서운 말이긴 해.'
+ );
+ prompts.push(
+  '그렇게 날 보지 말고 문제를 봐 ㅋㅋ',
+  '쫄지 마. 일단 띄어쓰기부터 확인해!',
+  '문제야, 우리한테 왜 이러니?',
+  '오늘의 미션: 함정 선지 들키게 만들기.',
+  '힌트는 내 얼굴에 없어. 문장에 있어!',
+  '정답아 어디 있니? 숨바꼭질 그만하자.',
+  '아 이 문제 느낌 있다. 근거는 아직 없음.',
+  '한 번 더 읽으면 보일지도. 안 보이면 또 읽기!',
+  '문제와 눈싸움 중… 집중해 봐.',
+  '이제 찍기의 시대를 끝내자. 근거 찾기!',
+  '헷갈리는 표현은 직접 소리 내어 비교해 봐.',
+  '답은 하나인데 왜 다 맞아 보이는 거야 ㅋㅋ'
+ );
+ right.push(
+  '와 정답ㅋㅋ 나보다 잘하는 거 아니야?',
+  '이거 그냥 고수잖아? 👑',
+  '정답! 출제자가 지금 좀 긴장했겠다.',
+  '맞혔다! 오늘도 맞춘범 이름값 하는 중.',
+  '그 선택 완벽했어. 내 입꼬리도 올라감.',
+  '정답! 나 방금 승리의 춤 춘 거 봤냐?',
+  '오케이, 국어 보스 체력 -1.',
+  '완벽한 한 방. 다음 문제 도전!',
+  '정답인데 왜 내가 더 신났지?',
+  '이야… 이쯤 되면 너한테 내가 배우겠다.'
+ );
+ wrong.push(
+  '앗 ㅋㅋ 문제한테 한 방 먹었네. 다시 복습!',
+  '이건 좀 억울하지? 해설 보면서 확인하자.',
+  '오답 발생! 하지만 데이터는 쌓인다.',
+  '어허, 방금 선지가 낚싯대 던진 거 봤어?',
+  '틀린 건 틀린 거고, 다음에 맞히면 되지!',
+  '너 방금 함정 밟았어. 지도에 표시해 두자.',
+  '아니 이 선지는 왜 이렇게 정답처럼 생겼냐.',
+  '그럴 수 있어. 오답노트엔 좋은 재료지!',
+  '아까워! 다음 문제에서는 내가 더 떠들어 줄게.',
+  '나도 헷갈렸어… 라고 하면 위로가 되려나?'
+ );
+ chatting.push(
+  '왜 불러 ㅋㅋ 나 지금 문법과 결투 중이야.',
+  '수다를 원한다고? 문제 다 풀고 와. 농담!',
+  '누른 김에 문제도 하나 풀자. 제발.',
+  '너 지금 캐릭터 클릭 업적 노리는 거지?',
+  '이 캐릭터, 말이 많아서 문제에 집중이 안 된대.',
+  '맞춘범 상담실입니다. 오답은 접수번호 1번.',
+  '우리 드립은 만점인데 맞춤법 점수는 어때?',
+  '내가 조용하면 섭섭하고 떠들면 시끄럽지? ㅋㅋ',
+  '국어 공부하는데 어휘력보다 드립력이 늘고 있어.',
+  '내 직업은 문제 옆에서 쓸데없이 응원하기.',
+  '진지하게 가자. 아 근데 사자성어 얘기하니까 사자 보고 싶다.',
+  '정답 알려달라고? 그건 반칙이지! 힌트는 문맥.',
+  '문법은 규칙인데 왜 내 인생은 랜덤이냐.',
+  '넌 공부해. 난 옆에서 리액션 담당할게.',
+  '이거 누를 시간에 정답 하나 더 고르는 건 어때?',
+  '내가 말이 좀 많지? 맞아. 아주 많이.',
+  '수행평가 만점 기원… 주문 접수 완료!',
+  '지금은 공부 중! 잡담은 내가 책임진다.',
+  '이러다가 나 캐릭터 대사로 국어 시험 나오겠다.',
+  '오늘의 퀴즈 꿀팁: 천천히 읽기. 너무 뻔한가?',
+  '맞춰보자! 아니 이름이 맛춘범이라니까?',
+  '나 사실 버튼 누를 때마다 춤 연습 중이야.',
+  '너가 누르니까 자꾸 떠들게 되잖아 ㅋㅋ',
+  '아니 왜 이렇게 많이 누르는 건데 ㅋㅋㅋ',
+  '캐릭터 수다 레벨 +1. 문제도 푸는 거 맞지?',
+  '나 지금 숨겨진 대사 100개 만들고 있는 기분임.',
+  '이 정도면 나보다 네가 더 수다쟁이 아니냐.',
+  '이벤트! 지금부터 말풍선에만 집중하면 공부는 못 함.',
+  '아무 말 대잔치 시작. 일단 문제부터 풀고!',
+  '드립을 이렇게 쳐도 국어 지식은 진지하게 가자.'
+ );
  let lastHome=bubble.textContent;
  function homeSay(){
   const next=oneOf(homeLines,lastHome);
@@ -507,7 +616,7 @@
   if(document.hidden || !home.getClientRects().length || reduceMotion())return;
   homeSay();
   playMotion(mascot,oneOf(['nod','think','sway','stretch']));
- },15000);
+ },6800);
  const quizView=document.getElementById('view-quiz');
  const question=document.getElementById('questionPrompt');
  const feedback=document.getElementById('feedback');
@@ -563,4 +672,158 @@
  observer.observe(feedback,{childList:true,attributes:true,attributeFilter:['hidden','class'],subtree:true});
  observer.observe(quizView,{attributes:true,attributeFilter:['hidden']});
  scheduleAnnouncement();
+
+ // Playful reminders also run during quizzes, but never cover the question.
+ setInterval(()=>{
+  if(document.hidden || quizView.hidden || !quizView.getClientRects().length)return;
+  const lines=feedback.hidden?prompts:feedback.classList.contains('bad')?wrong:right;
+  say(lines,oneOf(['nod','think','wiggle','sway','stretch']));
+ },8100);
+})();
+
+/* Achievements v1: independent, persistent, event-based, no changes to quiz data. */
+(()=>{
+ 'use strict';
+ if(window.__munbubAchievementsV1)return;
+ window.__munbubAchievementsV1=true;
+ const KEY='munbub_achievements_v1';
+ const $=id=>document.getElementById(id);
+ const defaults={visits:0,quizStarts:0,timedStarts:0,answers:0,correct:0,wrong:0,streak:0,bestStreak:0,chatClicks:0,unlocked:{}};
+ let loaded={};
+ try{loaded=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(_){}
+ const state={...defaults,...loaded,unlocked:{...(loaded.unlocked||{})}};
+ for(const k of Object.keys(defaults)){
+  if(k==='unlocked')continue;
+  state[k]=Number.isFinite(Number(state[k]))?Math.max(0,Math.floor(Number(state[k]))):0;
+ }
+ const awards=[
+  {id:'visit1',icon:'👋',name:'출석 완료',hint:'맛춘범에 접속하기',test:()=>state.visits>=1},
+  {id:'visit3',icon:'🏠',name:'단골손님',hint:'서로 다른 날이 아니어도 총 3회 접속하기',test:()=>state.visits>=3},
+  {id:'quiz1',icon:'🧭',name:'첫 도전',hint:'문제 풀이 시작하기',test:()=>state.quizStarts>=1},
+  {id:'answer1',icon:'📖',name:'첫 문제 완료',hint:'문제 1개 풀기',test:()=>state.answers>=1},
+  {id:'right1',icon:'✨',name:'첫 정답',hint:'처음으로 정답 맞히기',test:()=>state.correct>=1},
+  {id:'wrong1',icon:'📝',name:'오답도 경험치',hint:'오답 1개 기록하기',test:()=>state.wrong>=1},
+  {id:'answers10',icon:'🎯',name:'워밍업 끝',hint:'문제 10개 풀기',test:()=>state.answers>=10},
+  {id:'answers50',icon:'⚔️',name:'문제 사냥꾼',hint:'문제 50개 풀기',test:()=>state.answers>=50},
+  {id:'answers100',icon:'🏆',name:'백문이 불여일풀',hint:'문제 100개 풀기',test:()=>state.answers>=100},
+  {id:'right30',icon:'🌟',name:'정답 감별사',hint:'정답 30개 맞히기',test:()=>state.correct>=30},
+  {id:'streak3',icon:'🔥',name:'3연승',hint:'3문제 연속 정답',test:()=>state.bestStreak>=3},
+  {id:'streak7',icon:'🚀',name:'정답 급행열차',hint:'7문제 연속 정답',test:()=>state.bestStreak>=7},
+  {id:'streak15',icon:'👑',name:'연승 폭주 기관차',hint:'15문제 연속 정답',test:()=>state.bestStreak>=15},
+  {id:'chat1',icon:'💬',name:'말 좀 걸어 봐',hint:'캐릭터를 1회 클릭하기',test:()=>state.chatClicks>=1},
+  {id:'chat10',icon:'🗣️',name:'수다 동료',hint:'캐릭터를 10회 클릭하기',test:()=>state.chatClicks>=10},
+  {id:'chat30',icon:'🎤',name:'드립 대폭주',hint:'캐릭터를 30회 클릭하기',test:()=>state.chatClicks>=30},
+  {id:'timed1',icon:'⏱️',name:'시간과의 승부',hint:'시간제한 도전 시작하기',test:()=>state.timedStarts>=1}
+ ];
+ const style=document.createElement('style');
+ style.id='mb-achievements-v1';
+ style.textContent=[
+  '#mb-achievement-launch{position:fixed;right:16px;bottom:18px;z-index:950;padding:10px 15px;border:3px solid #7d4c38;border-radius:30px;background:linear-gradient(#ffedc4,#e3a978);color:#3a2524;font-weight:950;font-size:14px;line-height:1.2;cursor:pointer;box-shadow:0 4px 0 #382021,0 6px 14px #120b124d;transition:transform .14s,filter .14s;touch-action:manipulation}',
+  '#mb-achievement-launch:hover{transform:translateY(-2px) scale(1.04);filter:brightness(1.08)}',
+  '#mb-achievement-launch:active{transform:translateY(2px) scale(.97)}',
+  '#mb-achievement-dialog{box-sizing:border-box;width:min(92vw,720px);max-height:min(84vh,760px);padding:0;border:4px solid #7b4a39;border-radius:21px;background:#fff1d9;color:#392729;box-shadow:0 18px 70px #100b10bb;overflow:auto}',
+  '#mb-achievement-dialog::backdrop{background:rgba(12,8,14,.75)}',
+  '#mb-achievement-dialog .mb-award-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:17px 20px;background:#f7d2a9;border-bottom:3px solid #9f6d54}',
+  '#mb-achievement-dialog h2{margin:0;font-size:clamp(20px,3vw,29px)}',
+  '#mb-achievement-dialog .mb-award-close{display:grid;place-items:center;width:40px;height:40px;flex:none;background:#653e39;color:#fff4e6;border:0;border-radius:12px;font-size:23px;cursor:pointer}',
+  '#mb-achievement-dialog .mb-award-desc{margin:12px 18px;color:#654b40;font-weight:700;line-height:1.5}',
+  '#mb-achievement-dialog .mb-award-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;padding:10px 16px 20px}',
+  '#mb-achievement-dialog .mb-award-card{min-width:0;padding:12px;border:2px solid #a98269;border-radius:13px;background:#fffbf0;display:flex;gap:10px;align-items:flex-start}',
+  '#mb-achievement-dialog .mb-award-card.locked{filter:grayscale(.9);opacity:.62;background:#e9dfce}',
+  '#mb-achievement-dialog .mb-award-emoji{flex:none;font-size:30px;line-height:1.3}',
+  '#mb-achievement-dialog .mb-award-card strong{display:block;font-size:15px}',
+  '#mb-achievement-dialog .mb-award-card small{display:block;margin-top:4px;line-height:1.4;color:#634d46;font-size:12px}',
+  '#mb-achievement-dialog .mb-award-progress{font-size:13px;font-weight:850;color:#5c3931;white-space:nowrap}',
+  '#mb-achievement-dialog .mb-award-summary{margin:0;padding:0 18px 16px;font-size:14px;color:#5f4538}',
+  '#mb-achievement-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:1600;display:none;max-width:min(90vw,390px);width:max-content;box-sizing:border-box;padding:14px 19px;border:3px solid #f9d491;border-radius:16px;background:#39242b;color:#fff1cf;box-shadow:0 9px 30px #080708b5;text-align:center;line-height:1.45;font-weight:900;pointer-events:none}',
+  '#mb-achievement-toast.show{display:block;animation:mb-award-rise .36s ease both}',
+  '@keyframes mb-award-rise{from{opacity:0;transform:translate(-50%,15px) scale(.88)}to{opacity:1;transform:translate(-50%,0) scale(1)}}',
+  '@media(max-width:700px){#mb-achievement-launch{right:11px;bottom:calc(87px + env(safe-area-inset-bottom));padding:9px 12px;font-size:13px}#mb-achievement-dialog .mb-award-list{grid-template-columns:1fr;gap:8px}#mb-achievement-dialog .mb-award-head{padding:12px 14px}#mb-achievement-toast{bottom:calc(155px + env(safe-area-inset-bottom))}}',
+  '@media(prefers-reduced-motion:reduce){#mb-achievement-toast.show{animation:none}#mb-achievement-launch{transition:none}}'
+ ].join('\n');
+ document.head.append(style);
+ const launch=document.createElement('button');
+ launch.type='button';launch.id='mb-achievement-launch';launch.setAttribute('aria-label','업적 도감 열기');
+ const dialog=document.createElement('dialog');
+ dialog.id='mb-achievement-dialog';dialog.setAttribute('aria-label','맛춘범 업적 도감');
+ dialog.innerHTML='<div class="mb-award-head"><h2>🏆 맛춘범 업적 도감</h2><button type="button" class="mb-award-close" aria-label="업적 닫기">✕</button></div><p class="mb-award-desc">문제와 수다로 업적을 모아 보자! 이 브라우저에 자동 저장돼.</p><div class="mb-award-list"></div><p class="mb-award-summary"></p>';
+ const toast=document.createElement('div');
+ toast.id='mb-achievement-toast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
+ document.body.append(launch,dialog,toast);
+ const count=()=>awards.filter(a=>state.unlocked[a.id]).length;
+ function render(){
+  launch.textContent='🏆 업적 '+count()+'/'+awards.length;
+  const progress=dialog.querySelector('.mb-award-list');
+  if(progress)progress.innerHTML=awards.map(a=>'<article class="mb-award-card'+(state.unlocked[a.id]?'':' locked')+'"><span class="mb-award-emoji">'+(state.unlocked[a.id]?a.icon:'🔒')+'</span><div><strong>'+a.name+'</strong><small>'+a.hint+'</small></div></article>').join('');
+  const summary=dialog.querySelector('.mb-award-summary');
+  if(summary)summary.textContent='누적 문제 '+state.answers+'개 · 정답 '+state.correct+'개 · 최고 연속 정답 '+state.bestStreak+'개 · 캐릭터 대화 '+state.chatClicks+'회';
+ }
+ const pending=[];
+ let toastTimer=null;
+ function nextToast(){
+  if(toastTimer!==null||!pending.length)return;
+  const a=pending.shift();
+  toast.textContent='🏆 업적 달성! '+a.icon+' '+a.name;
+  toast.classList.add('show');
+  toastTimer=setTimeout(()=>{
+   toast.classList.remove('show');toastTimer=null;nextToast();
+  },2900);
+ }
+ function saveAndEvaluate(){
+  for(const a of awards)if(!state.unlocked[a.id]&&a.test()){
+   state.unlocked[a.id]=Date.now();pending.push(a);
+  }
+  try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}
+  render();nextToast();
+ }
+ launch.addEventListener('click',()=>{render();if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','')});
+ dialog.querySelector('.mb-award-close')?.addEventListener('click',()=>{if(typeof dialog.close==='function')dialog.close();else dialog.removeAttribute('open')});
+ dialog.addEventListener('click',e=>{
+  if(e.target===dialog && typeof dialog.close==='function')dialog.close();
+ });
+ const homeMascot=document.querySelector('#homeScreen .hero-character');
+ const quizMascot=document.querySelector('#view-quiz .mb-mascot-button');
+ function recordChat(){state.chatClicks++;saveAndEvaluate()}
+ homeMascot?.addEventListener('click',recordChat);
+ homeMascot?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')recordChat()});
+ quizMascot?.addEventListener('click',recordChat);
+ const originalStart=window.startSession;
+ if(typeof originalStart==='function' && !originalStart.__mbAchievementWrapped){
+  const wrapped=function(...args){
+   const result=originalStart.apply(this,args);
+   state.quizStarts++;
+   if(args[0]&&args[0].timed)state.timedStarts++;
+   saveAndEvaluate();
+   return result;
+  };
+  wrapped.__mbAchievementWrapped=true;
+  window.startSession=wrapped;
+ }
+ const feedback=$('feedback'),quiz=$('view-quiz');
+ const question=$('questionPrompt'),position=$('quizPosition');
+ if(feedback && quiz){
+  let visible=feedback.hidden===false;
+  let lastAnswerKey='',lastAnswerAt=0;
+  const onAnswer=()=>{
+   const nowVisible=feedback.hidden===false;
+   if(!nowVisible){visible=false;return}
+   if(visible)return;
+   visible=true;
+   if(quiz.hidden)return;
+   const key=(question?.textContent||'').trim()+'|'+(position?.textContent||'').trim()+'|'+feedback.className;
+   const now=Date.now();
+   if(key===lastAnswerKey&&now-lastAnswerAt<900)return;
+   lastAnswerKey=key;lastAnswerAt=now;
+   const wrong=feedback.classList.contains('bad');
+   state.answers++;
+   if(wrong){state.wrong++;state.streak=0}
+   else{state.correct++;state.streak++;state.bestStreak=Math.max(state.bestStreak,state.streak)}
+   saveAndEvaluate();
+  };
+  const observer=new MutationObserver(onAnswer);
+  observer.observe(feedback,{attributes:true,attributeFilter:['hidden','class'],childList:true,subtree:true});
+  observer.observe(quiz,{attributes:true,attributeFilter:['hidden']});
+ }
+ state.visits++;
+ saveAndEvaluate();
 })();
