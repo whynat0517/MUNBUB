@@ -93,5 +93,11 @@
   }
   $('mb-achievement-launch')?.setAttribute('aria-label','업적 도감 보기');
   document.querySelector('.timed-home-btn')?.setAttribute('aria-label','시간제한 도전!');
+  if(!document.getElementById('mb-custom-bgm-loader')){
+   const script=document.createElement('script');
+   script.id='mb-custom-bgm-loader';
+   script.src='./munbub_music_patch.js';
+   document.body.append(script);
+  }
  }
 })();
