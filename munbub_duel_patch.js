@@ -12,8 +12,8 @@
  const css=document.createElement('style');
  css.id='mb-duel-styles';
  css.textContent=[
-  '#homeScreen .mb-online-actions>.mb-duel-home{grid-column:1/-1!important;min-height:65px!important;background:linear-gradient(#f9ddb2,#bd8d68)!important;font-size:clamp(17px,1.7vw,23px)!important}',
-  '#homeScreen .mb-duel-home small{display:block!important;font-size:clamp(11px,.97vw,13px)!important;color:#59392d}',
+  '#homeScreen .mb-online-actions>.mb-duel-home{grid-column:auto!important;min-height:0!important;width:100%!important;background-color:transparent!important;font-size:0!important}',
+  '#homeScreen .mb-duel-home small{display:none!important}',
   '.sidebar-nav .mb-duel-nav,.mobile-drawer .mb-duel-nav{display:flex!important;flex-direction:column;align-items:center;justify-content:center;min-height:61px!important;padding:7px 5px!important;border:3px solid #b08566!important;border-radius:12px!important;background:linear-gradient(#ffedcd,#d4a784)!important;color:#42292a!important;box-shadow:inset 0 0 0 2px #fff6e5,0 3px 0 #39262a!important;font-weight:950!important;line-height:1.2!important;font-size:clamp(15px,1.35vw,19px)!important;cursor:pointer}',
   '.sidebar-nav .mb-duel-nav small,.mobile-drawer .mb-duel-nav small{font-size:11px!important;font-weight:750!important}',
   '.sidebar-nav .mb-duel-nav.active,.mobile-drawer .mb-duel-nav.active{filter:brightness(.77)!important;outline:3px solid #d6ad82;outline-offset:-3px}',
