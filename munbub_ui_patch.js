@@ -311,71 +311,208 @@
 })();
 
 
-/* Mascot v2: one character source, home animation, quiz reactions, and timed-nav image fix. */
+/* Mascot v3: restore compact home buttons, layer scaled character behind them,
+   vary character motion and banter while keeping timer and quiz controls intact. */
 (()=>{
  'use strict';
- if(window.__munbubMascotV2)return;
- window.__munbubMascotV2=true;
+ if(window.__munbubMascotV3)return;
+ window.__munbubMascotV3=true;
  const imgSource='./ui-assets/mascot-character.png';
- const mascot=document.querySelector('#homeScreen .hero-character');
- if(!mascot)return;
+ const home=document.getElementById('homeScreen');
+ const main=home?.querySelector('.home-main');
+ const mascot=home?.querySelector('.hero-character');
+ if(!home || !main || !mascot)return;
  mascot.src=imgSource;
- mascot.alt='맛춘범 픽셀 캐릭터';
+ mascot.alt='맛춘범 픽셀 캐릭터 — 눌러서 대화하기';
  mascot.decoding='async';
  mascot.draggable=false;
  mascot.classList.add('mb-mascot-animated');
+ // The art belongs to the HOME background, never inside the tall header slot.
+ // Direct-child placement avoids stacking-context traps on home-hero.
+ main.append(mascot);
+ mascot.setAttribute('role','button');
+ mascot.setAttribute('tabindex','0');
+ mascot.setAttribute('aria-label','맛춘범 캐릭터와 대화하기');
+ mascot.title='캐릭터를 누르면 새로운 대사가 나와요';
+ const bubble=document.createElement('div');
+ bubble.className='mb-home-speech';
+ bubble.setAttribute('aria-live','off');
+ bubble.textContent='국어 공부하러 왔어? 나도 퇴근 못 했어. 📚';
+ main.append(bubble);
  const style=document.createElement('style');
- style.id='mb-mascot-interactions-v2';
+ style.id='mb-mascot-v3-single-layer';
  style.textContent=[
-  "/* Three times the earlier ~192px mascot height on large screens, without scaling buttons or quiz UI. */",
-  "#homeScreen .home-hero{height:clamp(345px,37.5vw,576px)!important;overflow:visible!important}",
-  "#homeScreen .hero-scroll{left:1%!important;top:5%!important;width:min(54%,570px)!important;max-height:clamp(105px,12vw,192px)!important;z-index:3!important}",
-  "#homeScreen .hero-character.mb-mascot-animated{height:103%!important;width:auto!important;max-height:none!important;max-width:none!important;right:0!important;bottom:-4px!important;object-fit:contain!important;object-position:bottom right!important;image-rendering:pixelated;transform-origin:52% 87%;z-index:2!important;animation:mb-mascot-enter-v2 .7s cubic-bezier(.2,1.1,.3,1) both,mb-mascot-idle-v2 3.8s ease-in-out .7s infinite;will-change:transform;pointer-events:none}",
-  "#homeScreen .hero-character.mb-mascot-animated.mb-mascot-react{animation:mb-mascot-react-v2 .7s cubic-bezier(.24,.8,.22,1) 1}",
-  "@keyframes mb-mascot-enter-v2{0%{opacity:0;transform:translateY(18px) scale(.92) rotate(-5deg)}75%{opacity:1;transform:translateY(-6px) scale(1.03) rotate(2deg)}100%{opacity:1;transform:none}}",
-  "@keyframes mb-mascot-idle-v2{0%,100%{transform:translateY(0) rotate(-.6deg)}25%{transform:translateY(-6px) rotate(.4deg)}50%{transform:translateY(-10px) rotate(1.1deg)}75%{transform:translateY(-3px) rotate(-.4deg)}}",
-  "@keyframes mb-mascot-react-v2{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-19px) rotate(-5deg)}55%{transform:translateY(3px) rotate(5deg)}75%{transform:translateY(-9px) rotate(-3deg)}100%{transform:none}}",
-  "/* img elements survive the active-state background override that hid the timer graphic. */",
-  ".sidebar-nav .navbtn.timed-nav{display:block!important;min-height:0!important;height:auto!important;aspect-ratio:420/122!important;background:none!important;overflow:visible!important;line-height:0!important}",
-  ".sidebar-nav .navbtn.timed-nav img{display:block!important;width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;image-rendering:auto!important;pointer-events:none!important;opacity:1!important;visibility:visible!important}",
-  ".sidebar-nav .navbtn.timed-nav.active{background-color:rgba(26,14,20,.12)!important}",
-  ".sidebar-nav .navbtn.timed-nav.mb-timed-fallback{display:grid!important;place-items:center!important;min-height:70px!important;border:3px solid #f2d7b6!important;border-radius:12px!important;background:#291b21!important;color:#fbe4c2!important;font-size:clamp(16px,2vw,24px)!important;font-weight:900!important;line-height:1.2!important}",
-  "/* Companion occupies its own quiz column, never covering the answer choices. */",
-  "#workspace #view-quiz:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(185px,260px);gap:clamp(12px,1.5vw,22px);align-items:start}",
-  "#workspace #view-quiz>.panel{min-width:0;margin-bottom:0}",
-  "#workspace .mb-quiz-companion{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:8px;position:sticky;top:16px;min-width:0;width:100%;padding:14px 10px 16px;text-align:center}",
-  "#workspace .mb-mascot-button{display:grid;place-items:end center;flex:none;width:min(100%,220px);height:230px;max-width:100%;background:transparent;border:0;padding:0;cursor:pointer;touch-action:manipulation;filter:drop-shadow(5px 8px 1px #120b10aa);transition:filter .18s,transform .18s}",
-  "#workspace .mb-mascot-button img{display:block;max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;image-rendering:pixelated;pointer-events:none;animation:mb-quiz-idle-v2 3.5s ease-in-out infinite;transform-origin:50% 90%}",
-  "#workspace .mb-mascot-button:hover{filter:drop-shadow(6px 10px 2px #120b10) brightness(1.1)}",
-  "#workspace .mb-mascot-button:focus-visible{outline:3px solid #d69d6c;outline-offset:3px;border-radius:10px}",
-  "#workspace .mb-mascot-button.mb-mascot-react img{animation:mb-quiz-react-v2 .6s ease both}",
-  "#workspace .mb-quiz-speech{position:relative;box-sizing:border-box;width:100%;min-height:88px;padding:13px 12px;border:3px solid #4b292b;border-radius:16px;background:#ffead0;color:#3e2523;font-size:clamp(14px,1.1vw,17px);font-weight:850;line-height:1.5;word-break:keep-all;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a}",
-  "#workspace .mb-quiz-speech::before{content:'';position:absolute;top:-12px;left:calc(50% - 10px);width:18px;height:18px;transform:rotate(45deg);background:#ffead0;border-top:3px solid #4b292b;border-left:3px solid #4b292b}",
-  "#workspace .mb-quiz-hint{margin:6px 0 0;color:#f0d6bd;font-size:12px;font-weight:700}",
-  "@keyframes mb-quiz-idle-v2{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-5px) rotate(1.5deg)}}",
-  "@keyframes mb-quiz-react-v2{0%{transform:scale(1)}25%{transform:translateY(-15px) rotate(-7deg) scale(1.06)}55%{transform:rotate(6deg) scale(.96)}100%{transform:none}}",
-  "@media(max-width:1100px){#homeScreen .home-hero{height:clamp(330px,42vw,510px)!important}#homeScreen .hero-scroll{width:56%!important;max-height:145px!important}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr) minmax(160px,205px)}#workspace .mb-mascot-button{height:190px}}",
-  "@media(max-width:700px){#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr);gap:10px}#workspace .mb-quiz-companion{order:-1;position:static;flex-direction:row;align-items:center;justify-content:center;padding:8px 5px;gap:12px}#workspace .mb-mascot-button{height:118px;width:115px}#workspace .mb-quiz-speech{flex:1;min-height:77px;text-align:left;font-size:14px}#workspace .mb-quiz-speech::before{left:-11px;top:calc(50% - 9px);border-top:none;border-left:3px solid #4b292b;border-bottom:3px solid #4b292b}#workspace .mb-quiz-hint{display:none}}",
-  "@media(max-width:600px){#homeScreen .home-hero{height:clamp(330px,90vw,510px)!important}#homeScreen .hero-scroll{left:0!important;top:5%!important;width:62%!important;max-height:125px!important;z-index:4!important}#homeScreen .hero-character.mb-mascot-animated{height:96%!important;right:-2%!important}#workspace .mb-quiz-companion{gap:8px}#workspace .mb-mascot-button{height:102px;width:100px}#workspace .mb-quiz-speech{padding:10px;min-height:66px}}",
-  "@media(prefers-reduced-motion:reduce){#homeScreen .hero-character.mb-mascot-animated,#homeScreen .hero-character.mb-mascot-animated.mb-mascot-react,#workspace .mb-mascot-button img,#workspace .mb-mascot-button.mb-mascot-react img{animation:none!important;transform:none!important}}"
+  '/* Restore the original compact home button ordering; do not change the buttons or their click handlers. */',
+  '#homeScreen .home-main{position:relative!important;isolation:isolate;overflow:visible!important}',
+  '#homeScreen .home-hero{height:clamp(115px,12.5vw,192px)!important;min-height:0!important;max-height:none!important;overflow:visible!important;z-index:1}',
+  '#homeScreen .home-main>.home-hero,#homeScreen .home-main>.progress-panel,#homeScreen .home-main>.resume-group,#homeScreen .home-main>.timed-home-wrap,#homeScreen .home-main>.home-card-grid,#homeScreen .home-main>.home-actions,#homeScreen .home-main>.home-foot{position:relative;z-index:2}',
+  '#homeScreen .home-main>img.hero-character.mb-mascot-animated{position:absolute!important;z-index:1!important;top:clamp(155px,20vw,280px)!important;right:clamp(-16px,1.5vw,22px)!important;bottom:auto!important;left:auto!important;height:clamp(258.75px,28.125vw,432px)!important;width:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center bottom!important;image-rendering:pixelated;transform-origin:50% 90%;cursor:pointer;pointer-events:auto;filter:drop-shadow(7px 10px 4px #1a111859);animation:mb-mascot-idle-v3 4.8s ease-in-out infinite}',
+  '#homeScreen .home-main>img.hero-character.mb-mascot-animated:focus-visible{outline:3px dashed #fce1ae;outline-offset:5px;border-radius:8px}',
+  '#homeScreen .home-main>.mb-home-speech{position:absolute!important;z-index:3;top:clamp(10px,3vw,34px);right:clamp(8px,3vw,40px);width:clamp(150px,22vw,250px);max-width:42%;min-height:55px;box-sizing:border-box;padding:10px 13px;border:3px solid #4b292b;border-radius:16px;background:#ffecd1;color:#3e2523;font-size:clamp(12px,1.2vw,16px);line-height:1.35;font-weight:850;text-align:center;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a;pointer-events:none;word-break:keep-all}',
+  '#homeScreen .home-main>.mb-home-speech.mb-speech-pop{animation:mb-speech-pop .35s ease both}',
+  '/* Timed button retains its real PNG as an img, not an empty active-state background. */',
+  '.sidebar-nav .navbtn.timed-nav{display:block!important;min-height:0!important;height:auto!important;aspect-ratio:420/122!important;background:none!important;overflow:visible!important;line-height:0!important}',
+  '.sidebar-nav .navbtn.timed-nav img{display:block!important;width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;pointer-events:none!important;opacity:1!important;visibility:visible!important;filter:none!important}',
+  '.sidebar-nav .navbtn.timed-nav.active{background-color:rgba(26,14,20,.12)!important}',
+  '.sidebar-nav .navbtn.timed-nav.mb-timed-fallback{display:grid!important;place-items:center!important;min-height:70px!important;border:3px solid #f2d7b6!important;border-radius:12px!important;background:#291b21!important;color:#fbe4c2!important;font-size:clamp(15px,2vw,19px)!important;line-height:1.3!important}',
+  '/* Quiz companion stays in its own column. */',
+  '#workspace #view-quiz:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(185px,260px);gap:clamp(12px,1.5vw,22px);align-items:start}',
+  '#workspace #view-quiz>.panel{min-width:0;margin-bottom:0}',
+  '#workspace .mb-quiz-companion{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:8px;position:sticky;top:16px;min-width:0;width:100%;padding:14px 10px 16px;text-align:center}',
+  '#workspace .mb-mascot-button{display:grid;place-items:end center;flex:none;width:min(100%,220px);height:230px;max-width:100%;background:transparent;border:0;padding:0;cursor:pointer;touch-action:manipulation;filter:drop-shadow(5px 8px 1px #120b10aa);transition:filter .18s}',
+  '#workspace .mb-mascot-button img{display:block;max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;image-rendering:pixelated;pointer-events:none;animation:mb-quiz-idle-v3 4.1s ease-in-out infinite;transform-origin:50% 90%}',
+  '#workspace .mb-mascot-button:hover{filter:drop-shadow(6px 10px 2px #120b10) brightness(1.1)}',
+  '#workspace .mb-mascot-button:focus-visible{outline:3px solid #d69d6c;outline-offset:3px;border-radius:10px}',
+  '#workspace .mb-quiz-speech{position:relative;box-sizing:border-box;width:100%;min-height:88px;padding:13px 12px;border:3px solid #4b292b;border-radius:16px;background:#ffead0;color:#3e2523;font-size:clamp(14px,1.1vw,17px);font-weight:850;line-height:1.5;word-break:keep-all;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a}',
+  '#workspace .mb-quiz-speech::before{content:"";position:absolute;top:-12px;left:calc(50% - 10px);width:18px;height:18px;transform:rotate(45deg);background:#ffead0;border-top:3px solid #4b292b;border-left:3px solid #4b292b}',
+  '#workspace .mb-quiz-hint{margin:6px 0 0;color:#f0d6bd;font-size:12px;font-weight:700}',
+  '@keyframes mb-mascot-idle-v3{0%,100%{transform:translateY(0) rotate(-.8deg)}24%{transform:translateY(-5px) rotate(.5deg)}55%{transform:translateY(-9px) rotate(1.1deg)}79%{transform:translateY(-2px) rotate(-.5deg)}}',
+  '@keyframes mb-quiz-idle-v3{0%,100%{transform:translateY(0) rotate(-.4deg)}50%{transform:translateY(-6px) rotate(1deg)}}',
+  '@keyframes mb-act-hop{0%,100%{transform:translateY(0) scale(1)}32%{transform:translateY(-24px) scale(1.08,.92)}60%{transform:translateY(3px) scale(.96,1.04)}80%{transform:translateY(-7px)}}',
+  '@keyframes mb-act-nod{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(9deg) translateY(3px)}40%,80%{transform:rotate(-4deg) translateY(-4px)}}',
+  '@keyframes mb-act-wiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-11deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-7deg)}80%{transform:rotate(6deg)}}',
+  '@keyframes mb-act-think{0%,100%{transform:rotate(0)}30%,70%{transform:translateX(-8px) rotate(-10deg)}50%{transform:translateX(-10px) rotate(-5deg)}}',
+  '@keyframes mb-act-cheer{0%,100%{transform:translateY(0) rotate(0)}20%{transform:translateY(-15px) rotate(-9deg) scale(1.06)}45%{transform:translateY(-21px) rotate(10deg) scale(1.07)}70%{transform:translateY(-7px) rotate(-4deg)}}',
+  '@keyframes mb-act-surprise{0%,100%{transform:scale(1)}22%{transform:translateY(-9px) scale(1.13) rotate(-4deg)}50%{transform:scale(.92) rotate(5deg)}76%{transform:scale(1.04)}}',
+  '@keyframes mb-act-sway{0%,100%{transform:rotate(0)}35%{transform:translateX(-13px) rotate(-8deg)}68%{transform:translateX(13px) rotate(8deg)}}',
+  '@keyframes mb-act-stretch{0%,100%{transform:scale(1)}35%{transform:scale(.94,1.1) translateY(-5px)}60%{transform:scale(1.08,.94) translateY(3px)}}',
+  '@keyframes mb-speech-pop{0%{opacity:.4;transform:translateY(7px) scale(.94)}100%{opacity:1;transform:none}}',
+  '#homeScreen .hero-character.mb-motion-hop,#workspace .mb-mascot-button.mb-motion-hop img{animation:mb-act-hop .7s cubic-bezier(.24,.72,.26,1) 1 both!important}',
+  '#homeScreen .hero-character.mb-motion-nod,#workspace .mb-mascot-button.mb-motion-nod img{animation:mb-act-nod .75s ease 1 both!important}',
+  '#homeScreen .hero-character.mb-motion-wiggle,#workspace .mb-mascot-button.mb-motion-wiggle img{animation:mb-act-wiggle .68s ease 1 both!important}',
+  '#homeScreen .hero-character.mb-motion-think,#workspace .mb-mascot-button.mb-motion-think img{animation:mb-act-think .9s ease 1 both!important}',
+  '#homeScreen .hero-character.mb-motion-cheer,#workspace .mb-mascot-button.mb-motion-cheer img{animation:mb-act-cheer .8s ease 1 both!important}',
+  '#homeScreen .hero-character.mb-motion-surprise,#workspace .mb-mascot-button.mb-motion-surprise img{animation:mb-act-surprise .73s ease 1 both!important}',
+  '#homeScreen .hero-character.mb-motion-sway,#workspace .mb-mascot-button.mb-motion-sway img{animation:mb-act-sway .85s ease 1 both!important}',
+  '#homeScreen .hero-character.mb-motion-stretch,#workspace .mb-mascot-button.mb-motion-stretch img{animation:mb-act-stretch 1.1s ease 1 both!important}',
+  '@media(max-width:1100px){#homeScreen .home-hero{height:clamp(130px,23vw,220px)!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{height:clamp(247.5px,31.5vw,382.5px)!important;top:clamp(150px,24vw,235px)!important}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr) minmax(160px,205px)}#workspace .mb-mascot-button{height:190px}}',
+  '@media(max-width:700px){#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(145px,33vw,210px)!important;height:clamp(247.5px,75vw,382.5px)!important}#homeScreen .home-main>.mb-home-speech{width:38%;max-width:160px;top:8px;right:4px;padding:7px;font-size:12px;line-height:1.32;border-width:2px}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr);gap:10px}#workspace .mb-quiz-companion{order:-1;position:static;flex-direction:row;align-items:center;justify-content:center;padding:8px 5px;gap:12px}#workspace .mb-mascot-button{height:118px;width:115px}#workspace .mb-quiz-speech{flex:1;min-height:77px;text-align:left;font-size:14px}#workspace .mb-quiz-speech::before{left:-11px;top:calc(50% - 9px);border-top:none;border-left:3px solid #4b292b;border-bottom:3px solid #4b292b}#workspace .mb-quiz-hint{display:none}}',
+  '@media(max-width:600px){#homeScreen .home-hero{height:clamp(120px,31vw,185px)!important}#homeScreen .hero-scroll{left:0!important;top:5%!important;width:62%!important;max-height:125px!important;z-index:4!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(138px,38vw,200px)!important;height:clamp(247.5px,75vw,382.5px)!important}#workspace .mb-quiz-companion{gap:8px}#workspace .mb-mascot-button{height:102px;width:100px}#workspace .mb-quiz-speech{padding:10px;min-height:66px}}',
+  '@media(prefers-reduced-motion:reduce){#homeScreen .home-main>img.hero-character.mb-mascot-animated,#homeScreen .home-main>img.hero-character[class*="mb-motion-"],#workspace .mb-mascot-button img,#workspace .mb-mascot-button[class*="mb-motion-"] img,#homeScreen .mb-home-speech{animation:none!important;transform:none!important}}'
  ].join('\n');
  document.head.append(style);
  const reduceMotion=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
- let homeReactionTimer;
- function homeReact(){
-  if(reduceMotion())return;
-  clearTimeout(homeReactionTimer);
-  mascot.classList.remove('mb-mascot-react');
-  void mascot.offsetWidth;
-  mascot.classList.add('mb-mascot-react');
-  homeReactionTimer=setTimeout(()=>mascot.classList.remove('mb-mascot-react'),710);
+ const motions=['hop','nod','wiggle','think','cheer','surprise','sway','stretch'];
+ const timers=new WeakMap();
+ function playMotion(target,motion){
+  if(!target || reduceMotion())return;
+  const kind=motions.includes(motion)?motion:motions[Math.floor(Math.random()*motions.length)];
+  clearTimeout(timers.get(target));
+  for(const m of motions)target.classList.remove('mb-motion-'+m);
+  void target.offsetWidth;
+  target.classList.add('mb-motion-'+kind);
+  timers.set(target,setTimeout(()=>target.classList.remove('mb-motion-'+kind),1100));
  }
- document.querySelector('#homeScreen .home-hero')?.addEventListener('pointerdown',homeReact,{passive:true});
- document.querySelector('#homeScreen .home-card-grid')?.addEventListener('click',homeReact);
+ function oneOf(lines,previous){
+  if(lines.length===1)return lines[0];
+  let next=lines[Math.floor(Math.random()*lines.length)];
+  if(next===previous)next=lines[(lines.indexOf(next)+1+Math.floor(Math.random()*(lines.length-1)))%lines.length];
+  return next;
+ }
+ const homeLines=[
+  '국어 공부하러 왔어? 나도 퇴근 못 했어. 📚',
+  '맞춤법 점수로 승부 보자. 나도 긴장 중!',
+  '띄어쓰기는 중요해. 우리 사이는 붙어 있어도 되고.',
+  '어쩔티비? 정답은 외울티비.',
+  '사자성어? 사자 네 마리 찾는 게임 아니야. 🦁',
+  '오답은 부끄러운 게 아니야. 복습 퀘스트야!',
+  '국어 만점이면 내가 박수 대신 춤춰 줄게.',
+  '잠깐! 그 선택지… 냄새가 수상한데?',
+  '이 문제 맞히면 오늘의 명예 국어왕 인정.',
+  '찍는 것도 실력? 음… 근거부터 찾자.',
+  '난 맞춘범. 정답을 맞추는 쪽이 전문이지!',
+  '오늘도 뇌세포 출근 완료. 야근은 사양할게.',
+  '정답 찾기 전에 간식 찾는 건 국룰이지.',
+  '말은 쉬운데 띄어쓰기가 안 쉬워. 🥲',
+  '국어를 공부했더니 말장난이 늘었어.',
+  '아는 문제면 쿨하게, 헷갈리면 천천히!'
+ ];
+ const prompts=[
+  '이번 문제는 단어 하나가 힌트일지도?',
+  '선지부터 훑지 말고 문장을 먼저 읽어 봐!',
+  '함정 발견하면 내가 마음속으로 박수칠게.',
+  '오늘의 퀘스트: 오답 함정 피하기.',
+  '아리송하다면 문맥으로 돌아가 보자.',
+  '맞춤법은 감보다 근거! 탐정 모드 ON.',
+  '문장에 숨은 복선… 아니, 맞춤법 단서!',
+  '이거 맞히면 내 자신감도 같이 올라감.',
+  '잠깐만! 비슷한 표현끼리 비교해 봐.',
+  '국어 뇌 풀가동, 삐빅! 분석 중.'
+ ];
+ const right=[
+  '정답! 네 국어력, 오늘도 정상 영업 중. 🎉',
+  '이걸 맞히네? 나 지금 소름 돋았잖아!',
+  '오케이! 정답 버튼에 이름 새겨야겠다.',
+  '깔끔하다! 선택지들이 박수치는 중.',
+  '이 정도면 맞춤법 경찰도 경례하겠다.',
+  '좋았어! 다음 문제도 출동하자.',
+  '정답이다! 내 응원도 효과가 있었나? 😎',
+  '레벨 업! 국어 경험치 +100.',
+  '이야, 정답률이 춤추겠는데?',
+  '이번 판 주인공은 너다!'
+ ];
+ const wrong=[
+  '아깝다! 이 문제는 복습 보스라고 생각하자.',
+  '앗, 함정 카드였네. 해설에서 힌트를 챙겨!',
+  '틀릴 수도 있지! 다음 문제에서 복수전.',
+  '괜찮아. 오답은 기억에 오래 남는 단서야.',
+  '이번 건 헷갈릴 만했어. 차이를 확인하자.',
+  '어이쿠! 국어 함정에 한 번 걸렸네.',
+  '정답 확인하고 다시 도전하면 돼. 🧠',
+  '아쉽지만 경험치 획득! 다음 문제 고고.',
+  '이 표현, 오답 노트에 특별 출연 확정.',
+  '한 번 틀렸다고 게임 오버는 아니지!'
+ ];
+ const chatting=[
+  '불렀어? 지금 공부하는 척하고 있었어.',
+  '내 대사보다 중요한 건 문제야… 아마도.',
+  '한 번 더 누르면 내가 더 수다스러워짐.',
+  '이 버튼 누르는 실력으로 정답도 눌러 봐.',
+  '국어가 어려워? 나도 내 이름 맞춤법 헷갈려.',
+  '사자성어가 어렵다면 뜻을 장면으로 외워 봐.',
+  '내가 힌트 줄까? 답은 문맥 속에 숨어 있다!',
+  '오늘의 명언: 찍지 말고 읽자. (가끔 찍힘)',
+  '문제 하나씩! 속도보다 이해가 더 중요해.',
+  '계속 누르면 숨겨진 대사는… 그냥 드립이야.',
+  '학습 모드 ON! 농담 모드도 ON!',
+  '자, 집중! 내가 떠드는 사이 문제 도망간다.'
+ ];
+ let lastHome=bubble.textContent;
+ function homeSay(){
+  const next=oneOf(homeLines,lastHome);
+  lastHome=next;
+  bubble.textContent=next;
+  if(!reduceMotion()){
+   bubble.classList.remove('mb-speech-pop');
+   void bubble.offsetWidth;
+   bubble.classList.add('mb-speech-pop');
+  }
+ }
+ function homeReact(){
+  homeSay();
+  playMotion(mascot,oneOf(['hop','nod','wiggle','cheer','surprise','sway','stretch']));
+ }
+ mascot.addEventListener('click',homeReact);
+ mascot.addEventListener('keydown',event=>{
+  if(event.key==='Enter'||event.key===' '){event.preventDefault();homeReact();}
+ });
+ home.querySelector('.home-card-grid')?.addEventListener('click',()=>{
+  homeSay();playMotion(mascot,'cheer');
+ });
+ home.querySelector('.home-actions')?.addEventListener('click',()=>{
+  homeSay();playMotion(mascot,'hop');
+ });
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)bubble.classList.remove('mb-speech-pop')});
+ setInterval(()=>{
+  if(document.hidden || !home.getClientRects().length || reduceMotion())return;
+  homeSay();
+  playMotion(mascot,oneOf(['nod','think','sway','stretch']));
+ },15000);
  const quizView=document.getElementById('view-quiz');
  const question=document.getElementById('questionPrompt');
  const feedback=document.getElementById('feedback');
- if(!quizView || !question || !feedback || quizView.querySelector('.mb-quiz-companion'))return;
+ if(!quizView||!question||!feedback)return;
+ if(quizView.querySelector('.mb-quiz-companion'))return;
  const companion=document.createElement('aside');
  companion.className='mb-quiz-companion';
  companion.setAttribute('aria-label','맛춘범 캐릭터 응원');
@@ -393,44 +530,34 @@
  dialogue.className='mb-quiz-speech';
  dialogue.setAttribute('role','status');
  dialogue.setAttribute('aria-live','polite');
- dialogue.textContent='같이 문제를 풀어 보자! ✨';
- const tapHint=document.createElement('p');
- tapHint.className='mb-quiz-hint';
- tapHint.textContent='캐릭터를 눌러서 대화하기';
- companion.append(characterButton,dialogue,tapHint);
+ dialogue.textContent='문제를 잘 읽어 봐! 난 옆에서 응원할게. 🧠';
+ const hint=document.createElement('p');
+ hint.className='mb-quiz-hint';
+ hint.textContent='캐릭터를 눌러서 대화하기';
+ companion.append(characterButton,dialogue,hint);
  quizView.append(companion);
- const generic=['천천히 읽어 보자!','문장에 단서가 있을 거야.','이번 문제도 할 수 있어!','선택하기 전에 한 번 확인!'];
- const right=['정답이다! 정말 잘했어! 🎉','바로 그거야! 다음 문제도 가자!','멋진 선택이야! 계속 도전!'];
- const wrong=['아깝다! 해설을 살펴보자.','괜찮아! 정답 표현을 기억해 봐.','틀린 문제도 좋은 복습이야!'];
- const chatting=['반가워! 오늘도 화이팅!','문제를 다 읽고 선택해 봐.','잠깐 고민해도 괜찮아.','틀린 문제는 오답노트에서 복습!','사자성어는 뜻부터 살펴봐!'];
- let lastPhase='',turn=0,reactionTimer,scheduled=false;
- function animateCharacter(){
-  if(reduceMotion())return;
-  clearTimeout(reactionTimer);
-  characterButton.classList.remove('mb-mascot-react');
-  void characterButton.offsetWidth;
-  characterButton.classList.add('mb-mascot-react');
-  reactionTimer=setTimeout(()=>characterButton.classList.remove('mb-mascot-react'),650);
+ let lastPhase='',lastLine=dialogue.textContent,scheduled=false;
+ function say(lines,motion){
+  lastLine=oneOf(lines,lastLine);
+  dialogue.textContent=lastLine;
+  if(motion)playMotion(characterButton,motion);
  }
  function announce(){
-  if(quizView.hidden)return;
+  if(quizView.hidden || !quizView.getClientRects().length)return;
   const phase=feedback.hidden?'question':feedback.classList.contains('bad')?'wrong':'right';
   const signature=phase+'|'+question.textContent.trim()+'|'+(document.getElementById('quizPosition')?.textContent||'');
   if(signature===lastPhase)return;
   lastPhase=signature;
-  const phrases=phase==='right'?right:phase==='wrong'?wrong:generic;
-  dialogue.textContent=phrases[turn++%phrases.length];
-  if(phase!=='question')animateCharacter();
+  if(phase==='right')say(right,oneOf(['cheer','hop','wiggle']));
+  else if(phase==='wrong')say(wrong,oneOf(['surprise','think','nod']));
+  else say(prompts,oneOf(['nod','think','sway']));
  }
  function scheduleAnnouncement(){
   if(scheduled)return;
   scheduled=true;
   queueMicrotask(()=>{scheduled=false;announce()});
  }
- characterButton.addEventListener('click',()=>{
-  dialogue.textContent=chatting[turn++%chatting.length];
-  animateCharacter();
- });
+ characterButton.addEventListener('click',()=>say(chatting,oneOf(motions)));
  const observer=new MutationObserver(scheduleAnnouncement);
  observer.observe(question,{childList:true,characterData:true,subtree:true});
  observer.observe(feedback,{childList:true,attributes:true,attributeFilter:['hidden','class'],subtree:true});
