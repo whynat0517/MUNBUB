@@ -311,12 +311,12 @@
 })();
 
 
-/* Mascot v4: restore compact home buttons, layer scaled character behind them,
+/* Mascot v5: grid-based home hero compact home buttons, layer scaled character behind them,
    vary character motion and banter while keeping timer and quiz controls intact. */
 (()=>{
  'use strict';
- if(window.__munbubMascotV4)return;
- window.__munbubMascotV4=true;
+ if(window.__munbubMascotV5)return;
+ window.__munbubMascotV5=true;
  const imgSource='./ui-assets/mascot-character.png';
  const home=document.getElementById('homeScreen');
  const main=home?.querySelector('.home-main');
@@ -327,9 +327,20 @@
  mascot.decoding='async';
  mascot.draggable=false;
  mascot.classList.add('mb-mascot-animated');
- // The art belongs to the HOME background, never inside the tall header slot.
- // Direct-child placement avoids stacking-context traps on home-hero.
- main.append(mascot);
+ // Keep original buttons & click handlers, but reserve two explicit columns.
+ // Prevent the mascot from being obscured by full-width floating home controls.
+ const dashboard=document.createElement('div');
+ dashboard.className='mb-home-dashboard';
+ const left=document.createElement('div');
+ left.className='mb-dashboard-left';
+ const stage=document.createElement('div');
+ stage.className='mb-mascot-stage';
+ for(const node of Array.from(main.children)){
+  if(node.matches('.progress-panel,.resume-group,.timed-home-wrap'))left.append(node);
+ }
+ stage.append(mascot);
+ dashboard.append(left,stage);
+ main.append(dashboard);
  mascot.setAttribute('role','button');
  mascot.setAttribute('tabindex','0');
  mascot.setAttribute('aria-label','맛춘범 캐릭터와 대화하기');
@@ -338,18 +349,30 @@
  bubble.className='mb-home-speech';
  bubble.setAttribute('aria-live','off');
  bubble.textContent='국어 공부하러 왔어? 나도 퇴근 못 했어. 📚';
- main.append(bubble);
+ stage.append(bubble);
  const style=document.createElement('style');
- style.id='mb-mascot-v4-single-layer';
+ style.id='mb-mascot-v5-grid-and-speech';
  style.textContent=[
-  '/* Restore the original compact home button ordering; do not change the buttons or their click handlers. */',
-  '#homeScreen .home-main{position:relative!important;isolation:isolate;overflow:visible!important}',
-  '#homeScreen .home-hero{height:clamp(115px,12.5vw,192px)!important;min-height:0!important;max-height:none!important;overflow:visible!important;z-index:1}',
-  '#homeScreen .home-main>.home-hero,#homeScreen .home-main>.progress-panel,#homeScreen .home-main>.resume-group,#homeScreen .home-main>.timed-home-wrap,#homeScreen .home-main>.home-card-grid,#homeScreen .home-main>.home-actions,#homeScreen .home-main>.home-foot{position:relative;z-index:2}',
-  '#homeScreen .home-main>img.hero-character.mb-mascot-animated{position:absolute!important;z-index:1!important;top:clamp(16px,3vw,45px)!important;right:clamp(-10px,1vw,16px)!important;bottom:auto!important;left:auto!important;height:clamp(345px,37.5vw,576px)!important;width:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center bottom!important;image-rendering:pixelated;transform-origin:50% 90%;cursor:pointer;pointer-events:auto;filter:drop-shadow(7px 10px 4px #1a111859);animation:mb-mascot-idle-v3 4.8s ease-in-out infinite}',
-  '#homeScreen .home-main>img.hero-character.mb-mascot-animated:focus-visible{outline:3px dashed #fce1ae;outline-offset:5px;border-radius:8px}',
-  '#homeScreen .home-main>.mb-home-speech{position:absolute!important;z-index:3;top:clamp(65px,7vw,96px);right:clamp(290px,33vw,485px);width:clamp(150px,22vw,250px);max-width:42%;min-height:55px;box-sizing:border-box;padding:10px 13px;border:3px solid #4b292b;border-radius:16px;background:#ffecd1;color:#3e2523;font-size:clamp(12px,1.2vw,16px);line-height:1.35;font-weight:850;text-align:center;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a;pointer-events:none;word-break:keep-all}',
-  '#homeScreen .home-main>.mb-home-speech.mb-speech-pop{animation:mb-speech-pop .35s ease both}',
+  "/* Home: dedicated left controls + right mascot. No absolute overlap with buttons. */",
+  "#homeScreen .home-main{position:relative!important;isolation:isolate;overflow:visible!important}",
+  "#homeScreen .home-main>.home-hero{order:0;position:relative;z-index:2;align-self:flex-start;width:100%;max-width:1160px;margin:0;height:clamp(150px,15.625vw,240px)!important;min-height:0!important;overflow:visible!important}",
+  "#homeScreen .home-hero .hero-scroll{left:-2%!important;top:0!important;width:min(67.5%,712px)!important;max-height:clamp(131px,15vw,240px)!important;transform:none!important;z-index:3!important}",
+  "#homeScreen .home-main>.mb-home-dashboard{order:1;position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(10px,2vw,28px);align-items:center;width:100%;max-width:1160px;margin:0 auto 14px;min-width:0}",
+  "#homeScreen .mb-dashboard-left{min-width:0;width:100%;max-width:590px;display:flex;flex-direction:column;justify-content:center;gap:clamp(8px,1.1vw,15px);align-items:stretch}",
+  "#homeScreen .mb-dashboard-left>.progress-panel{width:100%!important;max-width:100%!important;min-width:0;box-sizing:border-box!important;align-self:flex-start!important;margin:0!important;padding:clamp(9px,1.3vw,16px)!important;position:relative;left:auto!important;right:auto!important}",
+  "#homeScreen .mb-dashboard-left>.resume-group{box-sizing:border-box!important;display:flex;justify-content:flex-start;align-self:flex-start;width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important}",
+  "#homeScreen .mb-dashboard-left #resumeHotspot,#homeScreen .mb-dashboard-left #mobileResume{max-width:100%!important}",
+  "#homeScreen .mb-dashboard-left>.timed-home-wrap{box-sizing:border-box!important;align-self:flex-start!important;display:block;width:100%!important;max-width:100%!important;min-width:0;margin:0!important;padding:0!important}",
+  "#homeScreen .mb-dashboard-left .timed-home-btn{width:100%!important;max-width:100%!important;min-height:clamp(66px,6.5vw,88px)!important;padding:clamp(7px,1vw,14px)!important;gap:clamp(5px,1vw,12px)!important;font-size:clamp(17px,2vw,28px)!important;box-sizing:border-box!important}",
+  "#homeScreen .mb-dashboard-left .timed-home-btn::before{font-size:clamp(24px,3vw,38px)!important;width:clamp(27px,4vw,50px)!important;height:clamp(31px,4vw,50px)!important}",
+  "#homeScreen .mb-dashboard-left .timed-home-btn span{font-size:clamp(11px,1.15vw,16px)!important;padding-left:clamp(4px,.8vw,10px)!important}",
+  "#homeScreen .home-main>.home-card-grid,#homeScreen .home-main>.home-actions,#homeScreen .home-main>.home-foot{position:relative;z-index:2}",
+  "#homeScreen .mb-mascot-stage{position:relative!important;z-index:3;display:block;align-self:center;justify-self:end;box-sizing:border-box;width:min(100%,576px);aspect-ratio:1;min-width:0;min-height:0;overflow:visible!important;pointer-events:none}",
+  "#homeScreen .mb-mascot-stage>.hero-character.mb-mascot-animated{display:block!important;position:relative!important;z-index:2!important;inset:auto!important;top:auto!important;bottom:auto!important;left:auto!important;right:auto!important;visibility:visible!important;opacity:1!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:none!important;object-fit:contain!important;object-position:center!important;image-rendering:pixelated!important;transform-origin:50% 90%;cursor:pointer;pointer-events:auto!important;filter:drop-shadow(7px 10px 4px #1a111859);animation:mb-mascot-idle-v3 4.8s ease-in-out infinite}",
+  "#homeScreen .mb-mascot-stage>.hero-character.mb-mascot-animated:focus-visible{outline:3px dashed #fce1ae;outline-offset:5px;border-radius:8px}",
+  "#homeScreen .mb-mascot-stage>.mb-home-speech{position:absolute!important;z-index:4!important;top:0!important;right:-4px!important;left:auto!important;bottom:auto!important;max-width:56%;width:clamp(132px,19vw,235px);min-height:50px;box-sizing:border-box;padding:clamp(8px,1.1vw,13px);border:3px solid #4b292b;border-radius:15px;background:#ffecd1;color:#3e2523;font-size:clamp(12px,1.1vw,16px);line-height:1.4;font-weight:850;text-align:center;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a;pointer-events:none;word-break:keep-all}",
+  "#homeScreen .mb-mascot-stage>.mb-home-speech::after{content:\"\";position:absolute;right:25%;bottom:-10px;width:15px;height:15px;transform:rotate(45deg);background:#ffecd1;border-right:3px solid #4b292b;border-bottom:3px solid #4b292b}",
+  "#homeScreen .mb-mascot-stage>.mb-home-speech.mb-speech-pop{animation:mb-speech-pop .35s ease both}",
   '/* Timed button retains its real PNG as an img, not an empty active-state background. */',
   '.sidebar-nav .navbtn.timed-nav{display:block!important;min-height:0!important;height:auto!important;aspect-ratio:420/122!important;background:none!important;overflow:visible!important;line-height:0!important}',
   '.sidebar-nav .navbtn.timed-nav img{display:block!important;width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;pointer-events:none!important;opacity:1!important;visibility:visible!important;filter:none!important}',
@@ -385,10 +408,10 @@
   '#homeScreen .hero-character.mb-motion-surprise,#workspace .mb-mascot-button.mb-motion-surprise img{animation:mb-act-surprise .73s ease 1 both!important}',
   '#homeScreen .hero-character.mb-motion-sway,#workspace .mb-mascot-button.mb-motion-sway img{animation:mb-act-sway .85s ease 1 both!important}',
   '#homeScreen .hero-character.mb-motion-stretch,#workspace .mb-mascot-button.mb-motion-stretch img{animation:mb-act-stretch 1.1s ease 1 both!important}',
-  '@media(max-width:1100px){#homeScreen .home-hero{height:clamp(130px,23vw,220px)!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{height:clamp(330px,42vw,510px)!important;top:clamp(22px,5vw,65px)!important}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr) minmax(160px,205px)}#workspace .mb-mascot-button{height:190px}}',
-  '@media(max-width:700px){#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(35px,8vw,75px)!important;height:clamp(330px,90vw,510px)!important}#homeScreen .home-main>.mb-home-speech{width:38%;max-width:160px;top:clamp(98px,25vw,140px);left:8px;right:auto;padding:7px;font-size:12px;line-height:1.32;border-width:2px}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr);gap:10px}#workspace .mb-quiz-companion{order:-1;position:static;flex-direction:row;align-items:center;justify-content:center;padding:8px 5px;gap:12px}#workspace .mb-mascot-button{height:118px;width:115px}#workspace .mb-quiz-speech{flex:1;min-height:77px;text-align:left;font-size:14px}#workspace .mb-quiz-speech::before{left:-11px;top:calc(50% - 9px);border-top:none;border-left:3px solid #4b292b;border-bottom:3px solid #4b292b}#workspace .mb-quiz-hint{display:none}}',
-  '@media(max-width:600px){#homeScreen .home-hero{height:clamp(120px,31vw,185px)!important}#homeScreen .hero-scroll{left:0!important;top:5%!important;width:62%!important;max-height:125px!important;z-index:4!important}#homeScreen .home-main>img.hero-character.mb-mascot-animated{right:-12px!important;top:clamp(42px,10vw,82px)!important;height:clamp(330px,90vw,510px)!important}#workspace .mb-quiz-companion{gap:8px}#workspace .mb-mascot-button{height:102px;width:100px}#workspace .mb-quiz-speech{padding:10px;min-height:66px}}',
-  '@media(prefers-reduced-motion:reduce){#homeScreen .home-main>img.hero-character.mb-mascot-animated,#homeScreen .home-main>img.hero-character[class*="mb-motion-"],#workspace .mb-mascot-button img,#workspace .mb-mascot-button[class*="mb-motion-"] img,#homeScreen .mb-home-speech{animation:none!important;transform:none!important}}'
+  "@media(max-width:1100px){#homeScreen .home-hero{height:clamp(160px,28vw,270px)!important}#homeScreen .hero-scroll{width:min(67.5%,650px)!important;max-height:clamp(138px,19vw,233px)!important}#homeScreen .mb-dashboard-left .timed-home-btn{min-height:clamp(67px,8vw,87px)!important;font-size:clamp(16px,2.3vw,25px)!important}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr) minmax(160px,205px)}#workspace .mb-mascot-button{height:190px}}",
+  "@media(max-width:700px){#homeScreen .home-main>.mb-home-dashboard{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:7px;align-items:start}#homeScreen .mb-dashboard-left{gap:8px}#homeScreen .mb-dashboard-left>.progress-panel{padding:8px!important;font-size:12px!important}#homeScreen .mb-dashboard-left .timed-home-btn{min-height:76px!important;gap:4px!important;padding:6px!important;font-size:clamp(14px,3.7vw,20px)!important}#homeScreen .mb-dashboard-left .timed-home-btn::before{font-size:23px!important;width:25px!important;height:30px!important;padding-right:2px!important}#homeScreen .mb-dashboard-left .timed-home-btn span{font-size:11px!important;padding-left:4px!important}#homeScreen .mb-mascot-stage>.mb-home-speech{max-width:70%;width:145px;padding:7px;font-size:11px;line-height:1.32;border-width:2px}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr);gap:10px}#workspace .mb-quiz-companion{order:-1;position:static;flex-direction:row;align-items:center;justify-content:center;padding:8px 5px;gap:12px}#workspace .mb-mascot-button{height:118px;width:115px}#workspace .mb-quiz-speech{flex:1;min-height:77px;text-align:left;font-size:14px}#workspace .mb-quiz-speech::before{left:-11px;top:calc(50% - 9px);border-top:none;border-left:3px solid #4b292b;border-bottom:3px solid #4b292b}#workspace .mb-quiz-hint{display:none}}",
+  "@media(max-width:600px){#homeScreen .home-hero{height:clamp(125px,37vw,190px)!important}#homeScreen .hero-scroll{left:-3%!important;top:0!important;width:min(77.5%,480px)!important;max-height:clamp(115px,35vw,180px)!important;z-index:4!important}#homeScreen .mb-mascot-stage{align-self:start;margin-top:8px}#homeScreen .mb-dashboard-left>.resume-group{margin:2px 0!important}#workspace .mb-quiz-companion{gap:8px}#workspace .mb-mascot-button{height:102px;width:100px}#workspace .mb-quiz-speech{padding:10px;min-height:66px}}",
+  '@media(prefers-reduced-motion:reduce){#homeScreen .mb-mascot-stage>img.hero-character.mb-mascot-animated,#homeScreen .mb-mascot-stage>img.hero-character[class*="mb-motion-"],#workspace .mb-mascot-button img,#workspace .mb-mascot-button[class*="mb-motion-"] img,#homeScreen .mb-home-speech{animation:none!important;transform:none!important}}'
  ].join('\n');
  document.head.append(style);
  const reduceMotion=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
@@ -826,4 +849,109 @@
  }
  state.visits++;
  saveAndEvaluate();
+})();
+
+/* Result impact v1. Feedback visibility is the source of truth. */
+(()=>{
+ 'use strict';
+ if(window.__munbubResultImpactV1)return;
+ window.__munbubResultImpactV1=true;
+ const feedback=document.getElementById('feedback');
+ const quiz=document.getElementById('view-quiz');
+ if(!feedback || !quiz)return;
+ const style=document.createElement('style');
+ style.id='mb-result-impact-v1';
+ style.textContent=[
+  '#workspace #feedback:not([hidden]){border-width:4px!important;border-style:solid!important;border-radius:17px!important;box-shadow:0 7px 0 #1b131b55,0 0 0 4px #fff3d6!important;transform-origin:center;animation:mb-feedback-appear .4s cubic-bezier(.17,.8,.28,1) both}',
+  '#workspace #feedback:not([hidden]):not(.bad){background:#ddffe0!important;border-color:#16753b!important;color:#17472a!important}',
+  '#workspace #feedback.bad:not([hidden]){background:#ffe0db!important;border-color:#b52e33!important;color:#7f1721!important}',
+  '#workspace #feedback:not([hidden])::before{display:inline-block!important;margin-right:12px!important;font-size:clamp(22px,2.8vw,37px)!important;font-weight:1000!important;vertical-align:middle}',
+  '#workspace #feedback:not([hidden]):not(.bad)::before{content:"✔"!important}',
+  '#workspace #feedback.bad:not([hidden])::before{content:"✖"!important}',
+  '#workspace #view-quiz.mb-answer-good>.panel{animation:mb-answer-glow-good .8s ease both!important}',
+  '#workspace #view-quiz.mb-answer-bad>.panel{animation:mb-answer-glow-bad .8s ease both!important}',
+  '#mb-answer-impact{position:fixed;top:clamp(68px,12vh,130px);left:50%;z-index:2147482800;transform:translateX(-50%);min-width:min(75vw,270px);width:max-content;max-width:92vw;box-sizing:border-box;border:5px solid #fff7df;border-radius:22px;padding:12px 21px;text-align:center;line-height:1.3;font-weight:1000;font-size:clamp(21px,3vw,34px);letter-spacing:.02em;box-shadow:0 7px 0 #170e15,0 16px 34px #110b16aa;pointer-events:none;opacity:0;visibility:hidden}',
+  '#mb-answer-impact.mb-result-visible{visibility:visible;animation:mb-impact-pop 1.45s cubic-bezier(.2,.8,.25,1) both}',
+  '#mb-answer-impact.mb-hit-good{background:#228e51;color:#fffbe8;text-shadow:1px 2px #125c32}',
+  '#mb-answer-impact.mb-hit-bad{background:#b32e40;color:#fff8df;text-shadow:1px 2px #692033}',
+  '@keyframes mb-feedback-appear{from{transform:translateY(10px) scale(.97);opacity:.5}to{transform:translateY(0) scale(1);opacity:1}}',
+  '@keyframes mb-answer-glow-good{0%{box-shadow:0 0 0 0 #53e17b}45%{box-shadow:0 0 0 8px #53e17b99,0 0 36px #3bd872aa}100%{box-shadow:0 0 0 0 #53e17b00}}',
+  '@keyframes mb-answer-glow-bad{0%{box-shadow:0 0 0 0 #eb6060}45%{box-shadow:0 0 0 8px #eb606099,0 0 36px #f44a4aaa}100%{box-shadow:0 0 0 0 #eb606000}}',
+  '@keyframes mb-impact-pop{0%{opacity:0;transform:translate(-50%,-23px) scale(.58)}16%{opacity:1;transform:translate(-50%,3px) scale(1.12)}28%,78%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-16px) scale(.92)}}',
+  '@media(prefers-reduced-motion:reduce){#mb-answer-impact.mb-result-visible,#workspace #view-quiz.mb-answer-good>.panel,#workspace #view-quiz.mb-answer-bad>.panel,#workspace #feedback:not([hidden]){animation:none!important}#mb-answer-impact.mb-result-visible{opacity:1}}'
+ ].join('\n');
+ document.head.append(style);
+ const overlay=document.createElement('div');
+ overlay.id='mb-answer-impact';
+ overlay.setAttribute('role','status');
+ overlay.setAttribute('aria-live','assertive');
+ document.body.append(overlay);
+ let ctx=null;
+ function audio(){
+  try{
+   const Audio=window.AudioContext||window.webkitAudioContext;
+   if(!Audio)return null;
+   if(!ctx)ctx=new Audio();
+   if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+   return ctx;
+  }catch(_){return null}
+ }
+ // Unlock audio only from a real user gesture, never force playback on page load.
+ const unlock=()=>{if(!quiz.hidden)audio()};
+ document.addEventListener('pointerdown',unlock,{passive:true});
+ document.addEventListener('keydown',unlock,{passive:true});
+ function effectVolume(){
+  const v=Number(document.getElementById('bgmVolume')?.value);
+  return Number.isFinite(v)?Math.max(0,Math.min(1,v/100)):.35;
+ }
+ function playResultSound(correct){
+  const a=audio();if(!a)return;
+  const level=effectVolume();
+  if(level<=0)return;
+  const now=a.currentTime+.015;
+  const tones=correct?[[660,0,.1,'sine'],[830,.105,.11,'triangle'],[990,.22,.21,'sine']]:[[355,0,.14,'triangle'],[265,.12,.2,'sawtooth']];
+  for(const [hz,offset,duration,wave] of tones){
+   const osc=a.createOscillator(),gain=a.createGain();
+   osc.type=wave;osc.frequency.setValueAtTime(hz,now+offset);
+   const peak=(correct?.11:.05)*level;
+   gain.gain.setValueAtTime(.0001,now+offset);
+   gain.gain.exponentialRampToValueAtTime(Math.max(.0002,peak),now+offset+.014);
+   gain.gain.exponentialRampToValueAtTime(.0001,now+offset+duration);
+   osc.connect(gain).connect(a.destination);
+   osc.start(now+offset);
+   osc.stop(now+offset+duration+.02);
+  }
+ }
+ let wasVisible=!feedback.hidden,previous='',lastTime=0,removeTimer=null;
+ function observeAnswer(){
+  const showing=!feedback.hidden && !quiz.hidden;
+  if(!showing){wasVisible=false;return}
+  if(wasVisible)return;
+  wasVisible=true;
+  const question=document.getElementById('questionPrompt')?.textContent?.trim()||'';
+  const position=document.getElementById('quizPosition')?.textContent?.trim()||'';
+  const wrong=feedback.classList.contains('bad');
+  const key=question+'|'+position+'|'+(wrong?'bad':'good');
+  const now=Date.now();
+  if(key===previous&&now-lastTime<850)return;
+  previous=key;lastTime=now;
+  const type=wrong?'bad':'good';
+  overlay.className='mb-hit-'+type;
+  overlay.textContent=wrong?'✖ 오답! 다시 도전!':'✔ 정답! 완벽해!';
+  // Force the CSS entrance keyframe to restart on every new answer.
+  void overlay.offsetWidth;
+  overlay.classList.add('mb-result-visible');
+  quiz.classList.remove('mb-answer-good','mb-answer-bad');
+  void quiz.offsetWidth;
+  quiz.classList.add(wrong?'mb-answer-bad':'mb-answer-good');
+  clearTimeout(removeTimer);
+  removeTimer=setTimeout(()=>{
+   overlay.classList.remove('mb-result-visible');
+   quiz.classList.remove('mb-answer-good','mb-answer-bad');
+  },1550);
+  playResultSound(!wrong);
+ }
+ const observer=new MutationObserver(observeAnswer);
+ observer.observe(feedback,{attributes:true,attributeFilter:['class','hidden'],childList:true,subtree:true});
+ observer.observe(quiz,{attributes:true,attributeFilter:['hidden']});
 })();
