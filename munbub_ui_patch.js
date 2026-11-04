@@ -162,7 +162,10 @@
  }
  document.addEventListener('pointerdown',e=>{
   if(e.button!==0 || !e.isPrimary)return;
-  const el=clickableFor(e);if(!el)return;
+  const el=clickableFor(e);
+  // Every tap/click on the screen gets visual feedback, even empty space.
+  // Buttons and other controls also receive the short press animation/sound.
+  if(!el){burst(e.clientX,e.clientY);return;}
   lastPointer.set(el,Date.now());
   showInteraction(el,e.clientX,e.clientY,e.pointerType==='touch'?'touch':'pointer');
  },{passive:true});
