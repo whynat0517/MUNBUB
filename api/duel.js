@@ -52,7 +52,7 @@ async function state(c,room,guest,me){
   // One fresh progress read per player replaces 2 list operations and up to 20
   // per-answer downloads on every poll. Legacy in-progress rooms use fallback.
   let summary=await readPrivate(progressPath(c,member.id),{fresh:true});
-  if(!summary&&room.version!==2){
+  if(!summary&&!(room.version>=2)){
    const paths=await list({prefix:PREFIX+c+'/steps/'+member.id+'/',limit:20});
    const entries=(await Promise.all(paths.blobs.slice(0,MAX_QUESTIONS).map(b=>readPrivate(b.pathname).catch(()=>null)))).filter(x=>x&&Number.isInteger(x.index));
    const ordered=[...new Map(entries.map(e=>[e.index,e])).values()].sort((a,b)=>a.index-b.index);
