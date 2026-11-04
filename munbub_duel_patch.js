@@ -41,6 +41,17 @@
   '#mb-duel-dialog .mb-duel-option-list button:active{transform:scale(.97)}',
   '#mb-duel-dialog .mb-duel-clock{font-size:clamp(16px,2.2vw,25px);font-weight:1000;color:#74452c}',
   '#mb-duel-dialog .mb-duel-clock.low{color:#ae2939}',
+  '#mb-duel-dialog .mb-duel-start-box{text-align:center;padding:clamp(14px,3vw,26px);margin:12px auto;border:3px solid #b99166;border-radius:18px;background:linear-gradient(#fff7e6,#f3d7ab);max-width:410px}',
+  '#mb-duel-dialog .mb-duel-start-label{font-size:clamp(19px,3vw,28px);font-weight:950;color:#684333;letter-spacing:.04em}',
+  '#mb-duel-dialog .mb-duel-start-number{font-size:clamp(84px,16vw,146px);line-height:1.08;font-variant-numeric:tabular-nums;font-weight:1000;color:#9f3532;text-shadow:4px 5px 0 #edc18d;letter-spacing:-.05em;margin:4px 0}',
+  '#mb-duel-dialog .mb-duel-start-note{font-size:clamp(15px,2vw,18px);font-weight:800;color:#6e4b36}',
+  '#mb-duel-dialog .mb-duel-review{padding:clamp(13px,2vw,19px);margin:13px 0;border:3px solid #b48c68;border-radius:15px;background:#fff0d7;text-align:center}',
+  '#mb-duel-dialog .mb-duel-review .mb-duel-result{margin:6px 0 14px}',
+  '#mb-duel-dialog .mb-duel-review-clock{font-size:clamp(25px,4.6vw,40px);font-weight:1000;color:#823e30;font-variant-numeric:tabular-nums;line-height:1.3}',
+  '#mb-duel-dialog .mb-duel-review-status{font-size:clamp(13px,1.6vw,17px);font-weight:800;color:#6d4a3f;min-height:26px;margin:10px 0}',
+  '#mb-duel-dialog #mb-duel-next-ready{display:inline-block;width:min(100%,360px);min-height:53px;background:linear-gradient(#ffdb9c,#d99b5e);font-size:clamp(15px,2vw,20px);font-weight:950}',
+  '#mb-duel-dialog #mb-duel-next-ready:disabled{opacity:1;background:#e4d6bd;border-color:#8b7b66;color:#5d6258;filter:none}',
+  '@media(prefers-reduced-motion:reduce){#mb-duel-dialog .mb-duel-start-number{animation:none}}',
   '#mb-duel-dialog .mb-duel-clock.mb-duel-rival-fast{color:#c52839!important;animation:mb-duel-urgency .57s ease-in-out infinite alternate;transform-origin:left center}',
   '@keyframes mb-duel-urgency{from{filter:brightness(1);transform:scale(1)}to{filter:brightness(1.3);transform:scale(1.045)}}',
   '#mb-duel-dialog .mb-rival-alert{margin:9px 0;padding:9px 11px;border:2px solid #ac5c60;border-radius:10px;background:#ffdedc;color:#9c2535;font-weight:900;min-height:26px}',
@@ -251,6 +262,45 @@
   const extra=status.opponentAnsweredAt?Math.max(0,time-status.opponentAnsweredAt):0;
   return Math.max(0,duration()-original-extra);
  };
+ const newReview=()=>status?.reviewMode==='both-ready-or-5s';
+ const lastAnswer=(p,index)=>p?.answers?.find(a=>a.index===index);
+ function reviewTurnAt(ours,theirs){
+  const last=Math.max(Number(ours?.at)||0,Number(theirs?.at)||0);
+  const fallback=last+5000;
+  const first=Number(ours?.readyAt)||0,second=Number(theirs?.readyAt)||0;
+  return first&&second?Math.min(fallback,Math.max(first,second)):fallback;
+ }
+ function reviewInfo(){
+  const me=status?.players?.find(p=>p.id===status.me);
+  const opponent=status?.players?.find(p=>p.id!==status.me);
+  if(!me||me.answered<1||me.answered>=count())return null;
+  const index=me.answered-1;
+  const own=lastAnswer(me,index);
+  const theirs=lastOpponentSignal?.answers?.find(a=>a.index===index);
+  const readyAt=Number(own?.readyAt||status.reviewReadyAt)||null;
+  const opponentReadyAt=Number(theirs?.readyAt||status.opponentReviewReadyAt)||null;
+  const otherAnswered=!!opponent&&opponent.answered>index;
+  return {index,own,readyAt,opponentReadyAt,otherAnswered,
+   readyCount:Number(!!readyAt)+Number(!!opponentReadyAt)};
+ }
+ function refreshReview(){
+  if(phase!=='review'||!status)return;
+  const info=reviewInfo();
+  if(!info)return;
+  const btn=dialog.querySelector('#mb-duel-next-ready');
+  if(btn){
+   btn.disabled=!!info.readyAt||busy;
+   btn.textContent=info.readyAt?'✅ 바로 넘어가기 동의 완료':'⚡ 바로 다음 문제로 넘어가기 동의';
+  }
+  const clock=dialog.querySelector('#mb-duel-review-clock');
+  if(clock)clock.textContent=!info.otherAnswered?'⏳ 상대 답변 대기 중'
+   :status.turnStartsAt&&now()<status.turnStartsAt
+    ?'⏱ '+(Math.max(0,(status.turnStartsAt-now())/1000)).toFixed(1)+'초 후 자동 진행'
+    :'⚔ 다음 문제 시작!';
+  const statusText=dialog.querySelector('#mb-duel-review-status');
+  if(statusText)statusText.textContent=info.readyCount+' / 2명 동의'
+   +(info.otherAnswered?' · 둘 다 답변 완료':' · 상대방이 문제를 풀고 있어');
+ }
  function updateOpponentSignal(){
   if(!dialog.open||phase!=='question'||!status)return;
   const flash=!!status.opponentAnswered;
@@ -278,6 +328,7 @@
    if(progress)progress.textContent='정답 '+p.correct+' · '+p.answered+'/'+count();
   }
   updateOpponentSignal();
+  refreshReview();
  }
  function showGame(){
   if(!dialog.open||!roomCode||!status)return;
@@ -287,10 +338,13 @@
   // Local feedback may show first, but the new round is server-gated.
   const other=status.players.find(x=>x.id!==status.me);
   const unlocked=!!status.turnReady&&!!other&&qidx<=other.answered;
+  const showReview=newReview()&&qidx>0&&qidx<count()&&
+   (!unlocked||!status.turnStartsAt||now()<status.turnStartsAt);
   const newPhase=!status.ready?'waiting'
    :status.finished?'results'
-   :Date.now()<feedbackUntil?'feedback'
    :qidx>=count()?'finished'
+   :showReview?'review'
+   :!newReview()&&Date.now()<feedbackUntil?'feedback'
    :!unlocked?'opponent'
    :now()<status.turnStartsAt?'countdown':'question';
   const viewKey=newPhase+'|'+qidx;
@@ -303,7 +357,9 @@
   html+=scoreboard();
   if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
   if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 상대가 현재 문제를 제출할 때까지 대기 중이야. 둘 다 풀어야 다음 문제로 넘어가!</p><p class="mb-duel-note">상대방 진행 상황은 위 점수판에서 확인해 줘.</p>';
-  if(newPhase==='countdown')html+='<h3 id="mb-duel-countdown" class="mb-duel-clock">곧 시작!</h3><p>양쪽 모두 같은 순서로 10문제를 풀어.</p>';
+  if(newPhase==='countdown')html+='<section class="mb-duel-start-box" aria-label="대결 시작 카운트다운"><div class="mb-duel-start-label">⚔ 대결 시작까지</div>'+
+   '<div id="mb-duel-countdown" class="mb-duel-start-number" role="timer">'+Math.max(0,Math.ceil((status.turnStartsAt-now())/1000))+'</div>'+
+   '<div class="mb-duel-start-note">같은 문제를 동시에 시작해!</div></section>';
   if(newPhase==='question'){
    const q=MAP.get(status.questionIds[qidx]);
    if(!q){html+='<p id="mb-duel-info">문제를 불러오지 못했어.</p>'}
@@ -315,8 +371,19 @@
     '<h3>'+esc(title)+'</h3><p style="font-size:clamp(17px,2.1vw,23px);font-weight:900">'+esc(question)+'</p><div class="mb-duel-option-list">'+opts(q,qidx).map(value=>'<button type="button" data-duel-answer="'+esc(value)+'">'+esc(value)+'</button>').join('')+'</div><p class="mb-duel-note">빠르게 맞힐수록 최대 10점. 상대가 먼저 제출하면 남은 시간은 2배 속도로 감소!</p>';
    }
   }
+  if(newPhase==='review'){
+   const info=reviewInfo();
+   const good=info?.own?.correct??feedback?.correct;
+   const points=info?.own?.points??feedback?.points??0;
+   html+='<section class="mb-duel-review" aria-label="문제 풀이 후 대기">'+
+    '<p class="mb-duel-result '+(good?'good':'bad')+'">'+(good?'✔ 정답! +'+points+'점':'✖ 오답! 0점')+'</p>'+
+    '<div id="mb-duel-review-clock" class="mb-duel-review-clock" role="timer"></div>'+
+    '<p id="mb-duel-review-status" class="mb-duel-review-status" aria-live="polite"></p>'+
+    '<button type="button" id="mb-duel-next-ready">⚡ 바로 다음 문제로 넘어가기 동의</button>'+
+    '<p class="mb-duel-note">기본은 둘 다 답을 고른 뒤 5초 후 자동 진행! 둘 다 동의하면 바로 넘어가.</p></section>';
+  }
   if(newPhase==='feedback'){const good=feedback?.correct;html+='<p class="mb-duel-result '+(good?'good':'bad')+'">'+(good?'✔ 정답! +'+feedback.points+'점':'✖ 아쉬워! 0점')+'</p><p>다음 문제로 넘어가는 중...</p>'}
-  if(newPhase==='finished')html+='<p class="mb-duel-status">✅ 10문제를 모두 풀었어! 상대가 마칠 때까지 기다리고 있어.</p>';
+  if(newPhase==='finished')html+='<p class="mb-duel-status">✅ '+count()+'문제를 모두 풀었어! 상대가 마칠 때까지 기다리고 있어.</p>';
   if(newPhase==='results'){
    const players=[...status.players].sort((a,b)=>b.score-a.score||b.correct-a.correct);
    const draw=players[0].score===players[1].score&&players[0].correct===players[1].correct;
@@ -326,6 +393,8 @@
   html+='<div class="mb-duel-actions"><button id="mb-duel-new" type="button">새 대결 / 코드 입력</button></div><p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
   putHTML(html);
   updateOpponentSignal();
+  refreshReview();
+  dialog.querySelector('#mb-duel-next-ready')?.addEventListener('click',sendReady);
   dialog.querySelector('#mb-duel-copy')?.addEventListener('click',async()=>{
    try{await navigator.clipboard.writeText(roomCode);showError('방 코드가 복사됐어.')}catch(_){showError('복사가 제한됐어. 위 코드를 직접 알려 줘.')}
   });
