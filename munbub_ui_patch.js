@@ -8,7 +8,19 @@
  document.head.append(s);
  for(const b of document.querySelectorAll('.sidebar-nav .timed-nav')){
   b.setAttribute('aria-label','시간제한');
-  b.textContent='';
+  b.setAttribute('title','시간제한 도전');
+  if(!b.querySelector('img')){
+   const picture=document.createElement('img');
+   picture.src='./ui-assets/timed_sidebar_new.png';
+   picture.alt='';
+   picture.setAttribute('aria-hidden','true');
+   picture.decoding='async';
+   picture.addEventListener('error',()=>{
+    b.classList.add('mb-timed-fallback');
+    b.textContent='⏱ 시간제한';
+   },{once:true});
+   b.replaceChildren(picture);
+  }
  }
  const normal=document.getElementById('fontNormal'),large=document.getElementById('fontLarge');
  if(normal)normal.textContent='작은 글씨';
@@ -299,66 +311,129 @@
 })();
 
 
-/* Mascot update only: original navigation, controls, images and quiz logic remain intact. */
+/* Mascot v2: one character source, home animation, quiz reactions, and timed-nav image fix. */
 (()=>{
  'use strict';
- if(window.__munbubMascotV1)return;
- window.__munbubMascotV1=true;
+ if(window.__munbubMascotV2)return;
+ window.__munbubMascotV2=true;
+ const imgSource='./ui-assets/mascot-character.png';
  const mascot=document.querySelector('#homeScreen .hero-character');
  if(!mascot)return;
- mascot.src='./ui-assets/mascot-character.png';
+ mascot.src=imgSource;
  mascot.alt='맛춘범 픽셀 캐릭터';
  mascot.decoding='async';
  mascot.draggable=false;
  mascot.classList.add('mb-mascot-animated');
  const style=document.createElement('style');
- style.id='mb-mascot-animations-v1';
- style.textContent=`
- /* Preserve existing layout sizing on PC, tablets and mobile */
- #homeScreen .hero-character.mb-mascot-animated{
-  image-rendering:pixelated;
-  transform-origin:52% 86%;
-  animation:mb-mascot-enter .7s cubic-bezier(.2,1.1,.3,1) both,
-            mb-mascot-idle 3.8s ease-in-out .7s infinite;
-  will-change:transform;
- }
- #homeScreen .hero-character.mb-mascot-animated.mb-mascot-react{
-  animation:mb-mascot-respond .68s cubic-bezier(.24,.8,.22,1) 1;
- }
- @keyframes mb-mascot-enter{
-  0%{opacity:0;transform:translateY(18px) scale(.9) rotate(-7deg)}
-  75%{opacity:1;transform:translateY(-4px) scale(1.035) rotate(2deg)}
-  100%{opacity:1;transform:none}
- }
- @keyframes mb-mascot-idle{
-  0%,100%{transform:translateY(0) rotate(-.65deg) scale(1)}
-  25%{transform:translateY(-3px) rotate(.35deg) scale(1.008)}
-  50%{transform:translateY(-5px) rotate(1.15deg) scale(1.016)}
-  75%{transform:translateY(-2px) rotate(-.35deg) scale(1.008)}
- }
- @keyframes mb-mascot-respond{
-  0%{transform:translateY(-2px) rotate(-.5deg) scale(1)}
-  22%{transform:translateY(-13px) rotate(-5deg) scale(1.07)}
-  44%{transform:translateY(3px) rotate(5deg) scale(.98)}
-  65%{transform:translateY(-8px) rotate(-3deg) scale(1.035)}
-  100%{transform:translateY(0) rotate(0) scale(1)}
- }
- @media(prefers-reduced-motion:reduce){
-  #homeScreen .hero-character.mb-mascot-animated,
-  #homeScreen .hero-character.mb-mascot-animated.mb-mascot-react{
-   animation:none!important;transform:none!important
-  }
- }`;
- document.head.appendChild(style);
- let reactiveTimeout;
- const play=()=>{
-  if(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return;
-  clearTimeout(reactiveTimeout);
+ style.id='mb-mascot-interactions-v2';
+ style.textContent=[
+  "/* Three times the earlier ~192px mascot height on large screens, without scaling buttons or quiz UI. */",
+  "#homeScreen .home-hero{height:clamp(345px,37.5vw,576px)!important;overflow:visible!important}",
+  "#homeScreen .hero-scroll{left:1%!important;top:5%!important;width:min(54%,570px)!important;max-height:clamp(105px,12vw,192px)!important;z-index:3!important}",
+  "#homeScreen .hero-character.mb-mascot-animated{height:103%!important;width:auto!important;max-height:none!important;max-width:none!important;right:0!important;bottom:-4px!important;object-fit:contain!important;object-position:bottom right!important;image-rendering:pixelated;transform-origin:52% 87%;z-index:2!important;animation:mb-mascot-enter-v2 .7s cubic-bezier(.2,1.1,.3,1) both,mb-mascot-idle-v2 3.8s ease-in-out .7s infinite;will-change:transform;pointer-events:none}",
+  "#homeScreen .hero-character.mb-mascot-animated.mb-mascot-react{animation:mb-mascot-react-v2 .7s cubic-bezier(.24,.8,.22,1) 1}",
+  "@keyframes mb-mascot-enter-v2{0%{opacity:0;transform:translateY(18px) scale(.92) rotate(-5deg)}75%{opacity:1;transform:translateY(-6px) scale(1.03) rotate(2deg)}100%{opacity:1;transform:none}}",
+  "@keyframes mb-mascot-idle-v2{0%,100%{transform:translateY(0) rotate(-.6deg)}25%{transform:translateY(-6px) rotate(.4deg)}50%{transform:translateY(-10px) rotate(1.1deg)}75%{transform:translateY(-3px) rotate(-.4deg)}}",
+  "@keyframes mb-mascot-react-v2{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-19px) rotate(-5deg)}55%{transform:translateY(3px) rotate(5deg)}75%{transform:translateY(-9px) rotate(-3deg)}100%{transform:none}}",
+  "/* img elements survive the active-state background override that hid the timer graphic. */",
+  ".sidebar-nav .navbtn.timed-nav{display:block!important;min-height:0!important;height:auto!important;aspect-ratio:420/122!important;background:none!important;overflow:visible!important;line-height:0!important}",
+  ".sidebar-nav .navbtn.timed-nav img{display:block!important;width:100%!important;height:auto!important;max-height:none!important;object-fit:contain!important;image-rendering:auto!important;pointer-events:none!important;opacity:1!important;visibility:visible!important}",
+  ".sidebar-nav .navbtn.timed-nav.active{background-color:rgba(26,14,20,.12)!important}",
+  ".sidebar-nav .navbtn.timed-nav.mb-timed-fallback{display:grid!important;place-items:center!important;min-height:70px!important;border:3px solid #f2d7b6!important;border-radius:12px!important;background:#291b21!important;color:#fbe4c2!important;font-size:clamp(16px,2vw,24px)!important;font-weight:900!important;line-height:1.2!important}",
+  "/* Companion occupies its own quiz column, never covering the answer choices. */",
+  "#workspace #view-quiz:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr) minmax(185px,260px);gap:clamp(12px,1.5vw,22px);align-items:start}",
+  "#workspace #view-quiz>.panel{min-width:0;margin-bottom:0}",
+  "#workspace .mb-quiz-companion{box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:8px;position:sticky;top:16px;min-width:0;width:100%;padding:14px 10px 16px;text-align:center}",
+  "#workspace .mb-mascot-button{display:grid;place-items:end center;flex:none;width:min(100%,220px);height:230px;max-width:100%;background:transparent;border:0;padding:0;cursor:pointer;touch-action:manipulation;filter:drop-shadow(5px 8px 1px #120b10aa);transition:filter .18s,transform .18s}",
+  "#workspace .mb-mascot-button img{display:block;max-width:100%;max-height:100%;width:auto;height:100%;object-fit:contain;image-rendering:pixelated;pointer-events:none;animation:mb-quiz-idle-v2 3.5s ease-in-out infinite;transform-origin:50% 90%}",
+  "#workspace .mb-mascot-button:hover{filter:drop-shadow(6px 10px 2px #120b10) brightness(1.1)}",
+  "#workspace .mb-mascot-button:focus-visible{outline:3px solid #d69d6c;outline-offset:3px;border-radius:10px}",
+  "#workspace .mb-mascot-button.mb-mascot-react img{animation:mb-quiz-react-v2 .6s ease both}",
+  "#workspace .mb-quiz-speech{position:relative;box-sizing:border-box;width:100%;min-height:88px;padding:13px 12px;border:3px solid #4b292b;border-radius:16px;background:#ffead0;color:#3e2523;font-size:clamp(14px,1.1vw,17px);font-weight:850;line-height:1.5;word-break:keep-all;box-shadow:inset 0 0 0 2px #fff7e9,0 5px 0 #27171a}",
+  "#workspace .mb-quiz-speech::before{content:'';position:absolute;top:-12px;left:calc(50% - 10px);width:18px;height:18px;transform:rotate(45deg);background:#ffead0;border-top:3px solid #4b292b;border-left:3px solid #4b292b}",
+  "#workspace .mb-quiz-hint{margin:6px 0 0;color:#f0d6bd;font-size:12px;font-weight:700}",
+  "@keyframes mb-quiz-idle-v2{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-5px) rotate(1.5deg)}}",
+  "@keyframes mb-quiz-react-v2{0%{transform:scale(1)}25%{transform:translateY(-15px) rotate(-7deg) scale(1.06)}55%{transform:rotate(6deg) scale(.96)}100%{transform:none}}",
+  "@media(max-width:1100px){#homeScreen .home-hero{height:clamp(330px,42vw,510px)!important}#homeScreen .hero-scroll{width:56%!important;max-height:145px!important}#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr) minmax(160px,205px)}#workspace .mb-mascot-button{height:190px}}",
+  "@media(max-width:700px){#workspace #view-quiz:not([hidden]){grid-template-columns:minmax(0,1fr);gap:10px}#workspace .mb-quiz-companion{order:-1;position:static;flex-direction:row;align-items:center;justify-content:center;padding:8px 5px;gap:12px}#workspace .mb-mascot-button{height:118px;width:115px}#workspace .mb-quiz-speech{flex:1;min-height:77px;text-align:left;font-size:14px}#workspace .mb-quiz-speech::before{left:-11px;top:calc(50% - 9px);border-top:none;border-left:3px solid #4b292b;border-bottom:3px solid #4b292b}#workspace .mb-quiz-hint{display:none}}",
+  "@media(max-width:600px){#homeScreen .home-hero{height:clamp(330px,90vw,510px)!important}#homeScreen .hero-scroll{left:0!important;top:5%!important;width:62%!important;max-height:125px!important;z-index:4!important}#homeScreen .hero-character.mb-mascot-animated{height:96%!important;right:-2%!important}#workspace .mb-quiz-companion{gap:8px}#workspace .mb-mascot-button{height:102px;width:100px}#workspace .mb-quiz-speech{padding:10px;min-height:66px}}",
+  "@media(prefers-reduced-motion:reduce){#homeScreen .hero-character.mb-mascot-animated,#homeScreen .hero-character.mb-mascot-animated.mb-mascot-react,#workspace .mb-mascot-button img,#workspace .mb-mascot-button.mb-mascot-react img{animation:none!important;transform:none!important}}"
+ ].join('\n');
+ document.head.append(style);
+ const reduceMotion=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+ let homeReactionTimer;
+ function homeReact(){
+  if(reduceMotion())return;
+  clearTimeout(homeReactionTimer);
   mascot.classList.remove('mb-mascot-react');
   void mascot.offsetWidth;
   mascot.classList.add('mb-mascot-react');
-  reactiveTimeout=setTimeout(()=>mascot.classList.remove('mb-mascot-react'),680);
- };
- document.querySelector('#homeScreen .home-hero')?.addEventListener('pointerdown',play,{passive:true});
- document.querySelector('#homeScreen .home-card-grid')?.addEventListener('click',play);
+  homeReactionTimer=setTimeout(()=>mascot.classList.remove('mb-mascot-react'),710);
+ }
+ document.querySelector('#homeScreen .home-hero')?.addEventListener('pointerdown',homeReact,{passive:true});
+ document.querySelector('#homeScreen .home-card-grid')?.addEventListener('click',homeReact);
+ const quizView=document.getElementById('view-quiz');
+ const question=document.getElementById('questionPrompt');
+ const feedback=document.getElementById('feedback');
+ if(!quizView || !question || !feedback || quizView.querySelector('.mb-quiz-companion'))return;
+ const companion=document.createElement('aside');
+ companion.className='mb-quiz-companion';
+ companion.setAttribute('aria-label','맛춘범 캐릭터 응원');
+ const characterButton=document.createElement('button');
+ characterButton.type='button';
+ characterButton.className='mb-mascot-button';
+ characterButton.setAttribute('aria-label','맛춘범 캐릭터와 대화하기');
+ characterButton.title='눌러서 캐릭터와 대화하기';
+ const characterImage=document.createElement('img');
+ characterImage.src=imgSource;
+ characterImage.alt='맛춘범 캐릭터';
+ characterImage.draggable=false;
+ characterButton.append(characterImage);
+ const dialogue=document.createElement('div');
+ dialogue.className='mb-quiz-speech';
+ dialogue.setAttribute('role','status');
+ dialogue.setAttribute('aria-live','polite');
+ dialogue.textContent='같이 문제를 풀어 보자! ✨';
+ const tapHint=document.createElement('p');
+ tapHint.className='mb-quiz-hint';
+ tapHint.textContent='캐릭터를 눌러서 대화하기';
+ companion.append(characterButton,dialogue,tapHint);
+ quizView.append(companion);
+ const generic=['천천히 읽어 보자!','문장에 단서가 있을 거야.','이번 문제도 할 수 있어!','선택하기 전에 한 번 확인!'];
+ const right=['정답이다! 정말 잘했어! 🎉','바로 그거야! 다음 문제도 가자!','멋진 선택이야! 계속 도전!'];
+ const wrong=['아깝다! 해설을 살펴보자.','괜찮아! 정답 표현을 기억해 봐.','틀린 문제도 좋은 복습이야!'];
+ const chatting=['반가워! 오늘도 화이팅!','문제를 다 읽고 선택해 봐.','잠깐 고민해도 괜찮아.','틀린 문제는 오답노트에서 복습!','사자성어는 뜻부터 살펴봐!'];
+ let lastPhase='',turn=0,reactionTimer,scheduled=false;
+ function animateCharacter(){
+  if(reduceMotion())return;
+  clearTimeout(reactionTimer);
+  characterButton.classList.remove('mb-mascot-react');
+  void characterButton.offsetWidth;
+  characterButton.classList.add('mb-mascot-react');
+  reactionTimer=setTimeout(()=>characterButton.classList.remove('mb-mascot-react'),650);
+ }
+ function announce(){
+  if(quizView.hidden)return;
+  const phase=feedback.hidden?'question':feedback.classList.contains('bad')?'wrong':'right';
+  const signature=phase+'|'+question.textContent.trim()+'|'+(document.getElementById('quizPosition')?.textContent||'');
+  if(signature===lastPhase)return;
+  lastPhase=signature;
+  const phrases=phase==='right'?right:phase==='wrong'?wrong:generic;
+  dialogue.textContent=phrases[turn++%phrases.length];
+  if(phase!=='question')animateCharacter();
+ }
+ function scheduleAnnouncement(){
+  if(scheduled)return;
+  scheduled=true;
+  queueMicrotask(()=>{scheduled=false;announce()});
+ }
+ characterButton.addEventListener('click',()=>{
+  dialogue.textContent=chatting[turn++%chatting.length];
+  animateCharacter();
+ });
+ const observer=new MutationObserver(scheduleAnnouncement);
+ observer.observe(question,{childList:true,characterData:true,subtree:true});
+ observer.observe(feedback,{childList:true,attributes:true,attributeFilter:['hidden','class'],subtree:true});
+ observer.observe(quizView,{attributes:true,attributeFilter:['hidden']});
+ scheduleAnnouncement();
 })();
