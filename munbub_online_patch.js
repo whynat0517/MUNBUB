@@ -44,7 +44,17 @@
        if(ctx.measureText(me.name).width<=width)break;
       }
      }
-     span.style.setProperty('font-size',Math.round(px)+'px','important');
+     if(btn.clientWidth<166 && Array.from(me.name).length>=8){
+      // Compact mobiles: use two readable lines rather than tiny 10px text.
+      span.style.setProperty('white-space','normal','important');
+      span.style.setProperty('overflow-wrap','anywhere','important');
+      span.style.setProperty('line-height','1.08','important');
+      span.style.setProperty('font-size',Math.round(Math.max(12,btn.clientWidth*.097))+'px','important');
+      span.style.setProperty('max-height','2.3em','important');
+     }else{
+      span.style.setProperty('white-space','nowrap','important');
+      span.style.setProperty('font-size',Math.round(px)+'px','important');
+     }
     };
     requestAnimationFrame(fit);
     btn.__mbResizeObserver?.disconnect();
