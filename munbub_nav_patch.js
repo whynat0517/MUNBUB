@@ -47,6 +47,29 @@
   anchor.after(button);
   hardButtons.push(button);
  });
+
+ // Swap to the two uploaded pixel-art buttons without rewriting existing click handlers.
+ const imageScript=document.createElement('script');
+ imageScript.src='./hardcore_image_assets.js';
+ imageScript.id='mb-hardcore-image-loader';
+ imageScript.onload=()=>{
+  const art=window.__mbHardImages;
+  if(!art?.unlocked||!art?.locked)return;
+  const artwork=document.createElement('style');
+  artwork.id='mb-hardcore-artwork';
+  artwork.textContent=[
+   '.sidebar-nav .mb-hard-nav,.mobile-drawer .mb-hard-nav{display:block!important;position:relative!important;box-sizing:border-box!important;min-height:0!important;height:auto!important;aspect-ratio:256/85!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent url("'+art.unlocked+'") center/100% 100% no-repeat!important;box-shadow:none!important;color:transparent!important;font-size:0!important;line-height:0!important;text-shadow:none!important;image-rendering:pixelated!important;overflow:visible!important;cursor:pointer!important}',
+   '.sidebar-nav .mb-hard-nav small,.mobile-drawer .mb-hard-nav small{display:none!important}',
+   '.sidebar-nav .mb-hard-nav.locked,.mobile-drawer .mb-hard-nav.locked{background-image:url("'+art.locked+'")!important;filter:brightness(.42) grayscale(.17)!important;opacity:1!important}',
+   '.sidebar-nav .mb-hard-nav:not(.locked):hover,.mobile-drawer .mb-hard-nav:not(.locked):hover{transform:translateY(-2px) scale(1.035)!important;filter:brightness(1.12)!important}',
+   '.sidebar-nav .mb-hard-nav.active:not(.locked),.mobile-drawer .mb-hard-nav.active:not(.locked){background-image:url("'+art.unlocked+'")!important;filter:brightness(.81)!important;outline:0!important;transform:scale(.98)!important}',
+   '.sidebar-nav .mb-hard-nav.locked.active,.mobile-drawer .mb-hard-nav.locked.active{filter:brightness(.42) grayscale(.17)!important;outline:2px dashed #b88765!important;outline-offset:1px!important}',
+   '@media(max-width:700px){.sidebar-nav .mb-hard-nav,.mobile-drawer .mb-hard-nav{min-height:0!important;aspect-ratio:256/85!important}}'
+  ].join('\n');
+  document.head.append(artwork);
+ };
+ imageScript.onerror=()=>console.warn('Hardcore artwork could not load.');
+ document.body.append(imageScript);
  // Hide the legacy local ranking entirely; only live server ranking remains.
  document.querySelectorAll('#mb-hard-account').forEach(el=>el.remove());
  function syncHard(){
@@ -59,7 +82,7 @@
  }
  if(primary)new MutationObserver(syncHard).observe(primary,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
  let selected='home';
- const tracked=new Set(['home','spelling','idiom','application','infinite','timed','hard','mistakes','history','settings']);
+ const tracked=new Set(['home','spelling','idiom','application','infinite','timed','hard','duel','mistakes','history','settings']);
  function paint(){
   for(const btn of document.querySelectorAll('.sidebar-nav [data-route],.mobile-drawer [data-route],.mobile-bottom [data-route]')){
    const active=btn.dataset.route===selected;
@@ -98,5 +121,12 @@
  // spelling setup/quiz/result internally. Only a click on an actual mode menu
  // changes the selected mode, not selecting a question category.
  window.__mbSelectedMenu=()=>selected;
+ window.__mbMarkRoute=selectRoute;
  paint();
+ // The online duel is an independent overlay; no changes to existing quiz banks.
+ if(!document.getElementById('mb-duel-loader')){
+  const duelScript=document.createElement('script');
+  duelScript.id='mb-duel-loader';duelScript.src='./munbub_duel_patch.js';
+  document.body.append(duelScript);
+ }
 })();
