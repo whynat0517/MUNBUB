@@ -187,7 +187,7 @@ style.textContent=[
   const r=resultCache;
   if(!r?.cfg?.hard)return prev.result();
   const h=endState||{};
-  $('view-result').innerHTML='<div class="panel"><h2>⚔ 하드모드 종료!</h2><p class="summary">첫 오답에서 종료 · 연속 정답 '+(h.correct||0)+'개</p><div class="metrics"><span>점수 <strong>'+(h.score||0)+'</strong></span><span>정답 <strong>'+(h.correct||0)+'</strong></span></div><p>객관식은 35초, 서술형은 60초를 기준으로 답변 시간이 짧을수록 높은 점수. 문제당 최대 10점!</p>'+(h.miss?'<h3>마지막 오답과 자세한 해설</h3><div class="feedback bad">'+h.miss+'</div>':'')+'<div class="row"><button class="action" id="mb-hard-replay">다시 도전</button><button class="action" id="mb-hard-leaderboard">내 기기 랭킹</button><button class="action" data-route="home">홈으로</button></div></div>';
+  $('view-result').innerHTML='<div class="panel"><h2>⚔ 하드모드 종료!</h2><p class="summary">첫 오답에서 종료 · 연속 정답 '+(h.correct||0)+'개</p><div class="metrics"><span>점수 <strong>'+(h.score||0)+'</strong></span><span>정답 <strong>'+(h.correct||0)+'</strong></span></div><p>객관식은 35초, 서술형은 60초를 기준으로 답변 시간이 짧을수록 높은 점수. 문제당 최대 10점!</p>'+(h.miss?'<h3>마지막 오답과 자세한 해설</h3><div class="feedback bad">'+h.miss+'</div>':'')+'<div class="row"><button class="action" id="mb-hard-replay">다시 도전</button><button class="action" id="mb-hard-leaderboard">온라인 랭킹</button><button class="action" data-route="home">홈으로</button></div></div>';
   $('mb-hard-replay')?.addEventListener('click',()=>openSetup('hard'));
   $('mb-hard-leaderboard')?.addEventListener('click',rankingModal);
  };
@@ -196,10 +196,6 @@ style.textContent=[
   if(a?.cfg?.hard)endState={score:a.hardScore||0,correct:a.correctCount||0,miss:a.hardMiss||''};
   const out=prev.finish(timeUp);
   if(a&&isBasic(a.cfg)&&a.answeredCount>0){save(UNLOCK,true);updateHardButton()}
-  if(a?.cfg?.hard){
-   const list=read(RANK,[]);list.push({at:Date.now(),name:name(),score:a.hardScore||0,correct:a.correctCount||0});
-   save(RANK,list.sort((x,y)=>y.score-x.score||y.correct-x.correct).slice(0,100));
-  }
   return out;
  };
  setupUI('standard');updateHardButton();
