@@ -16,6 +16,15 @@ function validSettings(input){
   ?{count,seconds,type}:null;
 }
 function roomSettings(room){return validSettings(room?.settings)||{count:10,seconds:25,type:'mixed'}}
+const REVIEW_MS=5000;
+function nextTurnAt(roomVersion,ours,theirs){
+ const lastAt=Math.max(Number(ours?.at)||0,Number(theirs?.at)||0);
+ if(roomVersion<4)return lastAt+1500;
+ const fallback=lastAt+REVIEW_MS;
+ const first=Number(ours?.readyAt)||0,second=Number(theirs?.readyAt)||0;
+ // Fast-forward only on agreement by BOTH players. Either may agree early.
+ return first&&second?Math.min(fallback,Math.max(first,second)):fallback;
+}
 
 const ROOM_LIFETIME=45*60*1000;
 const CHARS='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -69,7 +78,8 @@ async function state(c,room,guest,me){
    finished:(summary.answered||0)>=settings.count,
    lastAt:summary.lastAt||null,
    answers:member.id===me.id?summary.answers||[]:undefined,
-   _answerTimes:(summary.answers||[]).map(x=>Number(x.at)||null)
+   _answerTimes:(summary.answers||[]).map(x=>Number(x.at)||null),
+   _answerDetails:summary.answers||[]
   };
  }));
  const mine=records.find(x=>x.id===me.id);
@@ -79,14 +89,18 @@ async function state(c,room,guest,me){
  const turnReady=!!guest&&!!other&&turn<settings.count&&turn<=other.answered;
  const opponentAnswered=!!other&&other.answered>turn;
  const opponentAnsweredAt=opponentAnswered?(other._answerTimes[turn]||other.lastAt||null):null;
- const previousAt=turn>0?Math.max(
-  mine?._answerTimes[turn-1]||mine?.lastAt||0,
-  other?._answerTimes[turn-1]||other?.lastAt||0):0;
- const turnStartsAt=turnReady?(turn===0?guest.joinedAt+6000:previousAt+1500):null;
+ const lastMine=turn>0?mine?._answerDetails[turn-1]:null;
+ const lastOther=turn>0?other?._answerDetails[turn-1]:null;
+ const turnStartsAt=turnReady?(turn===0?guest.joinedAt+6000:
+  nextTurnAt(room.version||0,lastMine,lastOther)):null;
+ const reviewReadyAt=Number(lastMine?.readyAt)||null;
+ const opponentReviewReadyAt=Number(lastOther?.readyAt)||null;
  return {code:c,hostName:room.hostName,guestName:guest?.name||null,
   me:me.id,role:room.hostId===me.id?'host':'guest',
   ready:!!guest,startsAt:guest?guest.joinedAt+6000:null,turnReady,turnStartsAt,
   opponentAnswered,opponentAnsweredAt,serverNow:Date.now(),settings,
+  reviewMode:room.version>=4?'both-ready-or-5s':'legacy',
+  reviewReadyAt,opponentReviewReadyAt,
   // A room-scoped, signed read ticket lets the client check ONLY the other
   // player's compact progress snapshot. The API still authenticates the
   // session and verifies ticket owner/room/expiry on every signal request.
@@ -99,10 +113,11 @@ async function state(c,room,guest,me){
   answerTicket:guest?token({
    kind:'duel-answer',code:c,viewerId:me.id,
    hostId:room.hostId,guestId:guest.id,joinedAt:guest.joinedAt,
+   version:room.version||3,
    settings,questionIds:room.questionIds,exp:room.expiresAt
   }):null,
   expiresAt:room.expiresAt,questionIds:room.questionIds,
-  players:records.map(({_answerTimes,...record})=>record),
+  players:records.map(({_answerTimes,_answerDetails,...record})=>record),
   finished:!!guest&&records.every(x=>x.finished)};
 }
 async function sendError(res,code,text){return res.status(code).json({error:text})}
@@ -133,7 +148,7 @@ export default async function handler(req,res){
     return res.status(200).json({
      ready:true,answered:progress?.answered||0,correct:progress?.correct||0,
      score:progress?.score||0,lastAt:progress?.lastAt||null,
-     answers:(progress?.answers||[]).map(x=>({index:x.index,at:x.at})),
+     answers:(progress?.answers||[]).map(x=>({index:x.index,at:x.at,readyAt:x.readyAt||null})),
      serverNow:Date.now()
     });
    }catch(e){
@@ -163,7 +178,7 @@ export default async function handler(req,res){
    if(!settings)return sendError(res,400,'문제 수·시간·유형 중 지원하지 않는 설정이 있어.');
    const code=codeNew(),now=Date.now();
    await put(roomPath(code),JSON.stringify({
-    version:3,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
+    version:4,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
    // Create the initial compact read model; avoids a list of empty steps on every poll.
@@ -173,7 +188,7 @@ export default async function handler(req,res){
   const code=String(body.code||'').trim().toUpperCase();
   if(!codeOK(code))return sendError(res,400,'올바른 8자리 방 코드를 입력해 줘.');
   let room,guest;
-  if(body.action==='answer'&&body.answerTicket){
+  if((body.action==='answer'||body.action==='ready')&&body.answerTicket){
    const verified=verify(String(body.answerTicket));
    if(!verified||verified.kind!=='duel-answer'||
     verified.code!==code||verified.viewerId!==me.id||
@@ -186,7 +201,7 @@ export default async function handler(req,res){
     return sendError(res,403,'대전 인증이 만료됐어. 방에 다시 입장해 줘.');
    }
    room={
-    version:3,hostId:verified.hostId,expiresAt:verified.exp,
+    version:Number(verified.version)||3,hostId:verified.hostId,expiresAt:verified.exp,
     questionIds:verified.questionIds,settings:verified.settings
    };
    guest={id:verified.guestId,joinedAt:verified.joinedAt};
@@ -223,6 +238,23 @@ export default async function handler(req,res){
    }
    return res.status(200).json({code,joined:true});
   }
+  if(body.action==='ready'){
+   if(!guest||room.version<4)return sendError(res,409,'현재 방은 바로 넘기기를 지원하지 않아.');
+   if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'방 참가자만 동의할 수 있어.');
+   const index=Number(body.index),settings=roomSettings(room);
+   if(!Number.isInteger(index)||index<0||index>=settings.count-1)
+    return sendError(res,400,'다음 문제가 없는 상태야.');
+   const myPath=progressPath(code,me.id);
+   const progress=await readPrivate(myPath,{fresh:true});
+   if(!progress||progress.answered!==index+1||progress.answers?.[index]?.index!==index)
+    return sendError(res,409,'현재 답변을 제출한 뒤 동의할 수 있어.');
+   const already=Number(progress.answers[index].readyAt)||0;
+   if(already)return res.status(200).json({accepted:true,index,readyAt:already,already:true});
+   const readyAt=Date.now();
+   progress.answers[index]={...progress.answers[index],readyAt};
+   await writePrivate(myPath,progress,{overwrite:true});
+   return res.status(200).json({accepted:true,index,readyAt});
+  }
   if(body.action==='answer'){
    if(!guest)return sendError(res,409,'상대가 입장할 때까지 기다려 줘.');
    if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'이 대결의 참가자가 아니야.');
@@ -246,12 +278,12 @@ export default async function handler(req,res){
    if(otherCount<index)return sendError(res,409,'상대방이 이전 문제를 마칠 때까지 기다려 줘.');
    let began=start;
    if(index>0){
-    // Both players get a shared 1.5-second transition window. Waiting for
-    // the opponent never eats into the next 25-second question.
-    began=Math.max(
-     Number(previousProgress?.answers?.[index-1]?.at)||Number(previousProgress?.lastAt)||0,
-     Number(otherProgress?.answers?.[index-1]?.at)||Number(otherProgress?.lastAt)||0
-    )+1500;
+    // New rooms: five seconds after both answers, or immediately if both
+    // players agree. This is verified on the SERVER, not just the UI.
+    // Older active rooms keep their original 1.5-second rule.
+    began=nextTurnAt(room.version||0,
+     previousProgress?.answers?.[index-1],
+     otherProgress?.answers?.[index-1]);
    }
    if(Date.now()<began)return sendError(res,409,'두 사람의 다음 문제 시작 신호를 기다려 줘.');
    const answer=String(body.answer??'');
