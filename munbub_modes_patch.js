@@ -190,5 +190,6 @@ style.textContent=[
   onlineScript.id='mb-online-module-script';
   onlineScript.src='./munbub_online_patch.js';
   document.body.append(onlineScript);
+  import('./munbub_nav_patch.js').catch(error=>console.warn('Navigation extension unavailable',error));
  }
 })();
