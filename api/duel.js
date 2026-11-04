@@ -1,7 +1,7 @@
 /* Private invite-code 1v1 quiz. Neither player's records overwrite the other's. */
 import { randomBytes, randomInt } from 'node:crypto';
 import { list, put } from '@vercel/blob';
-import { configured, noCache, sameOrigin, session, readPrivate, writePrivate, answerCorrect, duelQuestionIds } from '../lib/mb-server.js';
+import { configured, noCache, sameOrigin, session, token, verify, readPrivate, writePrivate, answerCorrect, duelQuestionIds } from '../lib/mb-server.js';
 
 const PREFIX='duels/';
 const MAX_QUESTIONS=10;
@@ -87,6 +87,13 @@ async function state(c,room,guest,me){
   me:me.id,role:room.hostId===me.id?'host':'guest',
   ready:!!guest,startsAt:guest?guest.joinedAt+6000:null,turnReady,turnStartsAt,
   opponentAnswered,opponentAnsweredAt,serverNow:Date.now(),settings,
+  // A room-scoped, signed read ticket lets the client check ONLY the other
+  // player's compact progress snapshot. The API still authenticates the
+  // session and verifies ticket owner/room/expiry on every signal request.
+  signalTicket:token({
+   kind:'duel-signal',code:c,viewerId:me.id,
+   opponentId:other?.id||null,exp:room.expiresAt
+  }),
   expiresAt:room.expiresAt,questionIds:room.questionIds,
   players:records.map(({_answerTimes,...record})=>record),
   finished:!!guest&&records.every(x=>x.finished)};
@@ -98,6 +105,35 @@ export default async function handler(req,res){
  const me=session(req);
  if(!me)return sendError(res,401,'1대1 대결은 온라인 로그인 후 이용할 수 있어.');
  if(req.method==='GET'){
+  // Fast event channel: ONE Blob read instead of room+guest+2 progress reads.
+  // The signed ticket was issued by a validated full room state response.
+  if(req.query?.signal){
+   const claim=verify(String(req.query.signal));
+   if(!claim||claim.kind!=='duel-signal'||claim.viewerId!==me.id||
+      !codeOK(claim.code)||!(claim.opponentId===null||
+      (typeof claim.opponentId==='string'&&claim.opponentId.length<100))){
+    return sendError(res,403,'유효하지 않은 대전 알림 인증이야.');
+   }
+   try{
+    if(!claim.opponentId){
+     const guest=await readPrivate(guestPath(claim.code),{fresh:true});
+     return res.status(200).json({
+      ready:!!guest,opponentId:guest?.id||null,
+      serverNow:Date.now()
+     });
+    }
+    const progress=await readPrivate(progressPath(claim.code,claim.opponentId),{fresh:true});
+    return res.status(200).json({
+     ready:true,answered:progress?.answered||0,correct:progress?.correct||0,
+     score:progress?.score||0,lastAt:progress?.lastAt||null,
+     answers:(progress?.answers||[]).map(x=>({index:x.index,at:x.at})),
+     serverNow:Date.now()
+    });
+   }catch(e){
+    console.error('Duel signal',e?.name);
+    return sendError(res,503,'상대방 상태를 확인하지 못했어.');
+   }
+  }
   const code=String(req.query?.code||'').toUpperCase();
   if(!codeOK(code))return sendError(res,400,'8자리 방 코드를 입력해 줘.');
   try{
@@ -170,8 +206,9 @@ export default async function handler(req,res){
    if(!qid)return sendError(res,400,'문제 정보를 찾을 수 없어.');
    const start=guest.joinedAt+6000;
    if(Date.now()<start)return sendError(res,409,'대결 시작 신호를 기다려 줘.');
+   // Progress snapshot guards the turn, and an immutable put below rejects
+   // duplicate submissions atomically. No extra Blob read is needed here.
    const path=stepPath(code,me.id,index);
-   if(await readPrivate(path))return sendError(res,409,'이미 제출한 문제야.');
    const otherId=me.id===room.hostId?guest.id:room.hostId;
    const [previousProgress,otherProgress]=await Promise.all([
     readPrivate(progressPath(code,me.id),{fresh:true}),
@@ -220,7 +257,7 @@ export default async function handler(req,res){
     // The immutable answer survives even when the read model needs repair.
     console.error('Duel progress snapshot failed',e?.name);
    }
-   return res.status(200).json({accepted:true,index,correct,points,elapsed,timedOut,finished:index===settings.count-1});
+   return res.status(200).json({accepted:true,index,correct,points,elapsed,timedOut,at,finished:index===settings.count-1});
   }
   return sendError(res,400,'알 수 없는 대결 요청이야.');
  }catch(e){console.error('Duel API',e.message);return sendError(res,503,'대결 서버에 문제가 발생했어. 다시 시도해 줘.')}
