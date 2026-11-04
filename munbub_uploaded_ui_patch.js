@@ -108,5 +108,11 @@
    script.src='./munbub_music_patch.js';
    document.body.append(script);
   }
+  if(!document.getElementById('mb-night-scene-loader')){
+   const sceneScript=document.createElement('script');
+   sceneScript.id='mb-night-scene-loader';
+   sceneScript.src='./munbub_scene_patch.js';
+   document.body.append(sceneScript);
+  }
  }
 })();
