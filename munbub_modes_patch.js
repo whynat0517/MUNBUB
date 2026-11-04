@@ -189,4 +189,11 @@ style.textContent=[
   return out;
  };
  setupUI('standard');updateHardButton();
+ // Load online account/leaderboard only after the core hard-mode wrappers exist.
+ if(!document.getElementById('mb-online-module-script')){
+  const onlineScript=document.createElement('script');
+  onlineScript.id='mb-online-module-script';
+  onlineScript.src='./munbub_online_patch.js';
+  document.body.append(onlineScript);
+ }
 })();
