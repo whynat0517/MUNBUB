@@ -68,6 +68,7 @@
  }
  // 1대1 대결은 홈 캐릭터 아래 버튼에서만 진입한다.
  let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null,serverOffset=0;
+ let signalBusy=false,signalLastAt=0,signalFailures=0;
  const currentRoomKey='mb_duel_last_room_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
  function showError(message){const place=statusEl();if(place)place.textContent=message;else renderNotice(message)}
@@ -88,7 +89,7 @@
   try{const r=await fetch('/api/account',{credentials:'same-origin'});const j=await r.json();return !!j.loggedIn}catch{return false}
  }
  function showLobby(){
-  roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';
+  roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;
   const last=localStorage.getItem(currentRoomKey)||'';
   putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고 같은 문제로 대결해 봐! 방장이 문제 수와 시간, 유형을 정할 수 있어.</p>'+
    '<form id="mb-duel-create-form"><div class="mb-duel-config">'+
@@ -141,7 +142,7 @@
  async function enterRoom(code){
   roomCode=String(code||'').trim().toUpperCase();
   if(!roomCode)return showLobby();
-  phase='room';status=null;feedback=null;lastViewKey='';
+  phase='room';status=null;feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;
   try{localStorage.setItem(currentRoomKey,roomCode)}catch(_){}
   putHTML('<div class="mb-duel-panel"><p class="mb-duel-status" id="mb-duel-info">대결 정보를 불러오는 중...</p></div>');
   await updateRoom();
@@ -149,13 +150,74 @@
  async function updateRoom(){
   if(!roomCode||pollBusy||!dialog.open)return;
   pollBusy=true;
+  const started=Date.now(),code=roomCode;
   try{
-   const next=await api(null,roomCode);
+   const next=await api(null,code);
    if(!dialog.open||roomCode!==next.code)return;
+   // An earlier full response must never roll back a fresher signal.
+   if(status?.code===code&&signalLastAt>started)return;
    if(Number.isFinite(next.serverNow))serverOffset=next.serverNow-Date.now();
    status=next;
    showGame();
   }catch(e){showError(e.message)}finally{pollBusy=false}
+ }
+ // Fast path: a room-bound signed ticket reads only ONE opponent progress Blob
+ // rather than reloading the room, guest and two players on every 0.4s poll.
+ async function checkSignal(){
+  if(signalBusy||!dialog.open||!roomCode||document.hidden||
+     !status?.signalTicket||busy)return;
+  const code=roomCode,credential=status.signalTicket;
+  signalBusy=true;
+  try{
+   const start=Date.now();
+   const res=await fetch('/api/duel?signal='+encodeURIComponent(credential),{
+    credentials:'same-origin',cache:'no-store'
+   });
+   if(!res.ok)throw Error('대전 알림 연결 실패 '+res.status);
+   const signal=await res.json();
+   if(!dialog.open||roomCode!==code||status?.signalTicket!==credential)return;
+   signalFailures=0;
+   // Server clock sample is captured before response transmission.
+   if(Number.isFinite(signal.serverNow))
+    serverOffset=signal.serverNow-Math.round((start+Date.now())/2);
+   if(!status.ready){
+    if(signal.ready)await updateRoom();
+    return;
+   }
+   const me=status.players.find(p=>p.id===status.me);
+   const opponent=status.players.find(p=>p.id!==status.me);
+   if(!me||!opponent||!Number.isInteger(signal.answered))return;
+   if(signal.answered<opponent.answered)return; // Ignore stale Blob copies.
+   const changed=signal.answered!==opponent.answered||
+    signal.score!==opponent.score||signal.lastAt!==opponent.lastAt;
+   if(!changed)return;
+   signalLastAt=Date.now();
+   opponent.answered=signal.answered;
+   opponent.correct=signal.correct;
+   opponent.score=signal.score;
+   opponent.lastAt=signal.lastAt;
+   status.opponentAnswered=opponent.answered>me.answered;
+   status.opponentAnsweredAt=status.opponentAnswered
+    ?signal.answers?.find(a=>a.index===me.answered)?.at||opponent.lastAt:null;
+   status.turnReady=me.answered<count()&&me.answered<=opponent.answered;
+   if(status.turnReady){
+    if(me.answered===0)status.turnStartsAt=status.startsAt;
+    else{
+     const prev=me.answered-1;
+     const ours=me.answers?.find(a=>a.index===prev)?.at||me.lastAt;
+     const theirs=signal.answers?.find(a=>a.index===prev)?.at||opponent.lastAt;
+     if(ours&&theirs)status.turnStartsAt=Math.max(ours,theirs)+1500;
+     else{await updateRoom();return}
+    }
+   }else status.turnStartsAt=null;
+   status.finished=status.players.every(p=>p.answered>=count());
+   showGame(); // Scoreboard-only update when phase/question is unchanged.
+  }catch(e){
+   signalFailures++;
+   // Graceful fallback to the normal authenticated state endpoint.
+   // Do not replace the question UI with a transient connection error.
+   if(signalFailures===2)await updateRoom();
+  }finally{signalBusy=false}
  }
  function opts(q,index){
   if(q.type==='spelling')return [...q.options||[]];
@@ -278,7 +340,10 @@
    me.answered=out.index+1;
    me.score+=out.points;
    if(out.correct)me.correct++;
-   me.lastAt=Date.now();
+   me.lastAt=out.at||Date.now();
+   if(!Array.isArray(me.answers))me.answers=[];
+   if(!me.answers.some(x=>x.index===out.index))
+    me.answers.push({index:out.index,at:me.lastAt,correct:out.correct,points:out.points});
    status.turnReady=false;
    status.turnStartsAt=null;
    showGame();
@@ -297,23 +362,35 @@
    if(ms<=0&&!busy)sendAnswer('');
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
- // Adaptive polling: quick recovery when waiting for the opponent,
- // but fewer Blob reads in lobby, while choosing an answer, and after results.
- // pollBusy ensures there are never overlapping status requests.
- function nextPollDelay(){
-  if(!dialog.open||!roomCode||document.hidden)return 4500;
-  if(phase==='opponent')return 950;
-  if(phase==='countdown'||phase==='feedback')return 1150;
-  if(phase==='question')return 950;
-  if(phase==='waiting'||phase==='finished')return 2100;
-  if(phase==='results')return 9000;
-  return 2500;
+ // Fast opponent signals are deliberately small and serial (no overlapping
+ // requests); full room state is reconciled much less often.
+ function signalDelay(){
+  if(!dialog.open||!roomCode||document.hidden)return 1400;
+  if(signalFailures>3)return 2600;
+  if(phase==='question'||phase==='opponent')return 350;
+  if(phase==='countdown'||phase==='feedback')return 500;
+  if(phase==='waiting')return 580;
+  if(phase==='finished')return 650;
+  return 2200;
+ }
+ function fullDelay(){
+  if(!dialog.open||!roomCode||document.hidden)return 4000;
+  if(status?.signalTicket&&signalFailures<2)
+   return phase==='results'?14000:6500;
+  return phase==='waiting'?1000:1300;
  }
  async function backgroundPoll(){
   if(dialog.open&&roomCode&&!document.hidden&&!busy)await updateRoom();
-  pollTimer=setTimeout(backgroundPoll,nextPollDelay());
+  fullTimer=setTimeout(backgroundPoll,fullDelay());
  }
- let pollTimer=setTimeout(backgroundPoll,900);
- window.addEventListener('pagehide',()=>clearTimeout(pollTimer),{once:true});
+ async function signalPoll(){
+  if(dialog.open&&roomCode&&!document.hidden&&!busy)await checkSignal();
+  fastTimer=setTimeout(signalPoll,signalDelay());
+ }
+ let fullTimer=setTimeout(backgroundPoll,900);
+ let fastTimer=setTimeout(signalPoll,520);
+ window.addEventListener('pagehide',()=>{
+  clearTimeout(fullTimer);clearTimeout(fastTimer);
+ },{once:true});
  setInterval(tick,210);
 })();
