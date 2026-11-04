@@ -44,16 +44,24 @@
        if(ctx.measureText(me.name).width<=width)break;
       }
      }
-     if(btn.clientWidth<166 && Array.from(me.name).length>=8){
-      // Compact mobiles: use two readable lines rather than tiny 10px text.
+     // Fit long Hangul/English nicknames into the supplied dark plaque.
+     // Two balanced lines stay readable on desktop, too, instead of 10px text.
+     const characterCount=Array.from(me.name).length;
+     const wrap=characterCount>=8&&(btn.clientWidth<166||px<15);
+     if(wrap){
+      const twoLineSize=Math.round(Math.max(12,Math.min(20,btn.clientWidth*.102)));
       span.style.setProperty('white-space','normal','important');
       span.style.setProperty('overflow-wrap','anywhere','important');
-      span.style.setProperty('line-height','1.08','important');
-      span.style.setProperty('font-size',Math.round(Math.max(12,btn.clientWidth*.097))+'px','important');
+      span.style.setProperty('word-break','break-all','important');
+      span.style.setProperty('text-wrap','balance','important');
+      span.style.setProperty('line-height','1.09','important');
+      span.style.setProperty('font-size',twoLineSize+'px','important');
       span.style.setProperty('max-height','2.3em','important');
      }else{
       span.style.setProperty('white-space','nowrap','important');
+      span.style.setProperty('word-break','normal','important');
       span.style.setProperty('font-size',Math.round(px)+'px','important');
+      span.style.setProperty('max-height','none','important');
      }
     };
     requestAnimationFrame(fit);
