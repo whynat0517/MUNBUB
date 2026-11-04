@@ -84,6 +84,8 @@ export default async function handler(req,res){
     code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
+   // Create the initial compact read model; avoids a list of empty steps on every poll.
+   await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
    return res.status(201).json({code,expiresAt:now+ROOM_LIFETIME});
   }
   const code=String(body.code||'').trim().toUpperCase();
@@ -102,6 +104,7 @@ export default async function handler(req,res){
    }
    const joined=await readPrivate(guestPath(code));
    if(joined?.id!==me.id)return sendError(res,409,'다른 사람이 먼저 입장했어.');
+   await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
    return res.status(200).json({code,joined:true});
   }
   if(body.action==='answer'){
