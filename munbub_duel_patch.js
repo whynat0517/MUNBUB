@@ -239,6 +239,6 @@
    if(ms<=0&&!busy)sendAnswer('');
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
- setInterval(()=>{if(dialog.open&&roomCode&&!document.hidden)updateRoom()},3400);
+ setInterval(()=>{if(dialog.open&&roomCode&&!document.hidden)updateRoom()},1800);
  setInterval(tick,210);
 })();
