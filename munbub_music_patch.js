@@ -11,6 +11,10 @@
  const HOME_TRACKS=[
   {id:'new',label:'새 메인 배경음악',path:'assets/bgm/home-new.mp3'},
   {id:'original',label:'기존 메인 배경음악',path:'assets/bgm/main.mp3'},
+  {id:'old-spelling',label:'기존 맞춤법 BGM',path:'assets/bgm/spelling.mp3'},
+  {id:'old-idiom',label:'기존 사자성어 BGM',path:'assets/bgm/idiom.mp3'},
+  {id:'old-timed',label:'기존 시간제한 BGM',path:'assets/bgm/timed.mp3'},
+  {id:'old-infinite',label:'기존 무한모드 BGM',path:'assets/bgm/infinite.mp3'},
   {id:'pixel',label:'Pixel Confetti Rush',path:'assets/bgm/spelling-new.mp3'},
   {id:'harbor',label:'Harbor View Drive',path:'assets/bgm/idiom-new.mp3'}
  ];
