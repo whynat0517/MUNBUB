@@ -29,8 +29,8 @@
   if((route==='hard'||active?.cfg?.hard)&&view!=='home')return 'hardcore';
   let category=active?.cfg?.category;
   if(view==='setup')category=document.getElementById('categorySelect')?.value||category;
-  if(category==='idiom'||route==='idiom'&&view!=='quiz')return 'idiom';
-  if(['quiz','setup','result','mistakes'].includes(view))return 'spelling';
+  if(category==='idiom'||view==='idiom'||(route==='idiom'&&view!=='quiz'))return 'idiom';
+  if(['quiz','setup','result','mistakes','spelling','application','idiom'].includes(view))return 'spelling';
   return 'home';
  }
  function allowed(){
