@@ -94,6 +94,13 @@ async function state(c,room,guest,me){
    kind:'duel-signal',code:c,viewerId:me.id,
    opponentId:other?.id||null,exp:room.expiresAt
   }),
+  // Server-signed immutable room parameters eliminate two Blob reads from
+  // every answer POST without weakening authentication or anti-duplicate writes.
+  answerTicket:guest?token({
+   kind:'duel-answer',code:c,viewerId:me.id,
+   hostId:room.hostId,guestId:guest.id,joinedAt:guest.joinedAt,
+   settings,questionIds:room.questionIds,exp:room.expiresAt
+  }):null,
   expiresAt:room.expiresAt,questionIds:room.questionIds,
   players:records.map(({_answerTimes,...record})=>record),
   finished:!!guest&&records.every(x=>x.finished)};
@@ -165,10 +172,30 @@ export default async function handler(req,res){
   }
   const code=String(body.code||'').trim().toUpperCase();
   if(!codeOK(code))return sendError(res,400,'올바른 8자리 방 코드를 입력해 줘.');
-  const [room,guest]=await Promise.all([
-   readPrivate(roomPath(code),{fresh:true}),
-   readPrivate(guestPath(code),{fresh:true})
-  ]);
+  let room,guest;
+  if(body.action==='answer'&&body.answerTicket){
+   const verified=verify(String(body.answerTicket));
+   if(!verified||verified.kind!=='duel-answer'||
+    verified.code!==code||verified.viewerId!==me.id||
+    ![verified.hostId,verified.guestId].includes(me.id)||
+    !validSettings(verified.settings)||
+    !Array.isArray(verified.questionIds)||
+    verified.questionIds.length!==verified.settings.count||
+    verified.questionIds.some(id=>typeof id!=='string'||!/^([si])\d{1,4}$/.test(id))||
+    !Number.isFinite(verified.joinedAt)){
+    return sendError(res,403,'대전 인증이 만료됐어. 방에 다시 입장해 줘.');
+   }
+   room={
+    version:3,hostId:verified.hostId,expiresAt:verified.exp,
+    questionIds:verified.questionIds,settings:verified.settings
+   };
+   guest={id:verified.guestId,joinedAt:verified.joinedAt};
+  }else{
+   [room,guest]=await Promise.all([
+    readPrivate(roomPath(code),{fresh:true}),
+    readPrivate(guestPath(code),{fresh:true})
+   ]);
+  }
   if(hasExpired(room))return sendError(res,404,'방을 찾을 수 없거나 유효 시간이 지났어.');
   if(body.action==='join'){
    if(room.hostId===me.id)return sendError(res,400,'자기 자신과는 대결할 수 없어.');
