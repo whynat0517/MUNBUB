@@ -15,6 +15,7 @@
   if(!res.ok)throw Error(out.error||'서버에 연결할 수 없어.');return out;
  }
  function open(body){
+  modal.classList.toggle('mb-ranking-modal',body.includes('mb-ranking-board'));
   modal.innerHTML='<button id="mb-online-close" style="float:right" type="button">✕ 닫기</button>'+body;
   $('mb-online-close')?.addEventListener('click',()=>modal.close());
   if(!modal.open)modal.showModal();
