@@ -1,166 +1,155 @@
-/* Tasteful, single-player music controller.
-   Keeps playback position for equal music URLs even when modes change;
-   preserves old and new BGM, and exposes a home-track selector in Settings.
-*/
+/* Single authoritative music controller: no gain boosts, no duplicate playback.
+ * The same Audio element is reused on every screen; playback continues for
+ * modes sharing the same track, and looping works on every browser.
+ */
 (()=>{
  'use strict';
- if(window.__mbBgm2026v3)return;
+ if(window.__mbBgm2026v4)return;
  if(typeof bgmPlayer==='undefined'||!bgmPlayer)return;
- window.__mbBgm2026v3=true;
- const audio=bgmPlayer;
- const HOME_TRACKS=[
-  {id:'new',label:'새 메인 배경음악',path:'assets/bgm/home-new.mp3'},
-  {id:'original',label:'기존 메인 배경음악',path:'assets/bgm/main.mp3'},
-  {id:'old-spelling',label:'기존 맞춤법 BGM',path:'assets/bgm/spelling.mp3'},
-  {id:'old-idiom',label:'기존 사자성어 BGM',path:'assets/bgm/idiom.mp3'},
-  {id:'old-timed',label:'기존 시간제한 BGM',path:'assets/bgm/timed.mp3'},
-  {id:'old-infinite',label:'기존 무한모드 BGM',path:'assets/bgm/infinite.mp3'},
-  {id:'pixel',label:'Pixel Confetti Rush',path:'assets/bgm/spelling-new.mp3'},
-  {id:'harbor',label:'Harbor View Drive',path:'assets/bgm/idiom-new.mp3'}
+ window.__mbBgm2026v4=true;
+ const audio=bgmPlayer,$=id=>document.getElementById(id);
+ const HOME=[
+  ['new','새 메인 배경음악','assets/bgm/home-new.mp3'],
+  ['original','기존 메인 배경음악','assets/bgm/main.mp3'],
+  ['old-spelling','기존 맞춤법 BGM','assets/bgm/spelling.mp3'],
+  ['old-idiom','기존 사자성어 BGM','assets/bgm/idiom.mp3'],
+  ['old-timed','기존 시간제한 BGM','assets/bgm/timed.mp3'],
+  ['old-infinite','기존 무한모드 BGM','assets/bgm/infinite.mp3'],
+  ['pixel','Pixel Confetti Rush','assets/bgm/spelling-new.mp3'],
+  ['harbor','Harbor View Drive','assets/bgm/idiom-new.mp3'],
+  ['hard','하드코어 BGM','assets/bgm/hardcore-new.mp3'],
+  ['duel','1대1 대결 BGM','assets/bgm/duel-new.mp3']
  ];
  const TRACKS={
-  spelling:{label:'Pixel Confetti Rush',path:'assets/bgm/spelling-new.mp3'},
-  idiom:{label:'Harbor View Drive',path:'assets/bgm/idiom-new.mp3'},
-  hardcore:{label:'하드코어 BGM',path:'assets/bgm/hardcore-new.mp3'},
-  duel:{label:'1대1 대전 BGM',path:'assets/bgm/duel-new.mp3'}
+  spelling:['spelling','Pixel Confetti Rush','assets/bgm/spelling-new.mp3'],
+  idiom:['idiom','Harbor View Drive','assets/bgm/idiom-new.mp3'],
+  hardcore:['hardcore','하드코어 BGM','assets/bgm/hardcore-new.mp3'],
+  duel:['duel','1대1 대결 BGM','assets/bgm/duel-new.mp3']
  };
- const STORAGE='matchunbeom_home_bgm_choice_v1';
- const $=id=>document.getElementById(id);
- let homeChoice='new',wantedUrl='',duelObserver=null,updating=false,wasEnabled=false;
- try{const stored=localStorage.getItem(STORAGE);if(HOME_TRACKS.some(t=>t.id===stored))homeChoice=stored}catch(_){}
- const toURL=path=>new URL(path,document.baseURI).href;
- const inDuel=()=>!!$('mb-duel-dialog')?.open;
- function currentMode(){
-  if(inDuel())return 'duel';
-  let view='home';
-  try{view=typeof section!=='undefined'?section:'home'}catch(_){}
-  if(view==='home')return 'home';
+ const KEY='matchunbeom_home_bgm_choice_v1';
+ let homeChoice='new',duelObserver=null,updating=false,lastLabel='',lastVolume=-1;
+ try{const v=localStorage.getItem(KEY);if(HOME.some(q=>q[0]===v))homeChoice=v}catch(_){}
+ const absolute=p=>new URL(p,document.baseURI).href;
+ function mode(){
+  if($('mb-duel-dialog')?.open)return 'duel';
+  const view=typeof section!=='undefined'?section:'home';
   const active=typeof store!=='undefined'?store.active:null;
   const route=window.__mbSelectedMenu?.();
+  if(view==='home'||view==='settings')return 'home';
   if((route==='hard'||active?.cfg?.hard)&&view!=='home')return 'hardcore';
-  let category=active?.cfg?.category;
-  if(view==='setup')category=$('categorySelect')?.value||category;
+  const category=view==='setup'?($('categorySelect')?.value||active?.cfg?.category):active?.cfg?.category;
   if(category==='idiom'||view==='idiom'||(route==='idiom'&&view!=='quiz'))return 'idiom';
-  if(['quiz','setup','result','mistakes','spelling','application','idiom','infinite','timed'].includes(view))return 'spelling';
+  if(['quiz','setup','result','spelling','application','infinite','timed','idiom','mistakes'].includes(view))return 'spelling';
   return 'home';
  }
  function desired(){
-  const m=currentMode();
-  return m==='home'?HOME_TRACKS.find(t=>t.id===homeChoice)||HOME_TRACKS[0]:TRACKS[m]||TRACKS.spelling;
+  const m=mode();
+  return m==='home'?HOME.find(t=>t[0]===homeChoice)||HOME[0]:TRACKS[m]||TRACKS.spelling;
  }
- function showLabel(t){
-  const el=$('bgmNowPlaying');
-  if(el)el.textContent=(typeof bgmEnabled!=='undefined'&&!bgmEnabled)?'배경음악 꺼짐':'선택된 곡: '+t.label;
+ function enabled(){return typeof bgmEnabled!=='undefined'&&!!bgmEnabled}
+ function volume(){return typeof bgmVolume!=='undefined'&&Number.isFinite(bgmVolume)?Math.max(0,Math.min(1,bgmVolume)):.35}
+ function syncUI(track){
+  const state=enabled(),pressed=String(state);
+  for(const id of ['bgmToggle','bgmQuick']){
+   const el=$(id);if(el&&el.getAttribute('aria-pressed')!==pressed)el.setAttribute('aria-pressed',pressed);
+  }
+  const toggle=$('bgmToggle');if(toggle){
+   const title=state?'🔊 음악 끄기':'🔇 음악 켜기';
+   if(toggle.textContent!==title)toggle.textContent=title;
+  }
+  const quick=$('bgmQuick');if(quick){
+   const title=state?'♫':'♪̸';if(quick.textContent!==title)quick.textContent=title;
+  }
+  const slider=$('bgmVolume'),label=$('bgmVolumeText'),v=String(Math.round(volume()*100));
+  if(slider&&slider.value!==v)slider.value=v;
+  if(label&&label.textContent!==v+'%')label.textContent=v+'%';
+  const msg=state?'선택된 곡: '+track[1]:'배경음악 꺼짐';
+  if(lastLabel!==msg){
+   const text=$('bgmNowPlaying');if(text)text.textContent=msg;
+   lastLabel=msg;
+  }
  }
- function refreshControls(){
-  const on=!!(typeof bgmEnabled!=='undefined'&&bgmEnabled);
-  const pressed=String(on);
-  const main=$('bgmToggle'),quick=$('bgmQuick');
-  if(main){
-   if(main.getAttribute('aria-pressed')!==pressed)main.setAttribute('aria-pressed',pressed);
-   const text=on?'🔊 음악 끄기':'🔇 음악 켜기';
-   if(main.textContent!==text)main.textContent=text;
-  }
-  if(quick){
-   if(quick.getAttribute('aria-pressed')!==pressed)quick.setAttribute('aria-pressed',pressed);
-   const text=on?'♫':'♪̸';
-   if(quick.textContent!==text)quick.textContent=text;
-   quick.setAttribute('aria-label',on?'배경음악 끄기':'배경음악 켜기');
-  }
-  const vol=$('bgmVolume');
-  if(vol&&typeof bgmVolume!=='undefined'){
-   const number=String(Math.round(bgmVolume*100));
-   if(vol.value!==number)vol.value=number;
-   const label=$('bgmVolumeText');
-   if(label&&label.textContent!==number+'%')label.textContent=number+'%';
+ function play(){
+  if(audio.paused&&enabled()&&typeof bgmArmed!=='undefined'&&bgmArmed&&!document.hidden){
+   const task=audio.play();if(task?.catch)task.catch(()=>{});
   }
  }
  function update(){
   if(updating)return;
   updating=true;
   try{
-   refreshControls();
-   const t=desired(),url=toURL(t.path);
-   const playingAllowed=!!(typeof bgmEnabled!=='undefined'&&bgmEnabled&&typeof bgmArmed!=='undefined'&&bgmArmed&&!document.hidden);
-   showLabel(t);
-   audio.loop=true;
-   if(typeof bgmVolume!=='undefined')audio.volume=bgmVolume;
-   // Change sources ONLY when the actual music file changes. This avoids
-   // restarting e.g. spelling -> infinite -> timed (same music).
-   if(wantedUrl!==url){
-    wantedUrl=url;
-    if(audio.src!==url){
-     audio.src=url;
-     audio.load();
-    }
+   const track=desired(),target=absolute(track[2]);
+   syncUI(track);
+   // Preserve sound level exactly as chosen by the user. Never triple it.
+   const v=volume();
+   if(lastVolume!==v||audio.volume!==v){audio.volume=v;lastVolume=v}
+   if(!audio.loop)audio.loop=true;
+   // Switching modes with the same actual URL NEVER calls load(), resets the
+   // playback position, or creates another Audio instance.
+   if(audio.src!==target){
+    audio.src=target;
+    audio.load();
    }
-   if(!playingAllowed){
+   if(!enabled()||document.hidden){
     if(!audio.paused)audio.pause();
-    wasEnabled=false;
-    return;
-   }
-   if(audio.paused){
-    const promise=audio.play();
-    if(promise?.catch)promise.catch(()=>{});
-   }
-   wasEnabled=true;
+   }else play();
   }finally{updating=false}
  }
- function attachSelector(){
-  const box=document.querySelector('#view-settings .bgm-settings');
-  if(!box||$('mb-home-bgm-choice'))return;
-  const wrap=document.createElement('div');
-  wrap.className='mb-home-bgm-picker';
-  const label=document.createElement('label');
-  label.htmlFor='mb-home-bgm-choice';
-  label.textContent='🏠 홈 화면 배경음악 선택';
-  const select=document.createElement('select');
-  select.id='mb-home-bgm-choice';
-  select.setAttribute('aria-label','홈 화면 배경음악');
-  for(const item of HOME_TRACKS){
-   const option=document.createElement('option');
-   option.value=item.id;option.textContent=item.label;
-   select.append(option);
+ // If native loop is unsupported and playback reaches the end, replay once.
+ audio.loop=true;
+ audio.addEventListener('ended',()=>{
+  if(!enabled()||document.hidden)return;
+  if(audio.ended){audio.currentTime=0;play()}
+ });
+ // Replace the legacy entrypoint so buttons, slider and navigation use ONE
+ // playback policy. Do not wrap its old implementation.
+ window.syncBgm=update;
+ function installPicker(){
+  const host=document.querySelector('#view-settings .bgm-settings');
+  if(!host)return;
+  let select=$('mb-home-bgm-choice');
+  if(select){if(select.value!==homeChoice)select.value=homeChoice;return}
+  const div=document.createElement('div');div.className='mb-home-bgm-picker';
+  const title=document.createElement('label');
+  title.htmlFor='mb-home-bgm-choice';title.textContent='🏠 홈 화면 배경음악';
+  select=document.createElement('select');
+  select.id='mb-home-bgm-choice';select.setAttribute('aria-label','홈 화면 배경음악 선택');
+  for(const [id,name] of HOME){
+   const option=document.createElement('option');option.value=id;option.textContent=name;select.append(option);
   }
   select.value=homeChoice;
-  const tip=document.createElement('small');
-  tip.textContent='기존 음악도 그대로 남아 있어. 같은 곡으로 모드를 이동하면 이어서 재생돼.';
-  wrap.append(label,select,tip);
-  box.append(wrap);
+  const note=document.createElement('small');
+  note.textContent='같은 곡을 사용하는 모드끼리는 재생 위치가 유지돼. 모든 곡은 자동 반복돼.';
+  div.append(title,select,note);host.append(div);
   select.addEventListener('change',()=>{
    homeChoice=select.value;
-   try{localStorage.setItem(STORAGE,homeChoice)}catch(_){}
+   try{localStorage.setItem(KEY,homeChoice)}catch(_){}
    update();
   });
  }
+ function watchDuel(){
+  const el=$('mb-duel-dialog');
+  if(!el||duelObserver)return;
+  duelObserver=new MutationObserver(update);
+  duelObserver.observe(el,{attributes:true,attributeFilter:['open']});
+ }
  const style=document.createElement('style');
- style.id='mb-music-v3-style';
+ style.id='mb-music-controller-v4';
  style.textContent=[
-  '#view-settings .mb-home-bgm-picker{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:13px 0 4px;padding:13px 15px;border:2px solid #b58b70;border-radius:11px;background:#f4dfc6;color:#422729}',
-  '#view-settings .mb-home-bgm-picker label{font-weight:900;font-size:clamp(14px,1.5vw,18px)}',
-  '#view-settings .mb-home-bgm-picker select{width:min(100%,390px);min-height:42px;padding:9px 12px;background:#fff7e9;color:#432c2a;border:2px solid #886452;border-radius:8px;font:inherit;font-size:15px}',
-  '#view-settings .mb-home-bgm-picker small{font-size:12px;line-height:1.5;color:#71544c}'
+  '#view-settings .mb-home-bgm-picker{display:flex;flex-direction:column;gap:9px;padding:14px;margin:15px 0;border:2px solid #b58b70;border-radius:12px;background:#f5dfc6;color:#422729}',
+  '#view-settings .mb-home-bgm-picker label{font-weight:900}',
+  '#view-settings .mb-home-bgm-picker select{min-height:42px;max-width:100%;padding:9px;font:inherit;border:2px solid #886452;border-radius:8px;background:#fff7e9;color:#422729}',
+  '#view-settings .mb-home-bgm-picker small{font-size:12px;line-height:1.5}'
  ].join('\n');
  document.head.append(style);
- // Core methods call global syncBgm() when switching sections, toggling
- // sound, or changing volume. Reuse the same Audio element and its timeline.
- if(typeof window.syncBgm==='function'){
-  window.syncBgm=function(){update()};
- }
- function bindDuel(){
-  const dialog=$('mb-duel-dialog');
-  if(!dialog||duelObserver)return;
-  duelObserver=new MutationObserver(update);
-  duelObserver.observe(dialog,{attributes:true,attributeFilter:['open']});
- }
- attachSelector();
- bindDuel();
- const control=$('bgmToggle');
- if(control)new MutationObserver(()=>requestAnimationFrame(update)).observe(control,{attributes:true,attributeFilter:['aria-pressed']});
- document.addEventListener('pointerup',()=>requestAnimationFrame(update),{passive:true});
- document.addEventListener('keydown',()=>requestAnimationFrame(update),{passive:true});
+ installPicker();watchDuel();
+ // One-shot pointer event can unlock browser audio; don't restart on every click.
+ const gesture=()=>{if(enabled())queueMicrotask(update)};
+ document.addEventListener('pointerdown',gesture,{once:true,passive:true});
+ document.addEventListener('keydown',gesture,{once:true,passive:true});
  document.addEventListener('visibilitychange',update);
- const timer=setInterval(()=>{bindDuel();attachSelector();if(!document.hidden)update()},1250);
- window.addEventListener('pagehide',()=>{clearInterval(timer);duelObserver?.disconnect()},{once:true});
+ $('bgmVolume')?.addEventListener('input',update);
+ const loop=setInterval(()=>{installPicker();watchDuel();update()},1800);
+ window.addEventListener('pagehide',()=>{clearInterval(loop);duelObserver?.disconnect()},{once:true});
  update();
 })();
