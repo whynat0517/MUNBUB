@@ -160,15 +160,26 @@
  const remaining=()=>{if(!status?.ready)return 0;const me=status.players.find(x=>x.id===status.me);const begun=me?.answered?me.lastAt:status.startsAt;return Math.max(0,25000-(Date.now()-begun))};
  function scoreboard(){
   return '<div class="mb-duel-scoreboard">'+(status?.players||[]).map(p=>
-   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+'<strong>'+p.score+'점</strong><small>정답 '+p.correct+' · '+p.answered+'/10</small></div>').join('')+'</div>';
+   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+'<strong class="mb-duel-score-value">'+p.score+'점</strong><small class="mb-duel-progress">정답 '+p.correct+' · '+p.answered+'/10</small></div>').join('')+'</div>';
+ }
+ function refreshScoreboard(){
+  // Never replace the active question merely because the opponent scored.
+  for(const p of status?.players||[]){
+   const card=dialog.querySelector('[data-duel-player="'+p.id+'"]');
+   if(!card)continue;
+   const points=card.querySelector('.mb-duel-score-value');
+   const progress=card.querySelector('.mb-duel-progress');
+   if(points)points.textContent=p.score+'점';
+   if(progress)progress.textContent='정답 '+p.correct+' · '+p.answered+'/10';
+  }
  }
  function showGame(){
   if(!dialog.open||!roomCode||!status)return;
   const me=status.players.find(x=>x.id===status.me);
   const qidx=me?.answered||0;
   const newPhase=!status.ready?'waiting':Date.now()<status.startsAt?'countdown':status.finished?'results':qidx>=10?'finished':Date.now()<feedbackUntil?'feedback':'question';
-  const viewKey=newPhase+'|'+qidx+'|'+status.players.map(p=>p.answered+'-'+p.score).join('|');
-  if(viewKey===lastViewKey)return;
+  const viewKey=newPhase+'|'+qidx;
+  if(viewKey===lastViewKey){refreshScoreboard();return;}
   lastViewKey=viewKey;phase=newPhase;
   let html='<div class="mb-duel-panel"><p>친구 초대 코드 <strong class="mb-duel-code" id="mb-duel-code">'+esc(roomCode)+'</strong> <button id="mb-duel-copy" type="button">복사</button></p>';
   html+=scoreboard();
@@ -207,12 +218,17 @@
   dialog.querySelectorAll('[data-duel-answer]').forEach(b=>b.disabled=true);
   try{
    const out=await api({action:'answer',code:roomCode,index:me.answered,answer});
-   feedback=out;feedbackUntil=Date.now()+1400;lastViewKey='';
-   await updateRoom();
+   feedback=out;feedbackUntil=Date.now()+1050;lastViewKey='';
+   // Use the server response for the local score immediately, no extra round-trip.
+   me.answered=out.index+1;
+   me.score+=out.points;
+   if(out.correct)me.correct++;
+   me.lastAt=Date.now();
+   showGame();
   }catch(e){lastViewKey='';showError('답변 처리 실패: '+e.message);await updateRoom()}finally{busy=false}
  }
  function tick(){
-  if(!dialog.open||!roomCode||!status)return;
+  if(!dialog.open||!roomCode||!status||document.hidden)return;
   if(phase==='countdown'){
    const left=Math.max(0,Math.ceil((status.startsAt-Date.now())/1000));
    const el=dialog.querySelector('#mb-duel-countdown');if(el)el.textContent='⚔ 시작까지 '+left+'초';
@@ -223,6 +239,6 @@
    if(ms<=0&&!busy)sendAnswer('');
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
- setInterval(()=>{if(dialog.open&&roomCode)updateRoom()},2800);
- setInterval(tick,180);
+ setInterval(()=>{if(dialog.open&&roomCode&&!document.hidden)updateRoom()},3400);
+ setInterval(tick,210);
 })();
