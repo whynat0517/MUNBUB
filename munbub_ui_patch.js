@@ -1,56 +1,58 @@
-/* 맛춘범 UI 확장: 독립 패치, 문제 데이터와 기존 퀴즈 핸들러 보존 */
 (()=>{
-  'use strict';
-  if(window.__munbubUIPatchV2)return;
-  window.__munbubUIPatchV2=true;
-  const css=`
-#resumeHotspot,#mobileResume,.timed-home-btn{position:relative!important;box-sizing:border-box!important;overflow:hidden!important;isolation:isolate;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;text-indent:-9999px!important;font-size:0!important;line-height:0!important;cursor:pointer!important;transition:transform .15s ease,filter .15s ease!important}
-#resumeHotspot,#mobileResume{width:min(100%,650px)!important;aspect-ratio:660/162!important;min-height:0!important;background-image:url('./ui-assets/resume.png')!important;background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important}
-#resumeHotspot[hidden],#mobileResume[hidden]{display:none!important}
-#resumeHotspot:not([hidden]){display:inline-block!important}
-#mobileResume:not([hidden]){display:none!important}
-.timed-home-btn{display:block!important;width:min(100%,660px)!important;max-width:660px!important;height:auto!important;min-height:0!important;aspect-ratio:660/92!important;background-image:url('./ui-assets/timed_dark.png')!important;background-repeat:no-repeat!important;background-position:center!important;background-size:contain!important;margin-inline:auto!important}
-.timed-home-btn span{display:none!important}
-#resumeHotspot:hover,#mobileResume:hover,.timed-home-btn:hover{transform:scale(1.025)!important;filter:brightness(1.09)!important}
-#resumeHotspot:active,#mobileResume:active,.timed-home-btn:active{transform:scale(.975)!important;filter:brightness(.93)!important}
-#resumeHotspot:focus-visible,#mobileResume:focus-visible,.timed-home-btn:focus-visible{outline:3px solid #f5d9b6!important;outline-offset:2px!important}
-.timed-home-wrap{max-width:670px!important;margin:10px auto!important;display:flex!important;justify-content:center!important}
-.munbub-timed-dialog{border:3px solid #5b3330;border-radius:17px;box-shadow:0 18px 0 #2a1719,0 24px 70px #0009;background:#f4ddc0;color:#392221;max-width:min(92vw,430px);width:430px;padding:24px;text-align:center}
-.munbub-timed-dialog::backdrop{background:#1d1118b9;backdrop-filter:blur(3px)}
-.munbub-timed-dialog h2{font-size:1.45rem;margin:0 0 8px;font-weight:900}
-.munbub-timed-dialog p{font-size:.92rem;margin:0 0 19px;line-height:1.6}
-.munbub-timed-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.munbub-timed-grid button,.munbub-timed-close{font:inherit;font-weight:900;border:2px solid #744b42;color:#35201c;background:#ffeaca;box-shadow:0 4px #76514b;border-radius:12px;padding:13px;cursor:pointer;min-height:48px;transition:transform .12s ease,background .12s ease}
-.munbub-timed-grid button:hover,.munbub-timed-close:hover{background:#fff4df;transform:translateY(-2px)}
-.munbub-timed-grid button:active,.munbub-timed-close:active{transform:translateY(2px);box-shadow:0 2px #76514b}
-.munbub-timed-close{margin-top:18px;background:#e6c4a8;width:100%}
-.munbub-timed-dialog button:focus-visible{outline:3px solid #a35648;outline-offset:3px}
-@media(max-width:800px){.resume-group>#resumeHotspot{display:none!important}#mobileResume:not([hidden]){display:block!important;width:min(100%,540px)!important;margin:0 auto 9px!important}.timed-home-btn{width:100%!important}}
-@media(prefers-reduced-motion:reduce){#resumeHotspot,#mobileResume,.timed-home-btn,.munbub-timed-grid button,.munbub-timed-close{transition:none!important}}
-`;
-  const style=document.createElement('style');style.id='munbub-ui-patch-v2';style.textContent=css;document.head.append(style);
-  const dialog=document.createElement('dialog');dialog.className='munbub-timed-dialog';dialog.setAttribute('aria-label','시간제한 도전 시간 선택');
-  dialog.innerHTML=`<h2>⏱ 시간제한 도전</h2><p>도전 시간을 선택해 봐!<br>시간이 끝나면 기록이 저장돼.</p><div class="munbub-timed-grid"><button type="button" data-seconds="60">1분</button><button type="button" data-seconds="120">2분</button><button type="button" data-seconds="180">3분</button><button type="button" data-seconds="300">5분</button></div><button type="button" class="munbub-timed-close">돌아가기</button>`;
-  document.body.append(dialog);
-  document.addEventListener('click',e=>{
-    const btn=e.target.closest?.('[data-route="timed"]');if(!btn)return;
-    if(typeof dialog.showModal!=='function')return;
-    e.preventDefault();e.stopImmediatePropagation();dialog.showModal();
-  },true);
-  dialog.addEventListener('click',e=>{
-    const select=e.target.closest?.('[data-seconds]');
-    if(select){const timeSeconds=Number(select.dataset.seconds);if(![60,120,180,300].includes(timeSeconds))return;
-      dialog.close();if(typeof window.startSession==='function')window.startSession({category:'all',style:'mixed',count:'all',infinite:true,onlyWrong:false,timed:true,timeSeconds});
-    }else if(e.target.closest?.('.munbub-timed-close'))dialog.close();
-  });
-  let context;
-  const tap=()=>{try{
-    const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
-    context ||=new C();if(context.state==='suspended')context.resume().catch(()=>{});
-    const t=context.currentTime,o=context.createOscillator(),g=context.createGain();o.type='sine';o.frequency.setValueAtTime(830,t);o.frequency.exponentialRampToValueAtTime(490,t+.065);
-    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.038,t+.009);g.gain.exponentialRampToValueAtTime(.0001,t+.077);
-    o.connect(g).connect(context.destination);o.start(t);o.stop(t+.083);
-  }catch(_){/* 미지원 환경은 무음으로 처리 */}};
-  document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled)tap()},{passive:true});
-  document.addEventListener('keydown',e=>{if(e.repeat||!['Enter',' '].includes(e.key))return;const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled)tap()});
+ 'use strict';
+ if(window.__munbubUIPatchV3)return;
+ window.__munbubUIPatchV3=true;
+ const s=document.createElement('style');
+ s.id='munbub-responsive-v3';
+ s.textContent="\n/* Responsive home and typography: one scoped override layer, v3 */\n#homeScreen .home-main{display:flex;flex-direction:column;align-items:stretch;gap:0;width:100%;max-width:none;min-width:0;overflow:visible;padding:clamp(12px,1.5vw,24px) clamp(12px,2vw,30px) 30px}\n#homeScreen .home-hero{order:0;height:clamp(115px,12.5vw,192px);min-height:0;max-width:920px;width:100%;margin:0 auto;overflow:visible}\n#homeScreen .hero-scroll{max-height:90%;top:3%;left:2%;width:60%}\n#homeScreen .hero-character{max-height:103%;width:40%;bottom:-4px;right:2%}\n#homeScreen .progress-panel{order:1;align-self:center;width:min(100%,850px);max-width:100%;margin:3px auto 12px;padding:8px 14px}\n#homeScreen .progress-mobile{display:none!important}\n#homeScreen .resume-group{order:2;width:100%;max-width:860px;min-width:0;display:flex;justify-content:center;align-self:center;margin:0 auto 9px}\n#resumeHotspot,#mobileResume{box-sizing:border-box!important;display:block;width:min(100%,600px)!important;max-width:600px!important;height:auto!important;min-height:0!important;aspect-ratio:660/162!important;position:relative;overflow:hidden;background:transparent url('./ui-assets/resume.png') center/contain no-repeat!important;border:0!important;box-shadow:none!important;padding:0!important;color:transparent!important;font-size:0!important;cursor:pointer;transition:transform .16s,filter .16s}\n#resumeHotspot[hidden],#mobileResume[hidden]{display:none!important}\n#mobileResume:not([hidden]){display:none!important}\n#resumeHotspot:not([hidden]){display:block!important}\n#homeScreen .timed-home-wrap{order:3;align-self:center;display:block;width:min(100%,1050px);max-width:100%;margin:3px auto 14px!important;min-width:0}\n#homeScreen .timed-home-btn{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:clamp(6px,1.5vw,24px)!important;width:100%!important;max-width:none!important;min-width:0!important;height:auto!important;min-height:clamp(78px,7.6vw,112px)!important;aspect-ratio:auto!important;margin:0!important;padding:clamp(9px,1.5vw,18px) clamp(10px,2vw,26px)!important;box-sizing:border-box!important;color:#2c1817!important;text-indent:0!important;font-size:clamp(17px,2.65vw,39px)!important;line-height:1.2!important;font-weight:900!important;word-break:keep-all;border:clamp(4px,.5vw,7px) double #bd896e!important;border-radius:clamp(13px,2vw,23px)!important;background:linear-gradient(180deg,#ffebd4 0%,#f3d0ad 100%)!important;box-shadow:inset 0 0 0 3px #fff7e9,0 7px 0 #351c20,0 11px 0 #180f13!important;white-space:normal!important;overflow:visible!important;isolation:isolate}\n#homeScreen .timed-home-btn::before{content:\"⏱\";display:inline-grid;place-items:center;flex:0 0 auto;font-size:clamp(25px,3.8vw,54px);width:clamp(36px,5.2vw,70px);height:clamp(36px,5.2vw,70px);border-right:3px solid #c08a75;padding-right:clamp(4px,1vw,17px);color:#713d35}\n#homeScreen .timed-home-btn span{display:inline!important;color:#3c2321!important;opacity:1!important;flex:0 1 auto;min-width:0;font-size:clamp(12px,1.65vw,24px)!important;font-weight:750!important;line-height:1.25!important;text-align:center;padding-left:clamp(5px,1vw,17px);border-left:3px solid #c48b74}\n#homeScreen .home-card-grid{order:4;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.5vw,22px);align-items:start;width:100%;max-width:1080px;margin:0 auto;isolation:auto}\n#homeScreen .home-card-grid .img-button{width:100%;max-width:100%;min-width:0;display:block;overflow:visible;align-self:start}\n#homeScreen .home-card-grid .img-button img{display:block;object-fit:contain;width:100%;height:auto;max-height:clamp(145px,21vw,300px)}\n#homeScreen .home-actions{order:5;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.5vw,22px);width:100%;max-width:1080px;margin:12px auto 0}\n#homeScreen .home-actions .img-button{width:100%;min-width:0}\n#homeScreen .home-actions img{display:block;width:100%;height:auto;max-height:94px;object-fit:contain}\n#homeScreen .home-foot{order:6;position:static;margin-top:12px;line-height:1.5}\n#homeScreen .timed-home-btn:hover,#resumeHotspot:hover,#mobileResume:hover{transform:translateY(-2px) scale(1.015)!important;filter:brightness(1.05)!important}\n#homeScreen .timed-home-btn:active,#resumeHotspot:active,#mobileResume:active{transform:translateY(1px) scale(.985)!important}\n#homeScreen .timed-home-btn:focus-visible,.timed-nav:focus-visible,#resumeHotspot:focus-visible,#mobileResume:focus-visible{outline:3px solid #ffdfb0!important;outline-offset:3px}\n.sidebar-nav .timed-nav{width:100%!important;min-height:clamp(47px,4.2vw,67px)!important;display:flex!important;flex-direction:row;align-items:center;justify-content:center;gap:clamp(6px,.8vw,16px);margin:1px 0!important;padding:7px 9px!important;border:5px double #fae4c9!important;border-radius:13px;background:#271b20!important;color:#ffe6cc!important;font-family:inherit;font-size:clamp(14px,1.55vw,23px)!important;line-height:1.1!important;font-weight:900;text-align:center;white-space:nowrap;box-shadow:inset 0 0 0 2px #4d3230,0 3px 0 #0e0b0d}\n.sidebar-nav .timed-nav .timed-icon{font-size:1.25em;line-height:1}\n.sidebar-nav .timed-nav:hover{transform:scale(1.035)!important;filter:brightness(1.1)}\n/* Large-text mode changes real text (not the decorative PNG labels). */\nbody.large-text .panel{font-size:18px!important}\nbody.large-text :is(.panel h2,.panel h3){font-size:clamp(23px,2.5vw,32px)!important}\nbody.large-text :is(.lead,.panel p,.history-item,.note-row,.feedback,.note-row p,.form-grid label,.quiz-meta,.app-caption,.prompt-desc){font-size:clamp(17px,1.75vw,20px)!important;line-height:1.7!important}\nbody.large-text .prompt{font-size:clamp(27px,3.25vw,43px)!important;line-height:1.6!important}\nbody.large-text .option{font-size:clamp(20px,2.15vw,25px)!important;line-height:1.5!important}\nbody.large-text :is(.action,.go-home,.essay-form input,.search,.form-grid input,.form-grid select,.form-grid select option){font-size:clamp(17px,1.85vw,22px)!important}\nbody.large-text :is(.work-header h1,.summary,.fb-title){font-size:clamp(26px,2.6vw,35px)!important}\nbody.large-text :is(.history-item small,.note-row small,.app-caption){font-size:16px!important}\n#fontNormal[aria-pressed=\"true\"],#fontLarge[aria-pressed=\"true\"]{outline:3px solid #8c5047;box-shadow:inset 0 0 0 2px #fff5dd}\n/* Tablet: no fixed-width desktop frame overflow */\n@media(max-width:1100px){\n #homeScreen .home-main{width:100%;max-width:900px;margin:auto;padding:10px max(12px,env(safe-area-inset-left)) calc(104px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-right))}\n #homeScreen .home-hero{height:clamp(130px,23vw,220px)}\n #homeScreen .progress-panel:not(.progress-mobile){display:none!important}\n #homeScreen .progress-mobile{display:block!important}\n #homeScreen .resume-group>#resumeHotspot{display:none!important}\n #homeScreen #mobileResume:not([hidden]){display:block!important;width:min(100%,560px)!important;margin:0 auto!important}\n #homeScreen .home-card-grid,#homeScreen .home-actions{max-width:800px;gap:clamp(8px,1.4vw,18px)}\n #homeScreen .timed-home-wrap{max-width:800px}\n #homeScreen .timed-home-btn{font-size:clamp(20px,3vw,30px)!important;min-height:92px!important}\n #homeScreen .timed-home-btn span{font-size:clamp(12px,2.05vw,20px)!important}\n .work-main{max-width:950px!important;min-width:0}\n}\n@media(max-width:600px){\n #homeScreen .home-hero{height:clamp(110px,30vw,170px)}\n #homeScreen .hero-scroll{width:68%;top:10%;left:-2%}\n #homeScreen .hero-character{width:45%;right:0;max-height:96%}\n #homeScreen .home-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}\n #homeScreen .home-card-grid .img-button:last-child{grid-column:1/-1;width:min(58%,215px);margin:auto}\n #homeScreen .home-actions{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}\n #homeScreen .home-actions .img-button:last-child{grid-column:1/-1;width:min(58%,215px);margin:auto}\n #homeScreen .timed-home-btn{min-height:78px!important;padding:10px!important;gap:7px!important;border-width:4px!important}\n #homeScreen .timed-home-btn::before{font-size:27px;width:35px;height:38px;padding-right:4px;border-right-width:2px}\n #homeScreen .timed-home-btn span{font-size:12px!important;padding-left:6px;border-left-width:2px}\n #homeScreen .timed-home-btn{font-size:clamp(16px,4.2vw,23px)!important}\n #homeScreen .home-foot{text-align:center}\n body.large-text .prompt{font-size:clamp(25px,6.5vw,33px)!important}\n body.large-text .option{font-size:clamp(18px,5vw,23px)!important}\n body.large-text :is(.panel p,.lead,.history-item,.note-row,.feedback,.form-grid label,.app-caption){font-size:17px!important}\n}\n@media(max-width:360px){\n #homeScreen .timed-home-btn span{font-size:11px!important}\n #homeScreen .home-card-grid .img-button:last-child,#homeScreen .home-actions .img-button:last-child{width:62%}\n}\n@media(hover:none){#homeScreen .timed-home-btn:hover,#resumeHotspot:hover,#mobileResume:hover{transform:none!important;filter:none!important}}\n@media(prefers-reduced-motion:reduce){#homeScreen .timed-home-btn,#resumeHotspot,#mobileResume{transition:none!important}}\n.munbub-timed-dialog{border:4px double #86584a;border-radius:16px;box-shadow:0 12px 0 #2b191a,0 24px 54px #0008;background:#f5dfc6;color:#392221;width:min(440px,calc(100vw - 32px));max-width:95vw;padding:22px;text-align:center}\n.munbub-timed-dialog::backdrop{background:#1d1118bd}\n.munbub-timed-dialog h2{margin:0 0 12px;font-size:1.5rem}\n.munbub-timed-dialog p{margin:0 0 18px}\n.munbub-timed-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}\n.munbub-timed-grid button,.munbub-timed-close{font:inherit;font-weight:900;border:2px solid #8f624f;color:#3f2821;background:#ffe9cc;min-height:49px;border-radius:8px;padding:12px}\n.munbub-timed-grid button:hover,.munbub-timed-close:hover{background:#fff9eb}\n.munbub-timed-close{margin-top:14px;width:100%}\n";
+ document.head.append(s);
+ for(const b of document.querySelectorAll('.sidebar-nav .timed-nav')){
+  b.textContent='';
+  const ico=document.createElement('span');
+  ico.className='timed-icon';ico.textContent='⏱';ico.setAttribute('aria-hidden','true');
+  const label=document.createElement('span');
+  label.textContent='시간제한';b.append(ico,label);
+ }
+ const normal=document.getElementById('fontNormal'),large=document.getElementById('fontLarge');
+ if(normal)normal.textContent='작은 글씨';
+ const updateFontButtons=()=>{
+  const big=document.body.classList.contains('large-text');
+  normal?.setAttribute('aria-pressed',String(!big));
+  large?.setAttribute('aria-pressed',String(big));
+ };
+ normal?.addEventListener('click',updateFontButtons);
+ large?.addEventListener('click',updateFontButtons);
+ updateFontButtons();
+ const dialog=document.createElement('dialog');
+ dialog.className='munbub-timed-dialog';
+ dialog.setAttribute('aria-label','시간제한 도전 시간 선택');
+ dialog.innerHTML='<h2>⏱ 시간제한 도전</h2><p>도전할 시간을 선택해 주세요.</p><div class="munbub-timed-grid"><button type="button" data-seconds="60">1분</button><button type="button" data-seconds="120">2분</button><button type="button" data-seconds="180">3분</button><button type="button" data-seconds="300">5분</button></div><button type="button" class="munbub-timed-close">돌아가기</button>';
+ document.body.append(dialog);
+ document.addEventListener('click',e=>{
+  const button=e.target.closest?.('button[data-route="timed"]');
+  if(!button||typeof dialog.showModal!=='function')return;
+  e.preventDefault();e.stopImmediatePropagation();
+  if(!dialog.open)dialog.showModal();
+ },true);
+ dialog.addEventListener('click',e=>{
+  const choice=e.target.closest?.('button[data-seconds]');
+  if(choice){
+   const seconds=Number(choice.dataset.seconds);
+   if(![60,120,180,300].includes(seconds))return;
+   dialog.close();
+   if(typeof window.startSession==='function')window.startSession({category:'all',style:'mixed',count:'all',infinite:true,onlyWrong:false,timed:true,timeSeconds:seconds});
+  }else if(e.target.closest?.('.munbub-timed-close'))dialog.close();
+ });
+ let audioContext=null;
+ const tap=()=>{try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  if(!audioContext)audioContext=new C();
+  if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});
+  const t=audioContext.currentTime,osc=audioContext.createOscillator(),gain=audioContext.createGain();
+  osc.type='sine';osc.frequency.setValueAtTime(790,t);osc.frequency.exponentialRampToValueAtTime(530,t+.065);
+  gain.gain.setValueAtTime(.0001,t);gain.gain.exponentialRampToValueAtTime(.035,t+.008);gain.gain.exponentialRampToValueAtTime(.0001,t+.07);
+  osc.connect(gain).connect(audioContext.destination);osc.start(t);osc.stop(t+.082);
+ }catch(_){}};
+ document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled)tap()},{passive:true});
+ document.addEventListener('keydown',e=>{if(e.repeat||!['Enter',' '].includes(e.key))return;const b=e.target.closest?.('button,[role="button"]');if(b&&!b.disabled)tap()});
 })();
