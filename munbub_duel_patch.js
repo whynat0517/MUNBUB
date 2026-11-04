@@ -205,9 +205,14 @@
    const opponent=status.players.find(p=>p.id!==status.me);
    if(!me||!opponent||!Number.isInteger(signal.answered))return;
    if(signal.answered<opponent.answered)return; // Ignore stale Blob copies.
+   const previousSignal=lastOpponentSignal;
    lastOpponentSignal=signal;
+   const agreementChanged=signal.answers?.some(a=>{
+    const prior=previousSignal?.answers?.find(x=>x.index===a.index);
+    return (a.readyAt||null)!==(prior?.readyAt||null);
+   });
    const changed=signal.answered!==opponent.answered||
-    signal.score!==opponent.score||signal.lastAt!==opponent.lastAt;
+    signal.score!==opponent.score||signal.lastAt!==opponent.lastAt||agreementChanged;
    if(!changed)return;
    signalLastAt=Date.now();
    opponent.answered=signal.answered;
@@ -224,8 +229,14 @@
      const prev=me.answered-1;
      const ours=me.answers?.find(a=>a.index===prev)?.at||me.lastAt;
      const theirs=signal.answers?.find(a=>a.index===prev)?.at||opponent.lastAt;
-     if(ours&&theirs)status.turnStartsAt=Math.max(ours,theirs)+1500;
-     else{await updateRoom();return}
+     if(ours&&theirs){
+      const ownAnswer=lastAnswer(me,prev)||{at:ours};
+      const theirAnswer=signal.answers?.find(a=>a.index===prev)||{at:theirs};
+      status.reviewReadyAt=Number(ownAnswer.readyAt)||null;
+      status.opponentReviewReadyAt=Number(theirAnswer.readyAt)||null;
+      status.turnStartsAt=newReview()
+       ?reviewTurnAt(ownAnswer,theirAnswer):Math.max(ours,theirs)+1500;
+     }else{await updateRoom();return}
     }
    }else status.turnStartsAt=null;
    status.finished=status.players.every(p=>p.answered>=count());
@@ -401,6 +412,40 @@
   dialog.querySelector('#mb-duel-new')?.addEventListener('click',showLobby);
   dialog.querySelectorAll('[data-duel-answer]').forEach(btn=>btn.addEventListener('click',()=>sendAnswer(btn.dataset.duelAnswer)));
  }
+ async function sendReady(){
+  if(busy||!newReview()||phase!=='review'||!status?.answerTicket)return;
+  const info=reviewInfo();
+  if(!info||info.readyAt||!info.own)return;
+  const room=roomCode,round=info.index;
+  busy=true;
+  const button=dialog.querySelector('#mb-duel-next-ready');
+  if(button)button.disabled=true;
+  try{
+   const out=await api({action:'ready',code:room,index:round,
+    answerTicket:status.answerTicket});
+   if(!dialog.open||roomCode!==room)return;
+   const me=status.players.find(p=>p.id===status.me);
+   const mine=lastAnswer(me,round);
+   if(!mine)return;
+   mine.readyAt=out.readyAt;
+   status.reviewReadyAt=out.readyAt;
+   const other=lastOpponentSignal?.answers?.find(a=>a.index===round);
+   const opponent=status.players.find(p=>p.id!==status.me);
+   const otherAnswer=other||((opponent?.answered||0)>round
+    ?{at:opponent.lastAt,readyAt:status.opponentReviewReadyAt}:null);
+   if(otherAnswer&&me.answered<=opponent.answered){
+    status.turnReady=true;
+    status.turnStartsAt=reviewTurnAt(mine,otherAnswer);
+   }
+   showGame();
+  }catch(e){
+   const label=dialog.querySelector('#mb-duel-review-status');
+   if(label)label.textContent='동의 전송 실패: '+e.message;
+  }finally{
+   busy=false;
+   refreshReview();
+  }
+ }
  async function sendAnswer(answer){
   if(busy||!roomCode||!status?.ready||!status.turnReady)return;
   const me=status.players.find(x=>x.id===status.me);
@@ -418,6 +463,8 @@
    me.score+=out.points;
    if(out.correct)me.correct++;
    me.lastAt=out.at||Date.now();
+   status.reviewReadyAt=null;
+   status.opponentReviewReadyAt=null;
    if(!Array.isArray(me.answers))me.answers=[];
    if(!me.answers.some(x=>x.index===out.index))
     me.answers.push({index:out.index,at:me.lastAt,correct:out.correct,points:out.points});
@@ -430,7 +477,12 @@
      opponentNow.lastAt;
     if(theirs){
      status.turnReady=true;
-     status.turnStartsAt=Math.max(me.lastAt,theirs)+1500;
+     const theirAnswer=lastOpponentSignal?.answers?.find(x=>x.index===index)||
+      {at:theirs};
+     status.opponentReviewReadyAt=Number(theirAnswer.readyAt)||null;
+     status.turnStartsAt=newReview()
+      ?reviewTurnAt(lastAnswer(me,index),theirAnswer)
+      :Math.max(me.lastAt,theirs)+1500;
     }else{
      status.turnReady=false;status.turnStartsAt=null;
     }
@@ -448,13 +500,19 @@
   if(!dialog.open||!roomCode||!status||document.hidden)return;
   if(phase==='countdown'){
    const left=Math.max(0,Math.ceil((status.turnStartsAt-now())/1000));
-   const el=dialog.querySelector('#mb-duel-countdown');if(el)el.textContent='⚔ 시작까지 '+left+'초';
+   const el=dialog.querySelector('#mb-duel-countdown');
+   if(el&&el.textContent!==String(left))el.textContent=String(left);
    if(left<=0){lastViewKey='';showGame()}
   }else if(phase==='question'){
    const ms=remaining(),el=dialog.querySelector('#mb-duel-clock');
    if(el){el.textContent='⏱ '+(ms/1000).toFixed(1)+'초';el.classList.toggle('low',ms<7000);el.classList.toggle('mb-duel-rival-fast',!!status.opponentAnswered)}
    updateOpponentSignal();
    if(ms<=0&&!busy)sendAnswer('');
+  }else if(phase==='review'){
+   refreshReview();
+   if(status.turnReady&&status.turnStartsAt&&now()>=status.turnStartsAt){
+    lastViewKey='';feedback=null;showGame();
+   }
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
  // Fast opponent signals are deliberately small and serial (no overlapping
@@ -462,7 +520,7 @@
  function signalDelay(){
   if(!dialog.open||!roomCode||document.hidden)return 1400;
   if(signalFailures>3)return 2600;
-  if(phase==='question'||phase==='opponent')return 350;
+  if(phase==='question'||phase==='opponent'||phase==='review')return 350;
   if(phase==='countdown'||phase==='feedback')return 500;
   if(phase==='waiting')return 580;
   if(phase==='finished')return 650;
