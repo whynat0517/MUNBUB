@@ -130,4 +130,17 @@
   duelScript.id='mb-duel-loader';duelScript.src='./munbub_duel_patch.js';
   document.body.append(duelScript);
  }
+ // Load the illustrated atlas once, then the UI image replacement.
+ if(!document.getElementById('mb-ui-atlas-loader')){
+  const atlasScript=document.createElement('script');
+  atlasScript.id='mb-ui-atlas-loader';
+  atlasScript.src='./munbub_supplied_ui_atlas.js';
+  atlasScript.onload=()=>{
+   if(document.getElementById('mb-supplied-ui-loader'))return;
+   const patch=document.createElement('script');
+   patch.id='mb-supplied-ui-loader';patch.src='./munbub_uploaded_ui_patch.js';
+   document.body.append(patch);
+  };
+  document.body.append(atlasScript);
+ }
 })();
