@@ -57,15 +57,7 @@
   homeRow.append(btn);
   btn.addEventListener('click',openLobby);
  }
- const duelButtons=[];
- document.querySelectorAll('.sidebar-nav,.mobile-drawer').forEach(sidebar=>{
-  const nav=document.createElement('button');nav.type='button';
-  nav.className='navbtn mb-duel-nav';nav.dataset.route='duel';
-  nav.setAttribute('aria-label','1대1 대결');
-  nav.innerHTML='🎮 1대1<small>친구 대결</small>';
-  const anchor=sidebar.querySelector('[data-route="hard"]')||sidebar.querySelector('[data-route="timed"]');
-  if(anchor){anchor.after(nav);duelButtons.push(nav)}
- });
+ // 1대1 대결은 홈 캐릭터 아래 버튼에서만 진입한다.
  let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null;
  const currentRoomKey='mb_duel_last_room_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
@@ -97,18 +89,18 @@
  async function openLobby(){
   if(dialog.open)return;
   previousSelection=window.__mbSelectedMenu?.()||'home';
-  if(typeof window.__mbMarkRoute==='function')window.__mbMarkRoute('duel');
+  // 홈 버튼에서 여는 팝업은 왼쪽 모드 선택 상태를 바꾸지 않는다.
   dialog.showModal();
   showLobby();
   const logged=await checkLogin();
   if(!logged && dialog.open && phase==='lobby'){
-   putHTML('<div class="mb-duel-panel"><p class="mb-duel-status">🔒 온라인 1대1은 로그인 후 이용할 수 있어.</p><p>홈 캐릭터 아래의 온라인 로그인에서 닉네임 계정을 만들거나 복구 코드로 로그인해 줘.</p><div class="mb-duel-actions"><button type="button" id="mb-duel-login">👤 로그인하기</button></div></div>');
+   putHTML('<div class="mb-duel-panel"><p class="mb-duel-status">🔒 온라인 1대1은 로그인 후 이용할 수 있어.</p><p>홈 캐릭터 아래의 로그인 버튼에서 닉네임과 비밀번호로 로그인해 줘.</p><div class="mb-duel-actions"><button type="button" id="mb-duel-login">👤 로그인하기</button></div></div>');
    dialog.querySelector('#mb-duel-login')?.addEventListener('click',()=>{
     dialog.close();$('mb-account-open')?.click();
    });
   }
  }
- for(const button of duelButtons)button.addEventListener('click',e=>{e.preventDefault();openLobby()});
+
  document.addEventListener('click',e=>{
   const target=e.target.closest?.('[data-route="duel"]');
   if(!target)return;
