@@ -149,7 +149,7 @@
   for(let offset=0;choices.length<4&&offset<candidates.length;offset++)choices.push(candidates[(seed+offset*11)%candidates.length].answer);
   return choices.map((x,i)=>({x,index:(i*7+seed)%4})).sort((a,b)=>a.index-b.index).map(x=>x.x);
  }
- const remaining=()=>{if(!status?.ready)return 0;const me=status.players.find(x=>x.id===status.me);const begun=me?.answered?me.lastAt:status.startsAt;return Math.max(0,25000-(Date.now()-begun))};
+ const remaining=()=>{if(!status?.ready||!status.turnReady||!status.turnStartsAt)return 0;return Math.max(0,25000-(Date.now()-status.turnStartsAt))};
  function scoreboard(){
   return '<div class="mb-duel-scoreboard">'+(status?.players||[]).map(p=>
    '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+'<strong class="mb-duel-score-value">'+p.score+'점</strong><small class="mb-duel-progress">정답 '+p.correct+' · '+p.answered+'/10</small></div>').join('')+'</div>';
@@ -169,13 +169,23 @@
   if(!dialog.open||!roomCode||!status)return;
   const me=status.players.find(x=>x.id===status.me);
   const qidx=me?.answered||0;
-  const newPhase=!status.ready?'waiting':Date.now()<status.startsAt?'countdown':status.finished?'results':qidx>=10?'finished':Date.now()<feedbackUntil?'feedback':'question';
+  // A player must never see the next question while the other is answering.
+  // Local feedback may show first, but the new round is server-gated.
+  const other=status.players.find(x=>x.id!==status.me);
+  const unlocked=!!status.turnReady&&!!other&&qidx<=other.answered;
+  const newPhase=!status.ready?'waiting'
+   :status.finished?'results'
+   :Date.now()<feedbackUntil?'feedback'
+   :qidx>=10?'finished'
+   :!unlocked?'opponent'
+   :Date.now()<status.turnStartsAt?'countdown':'question';
   const viewKey=newPhase+'|'+qidx;
   if(viewKey===lastViewKey){refreshScoreboard();return;}
   lastViewKey=viewKey;phase=newPhase;
   let html='<div class="mb-duel-panel"><p>친구 초대 코드 <strong class="mb-duel-code" id="mb-duel-code">'+esc(roomCode)+'</strong> <button id="mb-duel-copy" type="button">복사</button></p>';
   html+=scoreboard();
-  if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 친구가 방 코드로 들어오기를 기다리고 있어!</p>';
+  if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
+  if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 상대가 현재 문제를 제출할 때까지 대기 중이야. 둘 다 풀어야 다음 문제로 넘어가!</p><p class="mb-duel-note">상대방 진행 상황은 위 점수판에서 확인해 줘.</p>';
   if(newPhase==='countdown')html+='<h3 id="mb-duel-countdown" class="mb-duel-clock">곧 시작!</h3><p>양쪽 모두 같은 순서로 10문제를 풀어.</p>';
   if(newPhase==='question'){
    const q=MAP.get(status.questionIds[qidx]);
@@ -203,9 +213,11 @@
   dialog.querySelectorAll('[data-duel-answer]').forEach(btn=>btn.addEventListener('click',()=>sendAnswer(btn.dataset.duelAnswer)));
  }
  async function sendAnswer(answer){
-  if(busy||!roomCode||!status?.ready)return;
+  if(busy||!roomCode||!status?.ready||!status.turnReady)return;
   const me=status.players.find(x=>x.id===status.me);
-  if(!me||me.answered>=10||Date.now()<status.startsAt)return;
+  const opponent=status.players.find(x=>x.id!==status.me);
+  if(!me||!opponent||me.answered>opponent.answered||
+     me.answered>=10||Date.now()<status.turnStartsAt)return;
   busy=true;
   dialog.querySelectorAll('[data-duel-answer]').forEach(b=>b.disabled=true);
   try{
@@ -216,6 +228,8 @@
    me.score+=out.points;
    if(out.correct)me.correct++;
    me.lastAt=Date.now();
+   status.turnReady=false;
+   status.turnStartsAt=null;
    showGame();
   }catch(e){lastViewKey='';showError('답변 처리 실패: '+e.message);await updateRoom()}finally{busy=false}
  }
@@ -231,6 +245,8 @@
    if(ms<=0&&!busy)sendAnswer('');
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
- setInterval(()=>{if(dialog.open&&roomCode&&!document.hidden)updateRoom()},1800);
+ // Only one active status request; 2.6s avoids overlapping expensive Blob
+ // calls and never polls while an answer is being sent.
+ setInterval(()=>{if(dialog.open&&roomCode&&!document.hidden&&!busy)updateRoom()},2600);
  setInterval(tick,210);
 })();
