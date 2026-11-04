@@ -21,6 +21,7 @@
   '#workspace{background-color:rgba(29,17,24,.28)!important;background-image:none!important}',
   '#homeScreen .home-main{background:linear-gradient(90deg,rgba(30,18,24,.48),rgba(32,19,25,.53))!important;padding-top:clamp(9px,1vw,14px)!important;padding-bottom:clamp(14px,1.5vw,19px)!important}',
   '#homeScreen .home-main>.mb-home-dashboard{margin-bottom:0!important;row-gap:3px!important}',
+  '#homeScreen .mobile-top-logo{display:none!important}',
   '#homeScreen .mb-home-dashboard>.mb-mascot-stage{gap:clamp(4px,.5vw,7px)!important}',
   '#homeScreen .mb-home-dashboard>.mb-dashboard-left{gap:clamp(4px,.55vw,7px)!important}',
   '#homeScreen .home-main>.home-card-grid{margin-top:0!important;margin-bottom:0!important;gap:clamp(5px,.6vw,9px)!important}',
