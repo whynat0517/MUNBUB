@@ -346,12 +346,12 @@
 })();
 
 
-/* Mascot v6: compact top-left mascot, aligned controls, no duplicate overlays,
+/* Mascot v7: compact top-left mascot, aligned controls, no duplicate overlays,
    vary character motion and banter while keeping timer and quiz controls intact. */
 (()=>{
  'use strict';
- if(window.__munbubMascotV6)return;
- window.__munbubMascotV6=true;
+ if(window.__munbubMascotV7)return;
+ window.__munbubMascotV7=true;
  const imgSource='./ui-assets/mascot-character.png';
  const home=document.getElementById('homeScreen');
  const main=home?.querySelector('.home-main');
@@ -387,7 +387,7 @@
  bubble.textContent='국어 공부하러 왔어? 나도 퇴근 못 했어. 📚';
  stage.append(bubble);
  const style=document.createElement('style');
- style.id='mb-mascot-v6-compact-left-layout';
+ style.id='mb-mascot-v7-expanded-title-and-banter';
  style.textContent=[
   "/* v6 HOME: first column mascot at upper left, right column all controls without giant vertical gaps */",
   "#homeScreen .home-main{position:relative!important;isolation:isolate;overflow:visible!important;gap:0!important}",
@@ -455,9 +455,11 @@
   "@media(max-width:600px){\n#homeScreen .mb-dashboard-left>.home-hero{height:clamp(85px,29vw,135px)!important}\n#homeScreen .mb-dashboard-left>.home-hero .hero-scroll{left:0!important;top:0!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important}\n#homeScreen .mb-dashboard-left>.resume-group{margin:0!important}\n#workspace .mb-quiz-companion{gap:8px}\n#workspace .mb-mascot-button{height:102px;width:100px}\n#workspace .mb-quiz-speech{padding:10px;min-height:66px}\n}",
   '@media(prefers-reduced-motion:reduce){#homeScreen .mb-mascot-stage>img.hero-character.mb-mascot-animated,#homeScreen .mb-mascot-stage>img.hero-character[class*="mb-motion-"],#workspace .mb-mascot-button img,#workspace .mb-mascot-button[class*="mb-motion-"] img,#homeScreen .mb-home-speech{animation:none!important;transform:none!important}}'
  ].join('\n');
+ style.textContent += "\n" + "\n/* Progress retained as hidden DOM data targets, entirely removed from visible layout. */\n#homeScreen .progress-panel,#homeScreen .progress-mobile,#homeScreen .mb-dashboard-left>.progress-panel{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}\n#homeScreen .mb-dashboard-left>.home-hero{height:clamp(150px,19vw,255px)!important;min-height:0!important;max-height:255px!important;flex:none!important}\n#homeScreen .mb-dashboard-left>.home-hero .hero-scroll{width:100%!important;max-width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important;object-position:left center!important}\n#homeScreen .mb-dashboard-left{gap:clamp(5px,.7vw,9px)!important}\n#homeScreen .home-main>.mb-home-dashboard{margin-bottom:clamp(4px,.6vw,9px)!important}\n#homeScreen .mb-dashboard-left>.resume-group{order:1!important}\n#homeScreen .mb-dashboard-left>.timed-home-wrap{order:2!important}\n@media(max-width:1100px){#homeScreen .mb-dashboard-left>.home-hero{height:clamp(140px,21vw,240px)!important}}\n@media(max-width:700px){\n#homeScreen .mb-dashboard-left>.home-hero{height:clamp(112px,33vw,188px)!important;max-height:none!important}\n#homeScreen .mb-dashboard-left>.resume-group{grid-column:1/-1!important;grid-row:2!important}\n#homeScreen .mb-dashboard-left>.timed-home-wrap{grid-column:1/-1!important;grid-row:3!important}\n}\n@media(max-width:360px){#homeScreen .mb-dashboard-left>.home-hero{height:clamp(95px,32vw,140px)!important}}\n";
+ style.textContent += "\n" + "@keyframes mb-act-salute{0%,100%{transform:rotate(0)}25%,62%{transform:rotate(-13deg) translateY(-6px)}85%{transform:rotate(3deg)}}\n#homeScreen .hero-character.mb-motion-salute,#workspace .mb-mascot-button.mb-motion-salute img{animation:mb-act-salute .95s ease-in-out 1 both!important}\n@keyframes mb-act-shudder{0%,100%{transform:translateX(0)}15%,45%,75%{transform:translateX(-7px) rotate(-3deg)}30%,60%,90%{transform:translateX(7px) rotate(3deg)}}\n#homeScreen .hero-character.mb-motion-shudder,#workspace .mb-mascot-button.mb-motion-shudder img{animation:mb-act-shudder .95s ease-in-out 1 both!important}\n@keyframes mb-act-moonwalk{0%,100%{transform:translateX(0)}25%{transform:translateX(-18px) rotate(-3deg)}65%{transform:translateX(15px) rotate(4deg)}}\n#homeScreen .hero-character.mb-motion-moonwalk,#workspace .mb-mascot-button.mb-motion-moonwalk img{animation:mb-act-moonwalk .95s ease-in-out 1 both!important}\n@keyframes mb-act-victory{0%,100%{transform:translateY(0) scale(1)}20%{transform:translateY(-23px) rotate(-8deg) scale(1.07)}45%{transform:translateY(0)}70%{transform:translateY(-20px) rotate(9deg) scale(1.05)}}\n#homeScreen .hero-character.mb-motion-victory,#workspace .mb-mascot-button.mb-motion-victory img{animation:mb-act-victory .95s ease-in-out 1 both!important}\n@keyframes mb-act-peek{0%,100%{transform:translateX(0) rotate(0)}25%,60%{transform:translateX(18px) rotate(9deg)}}\n#homeScreen .hero-character.mb-motion-peek,#workspace .mb-mascot-button.mb-motion-peek img{animation:mb-act-peek .95s ease-in-out 1 both!important}\n@keyframes mb-act-stumble{0%,100%{transform:rotate(0) translateY(0)}25%{transform:rotate(-14deg) translateY(7px)}52%{transform:rotate(11deg) translateY(2px)}75%{transform:rotate(-5deg) translateY(4px)}}\n#homeScreen .hero-character.mb-motion-stumble,#workspace .mb-mascot-button.mb-motion-stumble img{animation:mb-act-stumble .95s ease-in-out 1 both!important}\n@keyframes mb-act-zoom{0%,100%{transform:scale(1)}30%{transform:scale(1.15) translateY(-8px)}67%{transform:scale(.93) translateY(5px)}}\n#homeScreen .hero-character.mb-motion-zoom,#workspace .mb-mascot-button.mb-motion-zoom img{animation:mb-act-zoom .95s ease-in-out 1 both!important}\n@keyframes mb-act-bow{0%,100%{transform:rotate(0) scaleY(1)}28%,65%{transform:rotate(6deg) scaleY(.87)}}\n#homeScreen .hero-character.mb-motion-bow,#workspace .mb-mascot-button.mb-motion-bow img{animation:mb-act-bow .95s ease-in-out 1 both!important}\n@keyframes mb-act-bop{0%,100%{transform:translateY(0) rotate(0)}20%{transform:translateY(-8px) rotate(-5deg)}40%{transform:translateY(0) rotate(4deg)}65%{transform:translateY(-8px) rotate(-3deg)}}\n#homeScreen .hero-character.mb-motion-bop,#workspace .mb-mascot-button.mb-motion-bop img{animation:mb-act-bop .95s ease-in-out 1 both!important}\n@keyframes mb-act-suspicious{0%,100%{transform:rotate(0) translateX(0)}20%,60%{transform:rotate(-11deg) translateX(-7px)}80%{transform:rotate(5deg) translateX(2px)}}\n#homeScreen .hero-character.mb-motion-suspicious,#workspace .mb-mascot-button.mb-motion-suspicious img{animation:mb-act-suspicious .95s ease-in-out 1 both!important}";
  document.head.append(style);
  const reduceMotion=()=>!!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
- const motions=['hop','nod','wiggle','think','cheer','surprise','sway','stretch'];
+ const motions=['hop','nod','wiggle','think','cheer','surprise','sway','stretch','salute','shudder','moonwalk','victory','peek','stumble','zoom','bow','bop','suspicious'];
  const timers=new WeakMap();
  function playMotion(target,motion){
   if(!target || reduceMotion())return;
@@ -466,7 +468,7 @@
   for(const m of motions)target.classList.remove('mb-motion-'+m);
   void target.offsetWidth;
   target.classList.add('mb-motion-'+kind);
-  timers.set(target,setTimeout(()=>target.classList.remove('mb-motion-'+kind),1100));
+  timers.set(target,setTimeout(()=>target.classList.remove('mb-motion-'+kind),1150));
  }
  function oneOf(lines,previous){
   if(lines.length===1)return lines[0];
@@ -651,6 +653,27 @@
   '아무 말 대잔치 시작. 일단 문제부터 풀고!',
   '드립을 이렇게 쳐도 국어 지식은 진지하게 가자.'
  );
+
+ const extraBanter={"home":["댓글 창엔 오타가 있고, 내 머릿속엔 교정기가 있지.","말은 눈 깜빡할 새 지나가도 맞춤법은 남아.","버튼이 날 부르고 있어. 아니, 네가 누른 거구나.","맞춤법 마스터의 길은 오답노트에서 시작돼.","정답이 외로워 보이면 한 문제 맞혀 주자.","난 국어 캐릭터인데 드립에 더 진심이야.","국어 시험지가 게임 보스처럼 생겨 보이는 건 기분 탓일까.","한글 맞춤법은 약속이고, 찍기는 운이야.","긴장하지 마. 문장은 도망가지 않아.","어휘력이 늘면 말장난도 정교해져. 이득이네!","누군가는 댓글에 오타를 남기고, 우린 그걸 공부하지.","자주 틀리는 표기를 고치면 속이 시원하다니까.","내가 떠들면 웃고, 문제는 진지하게 풀어 줘.","국어가 이렇게 스릴 넘치면 공포게임이 필요 없겠다.","선지들이 서로 정답인 척 연기하는 중이래.","와 이거 국어 공부인지 드립 수업인지 모르겠네.","사자성어 속 사자들은 사실 출석하지 않았습니다.","정답을 숨겨 놓은 출제자, 숨바꼭질 고수 인정.","한글이 위대하니까 띄어쓰기까지 쉽게 느껴지진 않네.","문장 하나가 두 뜻이라면 문맥을 먼저 봐.","내 눈엔 오타가 점프스케어처럼 보여.","오답은 내일 맞힐 문제의 예고편이야.","오늘의 국어 체력은 아직 괜찮아?","공부를 시작했으면 일단 10문제까지 도전!","어려운 문제는 천천히 푸는 게 오히려 빠를지도.","맞춤법에 자신 없어도 배울 준비면 충분해.","요즘 인터넷에서 본 표기, 사전에서는 다를 수 있어."],"prompts":["이 문제는 인터넷 댓글처럼 느낌으로만 고르면 안 돼.","어절을 잘라 보면 띄어쓰기가 보일 수 있어.","헷갈리면 문장 끝의 서술어부터 살펴봐.","기본형으로 돌리면 정답의 단서가 나올 수 있어.","부정 표현이면 '안'과 '않'을 구분해 봐.","문장을 소리 내 읽는 것도 좋은 방법이야.","의존 명사인지 조사인지가 핵심일 수 있어.","사자성어는 글자와 뜻을 연결해 봐.","맞는 표기만 보지 말고 틀린 표기도 분석해.","온라인에서 본 말이 표준어라고 단정하지 마.","이럴 땐 어휘의 뜻부터 확인하는 거야.","빨리 찍기 전에 한 번 더 비교해 봐.","숨은 단서가 있는지 천천히 살펴보자.","이 문장의 말하는 상황을 머릿속에 그려 봐.","한 글자 차이가 문장 의미를 바꿀 수도 있어.","기억이 흐릿하다면 반례를 떠올려 봐.","이번 문제는 문법의 개념을 확인할 기회야.","맞춘 뒤에도 근거를 설명할 수 있으면 최고!","쉽게 보이는 표기가 함정인 경우도 있어.","주변 단어와의 호응을 확인하는 거 잊지 마."],"right":["그거야! 출제자가 노린 함정을 피해 버렸네.","정답! 국어력이 한 단계 업그레이드됐어.","맞혔다! 사전도 끄덕이는 중일걸.","완벽한 국어 수비였어. 깔끔했다.","정답은 초록색, 내 기분은 무지개색.","댓글 오타도 네 앞에선 바로 교정되겠어.","정답! 한 번 더 맞혀서 연승을 이어 가자.","선택이 아주 정확했어. 이유도 기억하자!","어? 이 문제 은근 어려웠는데 대단한데?","맞췄다! 아니 '맞혔다'라고 해야겠지.","오늘 국어 뇌가 아주 열심히 일한다.","정답 누른 손가락에 훈장 하나 주고 싶네.","보기에 낚일 뻔했는데 잘 피했어.","정확하게 판단했어. 다음에도 이 규칙 기억!","한 문제 해결. 국어 퀘스트 완료!","정답 맞히는 속도보다 근거가 더 멋있어.","놀랍다! 내 말장난보다 정답이 더 신나네.","이거 완전히 고수 플레이잖아 ㅋㅋ.","국어 왕관은 아직 없지만 마음속엔 있어.","정답이야. 이제 나도 리액션 춤 춰야지."],"wrong":["아깝다. 인터넷에서 익숙한 오타가 함정이었을지도.","이건 틀린 이유를 알면 금세 해결돼.","오답도 공부의 일부라니까. 해설로 가자!","문맥 속 힌트를 하나 놓쳤을 수도 있어.","선지가 정답 코스프레를 잘하네.","괜찮아, 다음에는 비슷한 표기를 구별할 수 있겠어.","이런 문제는 자주 보면 감이 생기더라.","이건 사전 확인이 도움이 될 거야.","틀린 단어 하나가 좋은 복습 재료가 됐어.","다음에는 차분히 읽고 고르면 돼.","오늘의 보스는 이 선지였구나.","누구나 헷갈리는 표기가 있지. 이유를 알아보자.","오답노트에 들어갈 명예의 후보야.","틀린 답이 왜 틀렸는지 확인해 봐.","아니 이 보기 왜 이렇게 정답처럼 생겼냐?","다음에 또 만나면 정답으로 되갚아 주자.","방금 실수는 기억에 오래 남을 듯해.","조금만 더 읽었으면 찾았을 것 같은데!","한 번의 오답으로 실력을 단정할 필요 없어.","다음 문제는 더 침착하게 가자."],"chatting":["내가 지금 떠드는 동안 너는 문제를 풀고 있지?","오타 찾아달라고? 먼저 어떤 단어인지 알려 줘!","댓글에 '웬지' 쓰는 사람 보면 살짝 알려 주자.","난 맞춤법 지킴이, 넌 정답 지킴이.","나를 열 번 누르면 국어 지식도 열 배 될까? 글쎄.","맞춤법은 나도 사전 보면서 배운다니까.","어휘 선택이 고민되면 문맥부터 살펴봐.","수다보단 공부! 라고 말하는 캐릭터가 제일 시끄럽네.","내 춤을 감상하느라 문제 놓치지 마.","게임에는 보스가 있고 국어에는 함정이 있지.","계속 누르면 새로운 드립이 계속 나올걸.","오늘 배운 표현 하나만 제대로 기억해도 성공이야.","새 업적을 노리고 있는 거 맞지 ㅋㅋ.","클릭 소리가 들리면 난 춤출 준비를 한다.","무작정 암기보다 문장 속 쓰임을 확인해 봐.","맞춤법을 지적할 땐 사람 말고 표현을 고치자.","한글이 어렵다고? 난 맞춘범이라 매일 복습 중.","틀린 표현이 정답을 가르쳐 주는 역설.","이 드립에는 수능 출제 가능성이 없습니다.","국어 공부하다가 내가 더 수다스러워진 것 같아.","캐릭터가 말이 많아서 불편하면 문제에 집중해 봐.","연속 정답 달성하면 나도 축하 춤 춰 줄게.","정답의 열쇠는 '왜 그게 맞는지' 설명하는 거야.","내가 자주 말하는 단어? 정답, 오답, 복습!","나랑 노는 것도 좋은데 문제도 풀자 ㅋㅋ."]};
+ const commonTypos=[["웬지","왠지","'왜인지'에서 줄었어."],["왠일","웬일","'어찌 된 일'은 '웬일'이야."],["왠만하면","웬만하면","'웬만하다'에서 왔어."],["금새","금세","'금시에'에서 줄었어."],["어떻해","어떡해","'어떻게 해'의 준말이야."],["어떡해 풀지","어떻게 풀지","방법을 물을 때는 '어떻게'를 써."],["않 해","안 해","'안'은 '아니'의 준말이야."],["않 보여","안 보여","부정 부사 '안'을 써야지."],["깨끗히","깨끗이","'깨끗이'가 바른 부사야."],["갖어","가져","'가지다'의 활용은 '가져'야."],["낫설다","낯설다","바른 표기는 '낯설다'야."]];
+ const friendlyPrefixes=['ㅋㅋ 잠깐! ','📢 맞춘범 속보! ','아니 진짜, ','국어왕의 조언: '];
+ // Two rephrasings of the pre-existing corpus plus genuinely new lines.
+ for(const pool of [homeLines,prompts,right,wrong,chatting]){
+  const original=[...pool];
+  original.forEach((line,i)=>{
+   pool.push(friendlyPrefixes[i%friendlyPrefixes.length]+line);
+   pool.push(friendlyPrefixes[(i+2)%friendlyPrefixes.length]+line);
+  });
+ }
+ for(const [pool,lines] of [[homeLines,extraBanter.home],[prompts,extraBanter.prompts],
+                            [right,extraBanter.right],[wrong,extraBanter.wrong],[chatting,extraBanter.chatting]])pool.push(...lines);
+ for(const [bad,good,reason] of commonTypos){
+  homeLines.push("인터넷 댓글 맞춤법 단속! '"+bad+"' 대신 '"+good+"'이야. ㅋㅋ");
+  homeLines.push("아니 '"+bad+"'라고 썼어? '"+good+"'으로 고치자.");
+  chatting.push("오늘의 오타 제보: '"+bad+"' → '"+good+"'. "+reason);
+  chatting.push("나한테 물어봤으니 알려 줄게. '"+good+"'! "+reason);
+  prompts.push("인터넷에서 '"+bad+"' 본 적 있어? 바른 표현 '"+good+"'도 기억하자.");
+ }
  let lastHome=bubble.textContent;
  function homeSay(){
   const next=oneOf(homeLines,lastHome);
@@ -664,7 +687,7 @@
  }
  function homeReact(){
   homeSay();
-  playMotion(mascot,oneOf(['hop','nod','wiggle','cheer','surprise','sway','stretch']));
+  playMotion(mascot,oneOf(motions));
  }
  mascot.addEventListener('click',homeReact);
  mascot.addEventListener('keydown',event=>{
@@ -680,7 +703,7 @@
  setInterval(()=>{
   if(document.hidden || !home.getClientRects().length || reduceMotion())return;
   homeSay();
-  playMotion(mascot,oneOf(['nod','think','sway','stretch']));
+  playMotion(mascot,oneOf(['nod','think','sway','stretch','salute','peek','moonwalk','bop','suspicious']));
  },6800);
  const quizView=document.getElementById('view-quiz');
  const question=document.getElementById('questionPrompt');
@@ -722,9 +745,9 @@
   const signature=phase+'|'+question.textContent.trim()+'|'+(document.getElementById('quizPosition')?.textContent||'');
   if(signature===lastPhase)return;
   lastPhase=signature;
-  if(phase==='right')say(right,oneOf(['cheer','hop','wiggle']));
-  else if(phase==='wrong')say(wrong,oneOf(['surprise','think','nod']));
-  else say(prompts,oneOf(['nod','think','sway']));
+  if(phase==='right')say(right,oneOf(['cheer','hop','wiggle','victory','zoom','bop']));
+  else if(phase==='wrong')say(wrong,oneOf(['surprise','think','nod','stumble','shudder','bow']));
+  else say(prompts,oneOf(['nod','think','sway','peek','salute','suspicious']));
  }
  function scheduleAnnouncement(){
   if(scheduled)return;
@@ -778,7 +801,35 @@
   {id:'chat1',icon:'💬',name:'말 좀 걸어 봐',hint:'캐릭터를 1회 클릭하기',test:()=>state.chatClicks>=1},
   {id:'chat10',icon:'🗣️',name:'수다 동료',hint:'캐릭터를 10회 클릭하기',test:()=>state.chatClicks>=10},
   {id:'chat30',icon:'🎤',name:'드립 대폭주',hint:'캐릭터를 30회 클릭하기',test:()=>state.chatClicks>=30},
-  {id:'timed1',icon:'⏱️',name:'시간과의 승부',hint:'시간제한 도전 시작하기',test:()=>state.timedStarts>=1}
+  {id:'timed1',icon:'⏱️',name:'시간과의 승부',hint:'시간제한 도전 시작하기',test:()=>state.timedStarts>=1},
+  {id:"visit5",icon:"🏠",name:"단골 입장",hint:"누적 5회 방문",test:()=>state.visits>=5},
+  {id:"visit10",icon:"🎟️",name:"열 번째 출석",hint:"누적 10회 방문",test:()=>state.visits>=10},
+  {id:"visit25",icon:"🛋️",name:"국어방 주민",hint:"누적 25회 방문",test:()=>state.visits>=25},
+  {id:"quiz3",icon:"🎮",name:"세 번째 판",hint:"퀴즈 3회 시작",test:()=>state.quizStarts>=3},
+  {id:"quiz10",icon:"🧩",name:"퀴즈 수집가",hint:"퀴즈 10회 시작",test:()=>state.quizStarts>=10},
+  {id:"quiz25",icon:"🏟️",name:"고인물 입문",hint:"퀴즈 25회 시작",test:()=>state.quizStarts>=25},
+  {id:"timed3",icon:"⌛",name:"시간 압박 숙련",hint:"시간제한 3회 시작",test:()=>state.timedStarts>=3},
+  {id:"timed10",icon:"⏱️",name:"타임어택 장인",hint:"시간제한 10회 시작",test:()=>state.timedStarts>=10},
+  {id:"answers5",icon:"✏️",name:"몸풀기",hint:"누적 5문제 풀이",test:()=>state.answers>=5},
+  {id:"answers25",icon:"📗",name:"국어 시동",hint:"누적 25문제 풀이",test:()=>state.answers>=25},
+  {id:"answers200",icon:"📚",name:"문제책 정복자",hint:"누적 200문제 풀이",test:()=>state.answers>=200},
+  {id:"answers500",icon:"🏛️",name:"문제은행 탐험가",hint:"누적 500문제 풀이",test:()=>state.answers>=500},
+  {id:"answers1000",icon:"🌌",name:"천 문제의 기록",hint:"누적 1,000문제 풀이",test:()=>state.answers>=1000},
+  {id:"right5",icon:"🎯",name:"첫 다섯 정답",hint:"누적 정답 5개",test:()=>state.correct>=5},
+  {id:"right10",icon:"💡",name:"정답 감별력",hint:"누적 정답 10개",test:()=>state.correct>=10},
+  {id:"right50",icon:"🥇",name:"50 정답 달성",hint:"누적 정답 50개",test:()=>state.correct>=50},
+  {id:"right100",icon:"👑",name:"정답 100개",hint:"누적 정답 100개",test:()=>state.correct>=100},
+  {id:"right300",icon:"🌠",name:"국어 달인 수련",hint:"누적 정답 300개",test:()=>state.correct>=300},
+  {id:"wrong5",icon:"🔍",name:"함정 분석가",hint:"누적 오답 5개",test:()=>state.wrong>=5},
+  {id:"wrong20",icon:"🧠",name:"오답 기록 박사",hint:"누적 오답 20개",test:()=>state.wrong>=20},
+  {id:"streak2",icon:"🔸",name:"연승의 싹",hint:"2문제 연속 정답",test:()=>state.bestStreak>=2},
+  {id:"streak5",icon:"⚡",name:"5연승",hint:"5문제 연속 정답",test:()=>state.bestStreak>=5},
+  {id:"streak10",icon:"💥",name:"열 번의 집중력",hint:"10문제 연속 정답",test:()=>state.bestStreak>=10},
+  {id:"streak20",icon:"🌈",name:"연승 전설",hint:"20문제 연속 정답",test:()=>state.bestStreak>=20},
+  {id:"chat5",icon:"☕",name:"수다 시작",hint:"캐릭터를 5회 클릭하기",test:()=>state.chatClicks>=5},
+  {id:"chat20",icon:"📢",name:"말풍선 단골",hint:"캐릭터를 20회 클릭하기",test:()=>state.chatClicks>=20},
+  {id:"chat50",icon:"🎙️",name:"드립 방송국",hint:"캐릭터를 50회 클릭하기",test:()=>state.chatClicks>=50},
+  {id:"chat100",icon:"🎪",name:"백 번의 드립",hint:"캐릭터를 100회 클릭하기",test:()=>state.chatClicks>=100}
  ];
  const style=document.createElement('style');
  style.id='mb-achievements-v1';
@@ -824,6 +875,8 @@
   if(summary)summary.textContent='누적 문제 '+state.answers+'개 · 정답 '+state.correct+'개 · 최고 연속 정답 '+state.bestStreak+'개 · 캐릭터 대화 '+state.chatClicks+'회';
  }
  const pending=[];
+ let initializing=true;
+ const hadPriorProgress=Number(loaded.visits||0)>0;
  let toastTimer=null;
  function nextToast(){
   if(toastTimer!==null||!pending.length)return;
@@ -836,7 +889,7 @@
  }
  function saveAndEvaluate(){
   for(const a of awards)if(!state.unlocked[a.id]&&a.test()){
-   state.unlocked[a.id]=Date.now();pending.push(a);
+   state.unlocked[a.id]=Date.now();if(!(initializing&&hadPriorProgress))pending.push(a);
   }
   try{localStorage.setItem(KEY,JSON.stringify(state))}catch(_){}
   render();nextToast();
@@ -891,6 +944,7 @@
  }
  state.visits++;
  saveAndEvaluate();
+ initializing=false;
 })();
 
 /* Result impact v1. Feedback visibility is the source of truth. */
