@@ -141,7 +141,8 @@
   if(q.type==='spelling')return [...q.options||[]];
   if(q.type!=='idiom')return [];
   const rejected=new Set([q.answer]);
-  const synonyms=[['일거양득','일석이조'],['막상막하','난형난제'],['진퇴양난','진퇴유곡'],['고립무원','사고무친'],['분기탱천','비분강개'],
+  const synonyms=[['일거양득','일석이조'],['막상막하','난형난제'],['갑론을박','설왕설래'],
+  ['진퇴양난','진퇴유곡'],['고립무원','사고무친'],['분기탱천','비분강개'],
    ['안하무인','방약무인'],['대경실색','혼비백산'],
    ['명재경각','백척간두'],['전전긍긍','전전반측']];
   for(const group of synonyms)if(group.includes(q.answer))group.forEach(a=>rejected.add(a));
