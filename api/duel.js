@@ -232,6 +232,10 @@ export default async function handler(req,res){
   }
   if(hasExpired(room))return sendError(res,404,'방을 찾을 수 없거나 유효 시간이 지났어.');
   if(body.action==='join'){
+   if(room.version>=6){
+    const hostPresence=await readPrivate(presencePath(code,room.hostId),{fresh:true});
+    if(hostPresence?.leftAt)return sendError(res,410,'방장이 대결방을 나갔어. 새 방 코드를 받아 줘.');
+   }
    if(room.hostId===me.id)return sendError(res,400,'자기 자신과는 대결할 수 없어.');
    // Reconnecting with the same account should be safe and idempotent.
    if(guest?.id===me.id)return res.status(200).json({code,joined:true,reconnected:true});
@@ -259,8 +263,9 @@ export default async function handler(req,res){
    return res.status(200).json({code,joined:true});
   }
   if(body.action==='pulse'||body.action==='leave'){
-   if(!guest||room.version<6)return sendError(res,409,'방에 먼저 참가해 줘.');
-   if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'방 참가자가 아니야.');
+   if(room.version<6||(!guest&&!(body.action==='leave'&&room.hostId===me.id)))
+    return sendError(res,409,'방에 먼저 참가해 줘.');
+   if(me.id!==room.hostId&&me.id!==guest?.id)return sendError(res,403,'방 참가자가 아니야.');
    const path=presencePath(code,me.id),previous=await readPrivate(path,{fresh:true});
    const now=Date.now();
    if(previous?.leftAt)return res.status(200).json({ended:true,at:previous.leftAt});
