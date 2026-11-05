@@ -189,7 +189,8 @@
   signalBusy=true;
   try{
    const start=Date.now();
-   const res=await fetch('/api/duel?signal='+encodeURIComponent(credential),{
+   const includeEmote=++signalTickCount%2===0;
+   const res=await fetch('/api/duel?signal='+encodeURIComponent(credential)+(includeEmote?'&reactions=1':''),{
     credentials:'same-origin',cache:'no-store'
    });
    if(!res.ok)throw Error('대전 알림 연결 실패 '+res.status);
@@ -206,6 +207,7 @@
    const me=status.players.find(p=>p.id===status.me);
    const opponent=status.players.find(p=>p.id!==status.me);
    if(!me||!opponent||!Number.isInteger(signal.answered))return;
+   if(signal.emote)receiveEmote(signal.emote);
    if(signal.answered<opponent.answered)return; // Ignore stale Blob copies.
    const previousSignal=lastOpponentSignal;
    lastOpponentSignal=signal;
@@ -242,6 +244,11 @@
     }
    }else status.turnStartsAt=null;
    status.finished=status.players.every(p=>p.answered>=count());
+   if(status.finished&&newReview()){
+    const end=count()-1;
+    const ours=lastAnswer(me,end),theirs=signal.answers?.find(a=>a.index===end);
+    if(ours&&theirs)status.finalReviewEndsAt=reviewTurnAt(ours,theirs);
+   }
    showGame(); // Scoreboard-only update when phase/question is unchanged.
   }catch(e){
    signalFailures++;
@@ -463,8 +470,12 @@
    const otherAnswer=other||((opponent?.answered||0)>round
     ?{at:opponent.lastAt,readyAt:status.opponentReviewReadyAt}:null);
    if(otherAnswer&&me.answered<=opponent.answered){
-    status.turnReady=true;
-    status.turnStartsAt=reviewTurnAt(mine,otherAnswer);
+    if(me.answered>=count()){
+     status.finalReviewEndsAt=reviewTurnAt(mine,otherAnswer);
+    }else{
+     status.turnReady=true;
+     status.turnStartsAt=reviewTurnAt(mine,otherAnswer);
+    }
    }
    showGame();
   }catch(e){
@@ -522,6 +533,11 @@
    status.opponentAnswered=!!opponentNow&&opponentNow.answered>me.answered;
    status.opponentAnsweredAt=status.opponentAnswered?opponentNow.lastAt:null;
    status.finished=status.players.every(p=>p.answered>=count());
+   if(status.finished&&newReview()){
+    const ours=lastAnswer(me,count()-1);
+    const theirs=lastOpponentSignal?.answers?.find(a=>a.index===count()-1);
+    if(ours&&theirs)status.finalReviewEndsAt=reviewTurnAt(ours,theirs);
+   }
    showGame();
   }catch(e){lastViewKey='';showError('답변 처리 실패: '+e.message);await updateRoom()}finally{busy=false}
  }
