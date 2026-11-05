@@ -65,18 +65,8 @@
   '#mb-duel-dialog .mb-duel-result{margin-top:12px;padding:13px;border-radius:13px;border:3px solid #896848;font-size:clamp(16px,2.1vw,22px);font-weight:950}',
   '#mb-duel-dialog .mb-duel-result.good{background:#dff7d6;color:#205c37;border-color:#438e56}',
   '#mb-duel-dialog .mb-duel-result.bad{background:#ffe1dc;color:#96313a;border-color:#ad4b4f}',
-  '#mb-duel-dialog h2{background-image:url("/ui-assets/duel-parts/01_title_1v1.png"),linear-gradient(#684242,#32232b);background-size:100% 100%;background-repeat:no-repeat;min-height:62px;display:flex;align-items:center;justify-content:center}',
   '#mb-duel-dialog .mb-duel-scoreboard{position:relative;gap:clamp(22px,4vw,62px)}',
   '#mb-duel-dialog .mb-duel-scoreboard::after{content:"VS";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:7px 9px;background:#642c2e;color:#ffe0b0;border:3px double #e6ba85;border-radius:50%;font-size:clamp(14px,2vw,22px);font-weight:1000}',
-  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){background-image:url("/ui-assets/duel-parts/02_player_left.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){background-image:url("/ui-assets/duel-parts/03_player_right.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-question-text{background-image:url("/ui-assets/duel-parts/05_question_board.png"),linear-gradient(#fffaf0,#ffe7cb);background-size:100% 100%;background-repeat:no-repeat}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(1){background-image:url("/ui-assets/duel-parts/08_choice_a.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(2){background-image:url("/ui-assets/duel-parts/09_choice_b.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(3){background-image:url("/ui-assets/duel-parts/10_choice_c.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(4){background-image:url("/ui-assets/duel-parts/11_choice_d.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-round-indicator{background-image:url("/ui-assets/duel-parts/12_round_indicator_blank.png"),linear-gradient(#5f3534,#48242a);background-size:100% 100%}',
-  '#mb-duel-dialog #mb-duel-close{background-image:url("/ui-assets/duel-parts/17_exit_button.png");background-size:100% 100%;background-repeat:no-repeat}',
   '#mb-duel-dialog .mb-duel-note{color:#735444;font-size:13px}',
   '#mb-duel-dialog{width:min(95vw,1180px);max-height:95dvh;background:linear-gradient(180deg,#e4eff21a,#271c1d18),url("/ui-assets/duel-day-loop.webp") center/cover fixed!important}',
   '#mb-duel-dialog .mb-duel-panel{max-width:1050px;margin:0 auto;padding:clamp(13px,2vw,24px);background:linear-gradient(#fff1dce8,#fae2c6ec);backdrop-filter:blur(4px)}',
@@ -102,13 +92,31 @@
   '#mb-duel-dialog .mb-duel-remote-emote[hidden]{display:none!important}',
   '#mb-duel-dialog .mb-duel-remote-emote{animation:mb-scholar-emote .42s cubic-bezier(.2,1.2,.3,1) both;transform-origin:center bottom;box-shadow:0 7px 22px #3b202040}',
   '@keyframes mb-scholar-emote{0%{opacity:0;transform:translateY(22px) scale(.45) rotate(-9deg)}65%{opacity:1;transform:translateY(-7px) scale(1.08) rotate(3deg)}100%{transform:translateY(0) scale(1)}}',
-  '#mb-duel-dialog .mb-duel-emotes .mb-duel-emote-art{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;background-image:url("/ui-assets/duel-emotes-sheet.png");background-size:400% 300%;background-repeat:no-repeat;vertical-align:middle;image-rendering:auto}',
+  '#mb-duel-dialog .mb-duel-emotes .mb-duel-emote-art{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;background-size:400% 300%;background-repeat:no-repeat;vertical-align:middle;image-rendering:auto}',
   '#mb-duel-dialog .mb-duel-result-hero{filter:drop-shadow(1px 5px 3px #421e2d70)}',
   '#mb-duel-dialog .mb-duel-emotes-state{font-size:12px;color:#805b48;min-width:65px}',
   '@media(max-width:460px){#mb-duel-dialog .mb-duel-emotes{gap:3px;padding:5px}#mb-duel-dialog .mb-duel-emotes button{font-size:22px;min-width:36px;min-height:37px}#mb-duel-dialog .mb-duel-emotes-label{width:100%}}',
   '@media(max-width:600px){#mb-duel-dialog .mb-duel-option-list{grid-template-columns:1fr}#mb-duel-dialog .mb-duel-option-list button{min-height:55px}#mb-duel-dialog .mb-duel-scoreboard{gap:6px}}'
  ].join('\n');
  document.head.append(css);
+ const artStyles=[
+  '#mb-duel-dialog h2{background-image:url("/ui-assets/duel-parts/01_title_1v1.png"),linear-gradient(#684242,#32232b);background-size:100% 100%;background-repeat:no-repeat;min-height:62px;display:flex;align-items:center;justify-content:center}',
+  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){background-image:url("/ui-assets/duel-parts/02_player_left.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){background-image:url("/ui-assets/duel-parts/03_player_right.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-question-text{background-image:url("/ui-assets/duel-parts/05_question_board.png"),linear-gradient(#fffaf0,#ffe7cb);background-size:100% 100%;background-repeat:no-repeat}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(1){background-image:url("/ui-assets/duel-parts/08_choice_a.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(2){background-image:url("/ui-assets/duel-parts/09_choice_b.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(3){background-image:url("/ui-assets/duel-parts/10_choice_c.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(4){background-image:url("/ui-assets/duel-parts/11_choice_d.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-round-indicator{background-image:url("/ui-assets/duel-parts/12_round_indicator_blank.png"),linear-gradient(#5f3534,#48242a);background-size:100% 100%}',
+  '#mb-duel-dialog #mb-duel-close{background-image:url("/ui-assets/duel-parts/17_exit_button.png");background-size:100% 100%;background-repeat:no-repeat}',
+ ].join('\n');
+ // Avoid nine 404 image requests and unnecessary repainting if the supplied
+ // split PNGs have not yet been uploaded to the GitHub UI assets directory.
+ fetch('/ui-assets/duel-parts/05_question_board.png',{method:'HEAD',cache:'force-cache'})
+  .then(res=>{if(res.ok)css.textContent+='\n'+artStyles}).catch(()=>{});
+ fetch('/ui-assets/duel-emotes-sheet.png',{method:'HEAD',cache:'force-cache'})
+  .then(res=>{if(res.ok)css.textContent+='\n#mb-duel-dialog .mb-duel-emote-art{background-image:url("/ui-assets/duel-emotes-sheet.png")!important;font-size:0}'}).catch(()=>{});
  const homeRow=document.querySelector('#homeScreen .mb-online-actions');
  if(homeRow){
   const btn=document.createElement('button');
