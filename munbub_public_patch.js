@@ -1,7 +1,9 @@
 /* Live public-room browser adapted from the supplied offline UI pack. */
 (()=>{
 'use strict';if(window.__mbPublicRoomsV1)return;window.__mbPublicRoomsV1=true;
-const $=id=>document.getElementById(id);
+// Dialog controls must be looked up in their owning dialog, even if a
+// home-screen extension temporarily reparents overlay nodes.
+const $=id=>roomsDialog.querySelector('#'+String(id).replace(/^#/,''))||document.getElementById(String(id).replace(/^#/,''));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const roomsDialog=document.createElement('dialog');roomsDialog.id='mb-public-dialog';roomsDialog.setAttribute('aria-label','실시간 공개방');
 document.body.append(roomsDialog);
@@ -46,10 +48,10 @@ const css=document.createElement('style');css.id='mb-public-css';css.textContent
 .sidebar-nav .mb-public-nav,.mobile-drawer .mb-public-nav{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:65px;padding:9px 4px;background:linear-gradient(#ffe8be,#d4a57c);border:3px double #91644c;border-radius:11px;color:#482e28;font-weight:950;font-size:17px}
 @media(max-width:730px){#mb-public-dialog{width:100vw;max-height:100dvh;height:100dvh;padding:12px;border-radius:0}#mb-public-dialog .mb-pub-layout{grid-template-columns:1fr}#mb-public-dialog .mb-pub-side{display:none}#mb-public-dialog .mb-pub-actions{justify-content:flex-start}#mb-public-dialog .mb-pub-room{grid-template-columns:minmax(0,1fr) auto;gap:7px}#mb-public-dialog .mb-pub-people{display:none}#mb-public-dialog .mb-pub-field{grid-template-columns:1fr;gap:4px}#mb-public-dialog #mb-pub-list{max-height:52dvh}}
 `;document.head.append(css);
-let rooms=[],filter='all',query='',screen='list',busy=false,refreshing=false,lastCheck=0;
+let rooms=[],filter='all',query='',screen='list',busy=false,refreshing=false,lastCheck=0,pendingAccount=false;
 const typeNames={mixed:'혼합',spelling:'맞춤법',idiom:'사자성어'};
 function button(text,id,kind=''){return '<button type="button" class="mb-pub-btn '+kind+'" id="'+id+'">'+text+'</button>'}
-function shell(body){roomsDialog.innerHTML='<div class="mb-pub-top"><h2>🏮 맛춘범 공개방</h2>'+button('✕ 닫기','mb-pub-close')+'</div>'+body+'<p id="mb-pub-message" class="mb-pub-message" role="status"></p>';$('#mb-pub-close').onclick=()=>roomsDialog.close()}
+function shell(body){if(!roomsDialog.isConnected)document.body.append(roomsDialog);roomsDialog.innerHTML='<div class="mb-pub-top"><h2>🏮 맛춘범 공개방</h2>'+button('✕ 닫기','mb-pub-close')+'</div>'+body+'<p id="mb-pub-message" class="mb-pub-message" role="status"></p>';roomsDialog.querySelector('#mb-pub-close')?.addEventListener('click',()=>roomsDialog.close())}
 function message(s){const p=$('mb-pub-message');if(p)p.textContent=s}
 function matchingRooms(){return rooms.filter(r=>(filter==='all'||(filter==='waiting'?r.status==='waiting':r.type===filter))&&
  (!query||(r.name+' '+r.host).toLowerCase().includes(query.toLowerCase())))}
@@ -93,7 +95,7 @@ function createView(){
   e.preventDefault();if(busy)return;busy=true;message('방을 만들고 있어...');
   const settings={type:$('#mb-pub-type').value,form:$('#mb-pub-form').value,count:Number($('#mb-pub-amount').value),seconds:Number($('#mb-pub-seconds').value)};
   const body={action:'create',settings,publicRoom:!$('#mb-pub-private').checked,lobbyRoom:true,roomName:$('#mb-pub-name').value.trim(),title:window.mbGetEquippedTitle?.()||'국어 새내기'};
-  try{const out=await request('/api/duel',body);await enterDuel(out.code)}
+  try{const out=await request('/api/duel',body);message('방 생성 완료! 대기실로 이동 중...');await enterDuel(out.code)}
   catch(error){message(error.message)}finally{busy=false}
  };
 }
@@ -105,7 +107,13 @@ function codeView(){
 async function request(url,body){
  const res=await fetch(url,{method:body?'POST':'GET',credentials:'same-origin',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
  const data=await res.json().catch(()=>({}));
- if(!res.ok)throw Error(data.error||'서버와 통신할 수 없어.');return data;
+ if(!res.ok){
+  const why=res.status===404?'공개방 API가 배포되지 않았어. 프로젝트 루트에 api 폴더가 있는지 확인해 줘.':
+   res.status===503?'온라인 저장소 연결 오류야. Vercel Blob 설정을 확인해 줘.':
+   res.status===401?'온라인 계정 로그인이 필요해.':'서버와 통신할 수 없어 ('+res.status+').';
+  throw Error(data.error||why);
+ }
+ return data;
 }
 async function refresh(){
  if(!roomsDialog.open||screen!=='list'||refreshing)return;
@@ -116,24 +124,47 @@ async function refresh(){
 }
 async function enterDuel(code){
  if(typeof window.mbDuelEnterRoom!=='function')throw Error('1대1 대전 모듈을 불러오지 못했어. 새로고침해 줘.');
- roomsDialog.close();
  await window.mbDuelEnterRoom(code);
+ roomsDialog.close();
 }
 async function join(code){
  if(busy)return;code=String(code||'').trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code))return message('8자리 방 코드를 확인해 줘.');
  busy=true;message('방에 참가하고 있어...');
- try{await request('/api/duel',{action:'join',code,title:window.mbGetEquippedTitle?.()||'국어 새내기'});await enterDuel(code)}
+ try{await request('/api/duel',{action:'join',code,title:window.mbGetEquippedTitle?.()||'국어 새내기'});message('참가 완료! 대기실로 이동 중...');await enterDuel(code)}
  catch(e){message(e.message)}finally{busy=false}
 }
+let opening=false;
 async function open(){
+ if(opening)return;opening=true;
+ try{
+ try{
+  const account=await request('/api/account');
+  if(!account.loggedIn){
+   pendingAccount=true;
+   window.mbOpenAccount?.();
+   if(typeof window.mbOpenAccount!=='function'){
+    if(!roomsDialog.open)roomsDialog.showModal();
+    filter='all';query='';listView();
+    message('온라인 로그인·계정 생성 화면을 불러오지 못했어. 새로고침한 뒤 다시 눌러 줘.');
+   }
+   return;
+  }
+ }catch(e){
+  if(!roomsDialog.open)roomsDialog.showModal();
+  filter='all';query='';listView();
+  message('공개방 서버 확인 실패: '+e.message);
+  return;
+ }
+ pendingAccount=false;
  if(!roomsDialog.open)roomsDialog.showModal();
  filter='all';query='';listView();
- try{const account=await request('/api/account');if(!account.loggedIn){
-  message('온라인 로그인 후 공개방을 만들거나 참가할 수 있어. 홈의 온라인 로그인 버튼을 이용해 줘.');
-  return;
- }}catch(e){message('온라인 로그인 상태를 확인하지 못했어.')}
  await refresh();
+}finally{opening=false}
 }
+document.addEventListener('mb:auth-changed',event=>{
+ if(event.detail?.loggedIn&&pendingAccount){pendingAccount=false;open()}
+ if(!event.detail?.loggedIn)pendingAccount=false;
+});
 function mount(){
  const row=document.querySelector('#homeScreen .mb-online-actions');
  if(row&&!$('#mb-public-open')){const btn=document.createElement('button');btn.type='button';btn.id='mb-public-open';btn.textContent='🏮 공개방';btn.addEventListener('click',open);row.append(btn)}

@@ -19,7 +19,13 @@
  async function api(url,data){
   const res=await fetch(url,{method:data?'POST':'GET',headers:data?{'Content-Type':'application/json'}:{},credentials:'same-origin',body:data?JSON.stringify(data):undefined});
   const out=await res.json().catch(()=>({}));
-  if(!res.ok)throw Error(out.error||'서버에 연결할 수 없어.');return out;
+  if(!res.ok){
+   const detail=res.status===404?'배포된 사이트에서 /api 경로를 찾지 못했어. Vercel 프로젝트 루트에 api 폴더가 포함됐는지 확인해 줘.':
+    res.status===503?'온라인 저장소가 연결되지 않았어. Vercel의 BLOB_READ_WRITE_TOKEN 설정을 확인해 줘.':
+    res.status===401?'닉네임 또는 비밀번호를 확인해 줘.':'서버와 통신할 수 없어 ('+res.status+').';
+   throw Error(out.error||detail);
+  }
+  return out;
  }
  function open(body){
   modal.classList.toggle('mb-ranking-modal',body.includes('mb-ranking-board'));
@@ -103,7 +109,7 @@
    }else{
     open('<h2>👤 온라인 계정</h2><p><strong>'+esc(me.name)+'</strong> 님, 닉네임과 비밀번호로 로그인 중이야.</p><p class="mb-tip">비밀번호를 다른 사람에게 알려 주지 마. 재설정 기능은 아직 준비되지 않았어.</p><button id="mb-online-logout">로그아웃</button>');
    }
-   $('mb-online-logout')?.addEventListener('click',async()=>{try{await api('/api/account',{action:'logout'});me=null;refreshButtons();modal.close()}catch(e){alert(e.message)}});
+   $('mb-online-logout')?.addEventListener('click',async()=>{try{await api('/api/account',{action:'logout'});me=null;refreshButtons();modal.close();document.dispatchEvent(new CustomEvent('mb:auth-changed',{detail:{loggedIn:false}}))}catch(e){alert(e.message)}});
    return;
   }
   open('<h2>👤 맛춘범 로그인</h2><p class="mb-tip">닉네임과 비밀번호로 로그인해. 닉네임은 다른 사람과 중복할 수 없어.</p><form id="mb-login-form"><label>닉네임<input id="mb-login-name" maxlength="12" autocomplete="username" required></label><label>비밀번호<input id="mb-login-password" type="password" autocomplete="current-password" maxlength="72" required></label><button type="submit">🔓 로그인</button></form><hr><h3>새 계정 만들기</h3><form id="mb-register-form"><label>새 닉네임 (2~12자)<input id="mb-new-name" maxlength="12" minlength="2" autocomplete="off" required></label><label>비밀번호 (8자 이상)<input id="mb-new-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></label><label>비밀번호 확인<input id="mb-new-password-check" type="password" minlength="8" maxlength="72" autocomplete="new-password" required></label><button type="submit">➕ 계정 만들기</button></form><details><summary style="cursor:pointer;margin-top:10px;font-weight:800">이전 복구 코드 계정으로 로그인</summary><p class="mb-tip">예전에 만든 계정은 기존 복구 코드로 들어간 뒤 새 비밀번호를 설정할 수 있어.</p><form id="mb-legacy-form"><input id="mb-legacy-code" autocomplete="off" spellcheck="false" placeholder="예전 복구 코드" required><button type="submit">기존 계정 열기</button></form></details><p id="mb-account-error" role="status" aria-live="polite"></p>');
@@ -112,6 +118,7 @@
    me=x;refreshButtons();
    try{localStorage.setItem('mb_local_player_v1',JSON.stringify({name:x.name}))}catch(_){}
    modal.close();
+   document.dispatchEvent(new CustomEvent('mb:auth-changed',{detail:{loggedIn:true,name:x.name}}));
   }
   $('mb-login-form')?.addEventListener('submit',async e=>{
    e.preventDefault();msg.textContent='로그인 중...';
@@ -133,6 +140,7 @@
    }catch(err){msg.textContent=err.message}
   });
  }
+ window.mbOpenAccount=account;
  const RANK_TABS=[
   ['hardcore','⚔ 하드코어','점수'],
   ['timed60','⏱ 타임어택 1분','정답'],

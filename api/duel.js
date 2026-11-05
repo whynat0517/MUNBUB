@@ -1,6 +1,6 @@
 /* Private invite-code 1v1 quiz. Neither player's records overwrite the other's. */
 import { randomBytes, randomInt } from 'node:crypto';
-import { list, put } from '@vercel/blob';
+import { list, put, del } from '@vercel/blob';
 import { configured, noCache, sameOrigin, session, token, verify, readPrivate, writePrivate, answerCorrect, duelQuestionIds } from '../lib/mb-server.js';
 
 const PREFIX='duels/';
@@ -153,7 +153,7 @@ async function state(c,room,guest,me){
 async function sendError(res,code,text){return res.status(code).json({error:text})}
 export default async function handler(req,res){
  noCache(res);
- if(!configured())return sendError(res,503,'대결 서버가 준비되지 않았어.');
+ if(!configured())return sendError(res,503,'대결 서버의 Blob 저장소가 연결되지 않았어. Vercel 설정을 확인해 줘.');
  const me=session(req);
  if(!me)return sendError(res,401,'1대1 대결은 온라인 로그인 후 이용할 수 있어.');
  if(req.method==='GET'){
@@ -242,14 +242,14 @@ export default async function handler(req,res){
     publicRoom,roomName,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
+   // Write game state BEFORE listing. Never advertise a half-created room.
+   await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
+   await writePrivate(presencePath(code,me.id),{at:Date.now(),leftAt:null});
+   if(publicRoom)await writePrivate(lobbyPath(code),{hostReady:false,guestReady:false,startedAt:null},{overwrite:true});
    if(listPublicly)await writePrivate('public-rooms/'+code+'.json',{
     code,roomName,hostId:me.id,hostName:me.name,hostTitle,createdAt:now,
     expiresAt:now+ROOM_LIFETIME,settings
    },{overwrite:true});
-   // Create the initial compact read model; avoids a list of empty steps on every poll.
-   await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
-   await writePrivate(presencePath(code,me.id),{at:Date.now(),leftAt:null}).catch(()=>null);
-   if(publicRoom)await writePrivate(lobbyPath(code),{hostReady:false,guestReady:false,startedAt:null},{overwrite:true});
    return res.status(201).json({code,settings,expiresAt:now+ROOM_LIFETIME});
   }
   const code=String(body.code||'').trim().toUpperCase();
@@ -285,7 +285,17 @@ export default async function handler(req,res){
     if(hostPresence?.leftAt)return sendError(res,410,'방장이 대결방을 나갔어. 새 방 코드를 받아 줘.');
    }
    if(room.hostId===me.id)return sendError(res,400,'자기 자신과는 대결할 수 없어.');
-   // Reconnecting with the same account should be safe and idempotent.
+   // Reconnect while seated, but do not let departed guests occupy the
+   // only seat forever. Reopening applies only before the match started.
+   if(guest){
+    const departed=await readPrivate(presencePath(code,guest.id),{fresh:true});
+    const lobby=room.publicRoom?await readPrivate(lobbyPath(code),{fresh:true}):null;
+    const started=!!lobby?.startedAt||!!(room.version>=7&&await readPrivate(lobbyStartPath(code),{fresh:true}));
+    if(departed?.leftAt&&!started){
+     await del(guestPath(code)).catch(()=>{});
+     guest=await readPrivate(guestPath(code),{fresh:true});
+    }
+   }
    if(guest?.id===me.id)return res.status(200).json({code,joined:true,reconnected:true});
    if(guest)return sendError(res,409,'이미 다른 계정이 참가한 방이야. 새 방 코드를 받아 줘.');
    try{
@@ -368,6 +378,22 @@ export default async function handler(req,res){
    if(body.action==='leave'){
     const leftAt=now;
     await writePrivate(path,{at:previous?.at||now,leftAt},{overwrite:true});
+    if(me.id===room.hostId){
+     // Explicitly hide an abandoned public room. The original private room
+     // record stays for compatibility with in-progress opponent polling.
+     await del('public-rooms/'+code+'.json').catch(()=>{});
+    }else if(room.publicRoom){
+     const lobby=await readPrivate(lobbyPath(code),{fresh:true});
+     const started=!!lobby?.startedAt||!!(room.version>=7&&await readPrivate(lobbyStartPath(code),{fresh:true}));
+     if(!started){
+      // Free the waiting seat so a new guest can join without a dead room.
+      await del(guestPath(code)).catch(()=>{});
+      await Promise.all([
+       writePrivate(lobbyReadyPath(code,me.id),{ready:false},{overwrite:true}),
+       writePrivate(lobbyReadyPath(code,room.hostId),{ready:false},{overwrite:true})
+      ]);
+     }
+    }
     return res.status(200).json({ended:true,at:leftAt});
    }
    if(previous?.at&&now-previous.at<4500)return res.status(200).json({alive:true});

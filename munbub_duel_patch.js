@@ -119,6 +119,8 @@
  // 1대1 대결은 홈 캐릭터 아래 버튼에서만 진입한다.
  let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null,serverOffset=0;
  let emoteBusy=false,lastEmoteSentAt=0,lastRemoteEmoteAt=0,recentRemoteEmote=null,signalTickCount=0;
+ const perf={requests:0,failed:0,elapsedMs:0,signalRequests:0};
+ window.mbDuelMetrics=()=>({...perf,meanRequestMs:perf.requests?Math.round(perf.elapsedMs/perf.requests):0});
  let leaving=false,heartbeatBusy=false,lastHeartbeat=0;
  let signalBusy=false,signalLastAt=0,signalFailures=0,lastOpponentSignal=null;
  const currentRoomKey='mb_duel_last_room_v1';
@@ -128,13 +130,15 @@
  function makeHeader(){return '<div class="mb-duel-top-controls">'+
   '<button type="button" id="mb-duel-home" aria-label="홈으로 돌아가기"></button>'+
   '<button type="button" id="mb-duel-sound" aria-label="소리 켜기 또는 끄기"></button>'+
-  '<button class="mb-duel-close" type="button" id="mb-duel-close" aria-label="대결 나가기"></button>'+
+  '<button class="mb-duel-close" type="button" id="mb-duel-close" aria-label="1대1 설정으로 이동"></button>'+
   '</div><h2 aria-label="1대1 모드"></h2>'}
  function putHTML(content){
   dialog.classList.toggle('mb-duel-live',content.includes('mb-duel-arena'));
   dialog.innerHTML=makeHeader()+content;
-  dialog.querySelector('#mb-duel-close')?.addEventListener('click',()=>dialog.close());
-  dialog.querySelector('#mb-duel-home')?.addEventListener('click',()=>{
+  // Settings and leaving the room are not the Home action.
+  dialog.querySelector('#mb-duel-close')?.addEventListener('click',showLobby);
+  dialog.querySelector('#mb-duel-home')?.addEventListener('click',async()=>{
+   if(!await leaveCurrentRoom())return;
    dialog.close();window.navigate?.('home');
   });
   dialog.querySelector('#mb-duel-sound')?.addEventListener('click',()=>{
@@ -147,17 +151,20 @@
  }
  function renderNotice(message){putHTML('<div class="mb-duel-panel"><p class="mb-duel-status" id="mb-duel-info">'+esc(message)+'</p><div class="mb-duel-actions"><button type="button" id="mb-duel-back">방 선택으로</button></div></div>');dialog.querySelector('#mb-duel-back')?.addEventListener('click',showLobby)}
  async function api(body,code){
+  const started=performance.now();perf.requests++;
   const url='/api/duel'+(code?'?code='+encodeURIComponent(code):'');
-  const result=await fetch(url,{method:body?'POST':'GET',credentials:'same-origin',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
-  const json=await result.json().catch(()=>({}));
-  if(!result.ok)throw Error(json.error||'대결 서버에 연결하지 못했어.');
-  return json;
+  try{
+   const result=await fetch(url,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+   const json=await result.json().catch(()=>({}));
+   if(!result.ok)throw Error(json.error||'대결 서버에 연결하지 못했어.');
+   return json;
+  }catch(e){perf.failed++;throw e}finally{perf.elapsedMs+=performance.now()-started}
  }
  async function checkLogin(){
   try{const r=await fetch('/api/account',{credentials:'same-origin'});const j=await r.json();return !!j.loggedIn}catch{return false}
  }
- function showLobby(){
-  reportLeave();
+ async function showLobby(){
+  if(!await leaveCurrentRoom())return;
   roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;recentRemoteEmote=null;lastRemoteEmoteAt=0;signalTickCount=0;
   const last=localStorage.getItem(currentRoomKey)||'';
   putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고 같은 문제로 대결해 봐! 방장이 문제 수와 시간, 유형을 정할 수 있어.</p>'+
@@ -211,18 +218,30 @@
   if(typeof window.__mbMarkRoute==='function')window.__mbMarkRoute(previousSelection||'home');
   previousSelection=null;
  });
- function reportLeave(){
-  if(!roomCode||leaving)return;
-  const code=roomCode,payload={action:'leave',code,
-   ...(status?.answerTicket?{answerTicket:status.answerTicket}:{})};
+ async function leaveCurrentRoom(){
+  if(!roomCode)return true;
+  if(leaving)return false;
   leaving=true;
+  const code=roomCode;
   try{
-   const body=JSON.stringify(payload);
-   const beacon=navigator.sendBeacon?.('/api/duel',new Blob([body],{type:'application/json'}));
-   if(!beacon)fetch('/api/duel',{method:'POST',credentials:'same-origin',
+   await api({action:'leave',code,
+    ...(status?.answerTicket?{answerTicket:status.answerTicket}:{})});
+   if(roomCode===code){roomCode=null;status=null;}
+   try{localStorage.removeItem(currentRoomKey)}catch(_){}
+   return true;
+  }catch(error){showError('방을 나가지 못했어: '+error.message);return false}
+  finally{leaving=false}
+ }
+ // Best-effort only for tab closing. All visible exit buttons await the server.
+ function reportLeave(){
+  if(!roomCode)return;
+  try{
+   const body=JSON.stringify({action:'leave',code:roomCode,
+    ...(status?.answerTicket?{answerTicket:status.answerTicket}:{})});
+   const sent=navigator.sendBeacon?.('/api/duel',new Blob([body],{type:'application/json'}));
+   if(!sent)fetch('/api/duel',{method:'POST',credentials:'same-origin',
     headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});
   }catch(_){}
-  setTimeout(()=>{leaving=false},1500);
  }
  function opponentGone(offline){
   if(!roomCode)return;
@@ -263,7 +282,8 @@
   await updateRoom();
  }
  async function updateRoom(){
-  if(!roomCode||pollBusy||!dialog.open)return;
+  if(!roomCode||!dialog.open)return;
+  if(pollBusy){setTimeout(()=>{if(roomCode)updateRoom()},160);return;}
   pollBusy=true;
   const started=Date.now(),code=roomCode;
   try{
@@ -291,7 +311,7 @@
   const code=roomCode,credential=status.signalTicket;
   signalBusy=true;
   try{
-   const start=Date.now();
+   const start=Date.now();perf.requests++;perf.signalRequests++;
    const includeEmote=++signalTickCount%2===0;
    const res=await fetch('/api/duel?signal='+encodeURIComponent(credential)+(includeEmote?'&reactions=1':''),{
     credentials:'same-origin',cache:'no-store'
@@ -472,17 +492,17 @@
    if(!card)continue;
    const points=card.querySelector('.mb-duel-score-value');
    const progress=card.querySelector('.mb-duel-progress');
-   if(points)points.textContent=hidden?'🔒 공개 대기':p.score+'점';
-   if(progress)progress.textContent=hidden?
+   if(points){const next=hidden?'🔒 공개 대기':p.score+'점';if(points.textContent!==next)points.textContent=next;}
+   if(progress){const next=hidden?
     '상대 답변 후 점수 공개 · '+p.answered+'/'+count():
-    '정답 '+p.correct+' · '+p.answered+'/'+count();
+    '정답 '+p.correct+' · '+p.answered+'/'+count();if(progress.textContent!==next)progress.textContent=next;}
   }
   updateOpponentSignal();
   refreshReview();
   const points=status?.players||[];
   const left=dialog.querySelector('#mb-duel-score-left'),right=dialog.querySelector('#mb-duel-score-right');
-  if(left)left.textContent=hidden?'?':String(points[0]?.score||0);
-  if(right)right.textContent=hidden?'?':String(points[1]?.score||0);
+  if(left){const n=hidden?'?':String(points[0]?.score||0);if(left.textContent!==n)left.textContent=n;}
+  if(right){const n=hidden?'?':String(points[1]?.score||0);if(right.textContent!==n)right.textContent=n;}
  }
   const EMOTES={
   wave:['👋','인사'],cheer:['🙌','만세'],laugh:['😂','웃음'],
@@ -662,7 +682,7 @@
   }
   html+='<footer class="mb-duel-footer">'+emotePalette()+
    '<div class="mb-duel-round-indicator">ROUND '+Math.min(qidx+1,count())+' / '+count()+'</div>'+
-   '<div class="mb-duel-footer-actions"><button id="mb-duel-new" type="button">방 선택</button>'+
+   '<div class="mb-duel-footer-actions"><button id="mb-duel-new" type="button" aria-label="1대1 방 설정으로 이동">방 설정</button>'+
    '<button id="mb-duel-emoji-toggle" type="button" aria-expanded="false">이모티콘</button>'+
    '<button id="mb-duel-exit" type="button">나가기</button></div></footer>'+
    '<p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
@@ -698,7 +718,7 @@
    try{await navigator.clipboard.writeText(roomCode);showError('방 코드가 복사됐어.')}catch(_){showError('복사가 제한됐어. 위 코드를 직접 알려 줘.')}
   });
   dialog.querySelector('#mb-duel-new')?.addEventListener('click',showLobby);
-  dialog.querySelector('#mb-duel-exit')?.addEventListener('click',()=>dialog.close());
+  dialog.querySelector('#mb-duel-exit')?.addEventListener('click',showLobby);
   dialog.querySelector('#mb-duel-emoji-toggle')?.addEventListener('click',()=>{
    const palette=dialog.querySelector('.mb-duel-emotes');if(!palette)return;
    palette.classList.toggle('mb-duel-emotes-expanded');
@@ -754,6 +774,8 @@
   if(!me||!opponent||me.answered>opponent.answered||
      me.answered>=count()||now()<status.turnStartsAt)return;
   busy=true;
+  const activeOption=[...dialog.querySelectorAll('[data-duel-answer]')].find(x=>x.dataset.duelAnswer===answer);
+  if(activeOption)activeOption.classList.add('mb-answer-pending');
   dialog.querySelectorAll('[data-duel-answer],#mb-duel-written-form button,#mb-duel-written-answer').forEach(b=>b.disabled=true);
   try{
    const out=await api({action:'answer',code:roomCode,index:me.answered,answer,
@@ -800,7 +822,10 @@
     if(ours&&theirs)status.finalReviewEndsAt=reviewTurnAt(ours,theirs);
    }
    showGame();
-  }catch(e){lastViewKey='';showError('답변 처리 실패: '+e.message);await updateRoom()}finally{busy=false}
+  }catch(e){lastViewKey='';showError('답변 처리 실패: '+e.message);await updateRoom()}finally{
+   busy=false;if(activeOption?.isConnected)activeOption.classList.remove('mb-answer-pending');
+   if(phase==='question')dialog.querySelectorAll('[data-duel-answer],#mb-duel-written-form button,#mb-duel-written-answer').forEach(b=>b.disabled=false);
+  }
  }
  let chatBusy=false,lastChatPoll=0;
  async function loadChat(){
@@ -811,12 +836,14 @@
    const data=await res.json();if(!res.ok)throw Error(data.error||'채팅을 불러오지 못했어.');
    if(code!==roomCode)return;
    const view=dialog.querySelector('#mb-public-chatlog');if(!view)return;
-   view.innerHTML=(data.messages||[]).map(m=>'<div><strong>'+esc(m.name||'플레이어')+':</strong> '+esc(m.message||'')+'</div>').join('')||'<p>아직 메시지가 없어. 먼저 인사해 봐!</p>';
+   const html=(data.messages||[]).map(m=>'<div><strong>'+esc(m.name||'플레이어')+':</strong> '+esc(m.message||'')+'</div>').join('')||'<p>아직 메시지가 없어. 먼저 인사해 봐!</p>';
+   if(view.innerHTML!==html)view.innerHTML=html;
    view.scrollTop=view.scrollHeight;
   }catch(e){const view=dialog.querySelector('#mb-public-chatlog');if(view&&!view.children.length)view.textContent=e.message}
   finally{chatBusy=false}
  }
  function tick(){
+  if(dialog.open&&roomCode&&Date.now()-lastHeartbeat>6100)heartbeat();
   if(!dialog.open||!roomCode||!status||document.hidden)return;
   if(phase==='waiting'&&status.publicRoom&&Date.now()-lastChatPoll>2800)loadChat();
   if(recentRemoteEmote&&Date.now()-recentRemoteEmote.received>=2900){
@@ -844,10 +871,10 @@
  function signalDelay(){
   if(!dialog.open||!roomCode||document.hidden)return 1400;
   if(signalFailures>3)return 2600;
-  if(phase==='question'||phase==='opponent')return 350;
-  if(phase==='review'||phase==='countdown'||phase==='feedback')return 500;
-  if(phase==='waiting')return 580;
-  if(phase==='finished')return 650;
+  if(phase==='question'||phase==='opponent')return 440;
+  if(phase==='review'||phase==='countdown'||phase==='feedback')return 660;
+  if(phase==='waiting')return 900;
+  if(phase==='finished')return 950;
   return 2200;
  }
  function fullDelay(){
@@ -869,7 +896,6 @@
  window.addEventListener('pagehide',()=>{
   reportLeave();clearTimeout(fullTimer);clearTimeout(fastTimer);
  },{once:true});
- setInterval(heartbeat,6500);
  setInterval(tick,210);
  // Public-room browser is a separate module; route joined games here.
  window.mbDuelEnterRoom=async code=>{

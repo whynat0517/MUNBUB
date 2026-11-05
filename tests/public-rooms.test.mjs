@@ -15,7 +15,7 @@ async function fixture(){
   files.set(path,clone(value));return {pathname:path};
  };
  const list=async({prefix='',limit=1000}={})=>({blobs:[...files.keys()].filter(k=>k.startsWith(prefix)).sort().slice(0,limit).map(pathname=>({pathname}))});
- const blob={list,put:async(path,text,options={})=>writePrivate(path,JSON.parse(text),{overwrite:options.allowOverwrite===true})};
+ const blob={list,put:async(path,text,options={})=>writePrivate(path,JSON.parse(text),{overwrite:options.allowOverwrite===true}),del:async(path)=>{if(Array.isArray(path)){path.forEach(p=>files.delete(p))}else files.delete(path)}};
  const server={configured:()=>true,noCache:()=>{},sameOrigin:()=>true,session:req=>req.user,
   token:claim=>JSON.stringify(claim),verify:claim=>JSON.parse(claim),readPrivate,writePrivate,
   answerCorrect:()=>true,duelQuestionIds:()=>[...Array.from({length:156},(_,i)=>'s'+(i+1)),...Array.from({length:95},(_,i)=>'i'+(i+1))]};
@@ -110,4 +110,23 @@ test('legacy ready records remain compatible with existing rooms',async()=>{
  await f.call(f.host,{action:'lobbyReady',code,ready:true});
  await f.call(f.guest,{action:'lobbyReady',code,ready:true});
  assert.equal((await f.call(f.host,{action:'lobbyStart',code})).code,200);
+});
+
+
+test('guest leave releases public waiting-room seat and a different guest can enter',async()=>{
+ const f=await fixture(),code=await f.create();await f.enter(code);
+ assert.equal((await f.call(f.guest,{action:'leave',code})).code,200);
+ assert.equal((await f.listing()).data.rooms[0].players,1);
+ const next={id:'another-guest',name:'새로운 참가자'};
+ assert.equal((await f.call(next,{action:'join',code})).code,200);
+ const listing=(await f.listing()).data.rooms[0];
+ assert.equal(listing.players,2);
+ assert.equal((await f.call(next,null,{code})).code,200);
+});
+
+test('host leave removes public listing and prevents subsequent joins',async()=>{
+ const f=await fixture(),code=await f.create();
+ assert.equal((await f.call(f.host,{action:'leave',code})).code,200);
+ assert.equal((await f.listing()).data.rooms.length,0);
+ assert.equal((await f.call(f.guest,{action:'join',code})).code,410);
 });
