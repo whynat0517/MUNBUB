@@ -37,12 +37,28 @@ const codeNew=()=>Array.from(randomBytes(8),v=>CHARS[v%CHARS.length]).join('');
 const roomPath=c=>PREFIX+c+'/room.json';
 const guestPath=c=>PREFIX+c+'/guest.json';
 const lobbyPath=c=>PREFIX+c+'/lobby.json';
+const lobbyReadyPath=(c,id)=>PREFIX+c+'/lobby-ready/'+id+'.json';
+const lobbyStartPath=c=>PREFIX+c+'/lobby-start.json';
 const chatPath=c=>PREFIX+c+'/chat/';
 const stepPath=(c,id,index)=>PREFIX+c+'/steps/'+id+'/'+index+'.json';
 const progressPath=(c,id)=>PREFIX+c+'/progress/'+id+'.json';
 const emotePath=(c,id)=>PREFIX+c+'/emotes/'+id+'.json';
 const presencePath=(c,id)=>PREFIX+c+'/presence/'+id+'.json';
 const hasExpired=room=>!room||!Number.isFinite(room.expiresAt)||room.expiresAt<Date.now();
+
+async function readLobby(code,room,guest){
+ const lobby=await readPrivate(lobbyPath(code),{fresh:true});
+ if(!lobby||room.version<7)return lobby;
+ // Each player owns one readiness record. Simultaneous clicks must not
+ // overwrite the other player's ready flag in a shared read/modify/write.
+ const [host,visitor,start]=await Promise.all([
+  readPrivate(lobbyReadyPath(code,room.hostId),{fresh:true}),
+  guest?readPrivate(lobbyReadyPath(code,guest.id),{fresh:true}):null,
+  readPrivate(lobbyStartPath(code),{fresh:true})
+ ]);
+ return {...lobby,hostReady:!!host?.ready,guestReady:!!visitor?.ready,
+  startedAt:start?.startedAt||lobby.startedAt};
+}
 
 function pickQuestions(settings){
  const sp=duelQuestionIds().filter(k=>/^s[0-9]+$/.test(k));
@@ -62,7 +78,7 @@ function pickQuestions(settings){
 
 async function state(c,room,guest,me){
  const settings=roomSettings(room);
- const lobby=room.publicRoom?await readPrivate(lobbyPath(c),{fresh:true}):null;
+ const lobby=room.publicRoom?await readLobby(c,room,guest):null;
  const actualStart=room.publicRoom?(Number(lobby?.startedAt)||null):guest?.joinedAt+6000;
  const members=[{id:room.hostId,name:room.hostName,title:titleOf(room.hostTitle)},...(guest?[{id:guest.id,name:guest.name,title:titleOf(guest.title)}]:[])];
  const isMember=members.some(x=>x.id===me.id);
@@ -222,7 +238,7 @@ export default async function handler(req,res){
    const roomName=String(body.roomName||'').replace(/[<>\x00-\x1f]/g,'').trim().slice(0,36)||me.name+'의 대결방';
    const hostTitle=titleOf(body.title);
    await put(roomPath(code),JSON.stringify({
-    version:6,settings,code,hostId:me.id,hostName:me.name,hostTitle,
+    version:7,settings,code,hostId:me.id,hostName:me.name,hostTitle,
     publicRoom,roomName,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
@@ -303,9 +319,13 @@ export default async function handler(req,res){
   if(body.action==='lobbyReady'||body.action==='lobbyStart'){
    if(!room.publicRoom||!guest)return sendError(res,409,'공개 대기실에 두 플레이어가 들어와야 해.');
    if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'방 참가자가 아니야.');
-   const path=lobbyPath(code),lobby=await readPrivate(path,{fresh:true});
+   const path=lobbyPath(code),lobby=await readLobby(code,room,guest);
    if(!lobby||lobby.startedAt)return sendError(res,409,'이미 시작됐거나 대기실이 닫혔어.');
    if(body.action==='lobbyReady'){
+    if(room.version>=7){
+     await writePrivate(lobbyReadyPath(code,me.id),{ready:!!body.ready},{overwrite:true});
+     return res.status(200).json({ready:true});
+    }
     if(me.id===room.hostId)lobby.hostReady=!!body.ready;
     else lobby.guestReady=!!body.ready;
     await writePrivate(path,lobby,{overwrite:true});
@@ -313,7 +333,15 @@ export default async function handler(req,res){
    }
    if(me.id!==room.hostId)return sendError(res,403,'방장만 대결을 시작할 수 있어.');
    if(!lobby.hostReady||!lobby.guestReady)return sendError(res,409,'두 사람이 모두 준비해야 시작할 수 있어.');
-   const startedAt=Date.now()+6000;
+   let startedAt=Date.now()+6000;
+   if(room.version>=7){
+    try{await writePrivate(lobbyStartPath(code),{startedAt})}
+    catch(error){
+     const existing=await readPrivate(lobbyStartPath(code),{fresh:true});
+     if(!existing?.startedAt)throw error;
+     startedAt=existing.startedAt;
+    }
+   }
    await writePrivate(path,{...lobby,startedAt},{overwrite:true});
    return res.status(200).json({startedAt});
   }
@@ -331,7 +359,7 @@ export default async function handler(req,res){
    return res.status(200).json({sent:true});
   }
   if(body.action==='pulse'||body.action==='leave'){
-   if(room.version<6||(!guest&&!(body.action==='leave'&&room.hostId===me.id)))
+   if(room.version<6||(!guest&&room.hostId!==me.id))
     return sendError(res,409,'방에 먼저 참가해 줘.');
    if(me.id!==room.hostId&&me.id!==guest?.id)return sendError(res,403,'방 참가자가 아니야.');
    const path=presencePath(code,me.id),previous=await readPrivate(path,{fresh:true});

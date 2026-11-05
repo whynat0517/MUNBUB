@@ -51,10 +51,22 @@ style.textContent += [
  '@media(max-width:700px){.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{max-height:76px!important}}'
 ].join('\n');
 style.textContent += '\n'+[
- '#mb-ranked-dialog .mb-ranked-hourglass{position:absolute;right:16px;top:78px;z-index:1;width:clamp(54px,9vw,90px);height:auto;aspect-ratio:1/1;object-fit:contain;pointer-events:none;filter:drop-shadow(0 5px 7px #2c171b65)}',
- '#mb-ranked-dialog[data-mb-ranked-mode="timed60"] .mb-ranked-body{padding-top:clamp(92px,10vw,113px)!important}',
+ '#mb-ranked-dialog .mb-ranked-hourglass{display:block;align-self:center;flex:0 0 auto;width:clamp(32px,6dvh,58px);height:clamp(32px,6dvh,58px);margin:0 auto;object-fit:contain;pointer-events:none}',
  '#mb-ranked-dialog[data-mb-ranked-mode="timed60"] .mb-ranked-body .mb-ranked-question{position:relative}',
- '@media(max-width:540px){#mb-ranked-dialog .mb-ranked-hourglass{right:10px;top:70px;width:64px}}'
+ '#mb-ranked-dialog.mb-ranked-playing[open]{display:flex;flex-direction:column;width:min(98vw,1100px);height:98dvh;max-height:98dvh;overflow:hidden}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-head{flex:0 0 auto;padding:6px 12px}',
+ '#mb-ranked-dialog.mb-ranked-playing h2{font-size:clamp(16px,2.4vw,25px)}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-body{flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:clamp(3px,1dvh,10px);padding:clamp(7px,1.5dvh,16px)!important;overflow:hidden}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-stat{flex:0 0 auto;padding:5px 9px;font-size:clamp(11px,1.4vw,16px);gap:4px}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-question{display:grid;place-items:center;flex:1 1 auto;min-height:0;margin:0;padding:clamp(8px,2dvh,20px);font-size:clamp(18px,2.4vw,30px);line-height:1.3}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-choices{flex:1 1 auto;min-height:0;max-height:30dvh;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(32px,1fr);gap:5px}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-choices button{min-height:32px;padding:6px;font-size:clamp(13px,1.7vw,20px);line-height:1.25}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-help{flex:0 0 auto;font-size:11px;line-height:1.25;margin:0}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-feedback{flex:1 1 auto;min-height:0;overflow-y:auto;margin:0;padding:9px}',
+ '#mb-ranked-dialog.mb-ranked-playing .mb-ranked-primary{min-height:34px;padding:6px;margin:0;font-size:16px}',
+ '#mb-ranked-dialog.mb-ranked-playing #mb-ranked-stop{flex:0 0 auto;min-height:32px;padding:5px}',
+ '#mb-ranked-dialog.mb-ranked-playing #mb-ranked-message{display:none}',
+ '@media(max-height:500px){#mb-ranked-dialog.mb-ranked-playing .mb-ranked-question{font-size:17px;padding:6px}#mb-ranked-dialog.mb-ranked-playing .mb-ranked-stat>span:first-child{display:none}#mb-ranked-dialog.mb-ranked-playing .mb-ranked-hourglass{width:30px;height:30px}}'
 ].join('\n');
 document.head.append(style);
  let selected='infinite',run=null,active=false,busy=false,mode=null,qid=null,
@@ -62,6 +74,7 @@ document.head.append(style);
  const now=()=>Date.now();
  const safeMode=x=>MODES[x]?x:'infinite';
  function frame(title,content){
+  dialog.classList.toggle('mb-ranked-playing',active);
   dialog.innerHTML='<div class="mb-ranked-head"><h2>'+esc(title)+'</h2><button id="mb-ranked-close" type="button" aria-label="랭킹전 닫기">✕</button></div>'+
    '<div class="mb-ranked-body">'+
    (dialog.dataset.mbRankedMode==='timed60'?'<img class="mb-ranked-hourglass" src="/ui-assets/hourglass_loop.webp" alt="움직이는 모래시계" width="96" height="96">':'')+

@@ -13,17 +13,18 @@ export default async function handler(req,res){
    try{
     const r=await readPrivate(b.pathname,{fresh:true});
     if(!r||!ID.test(r.code)||!Number.isFinite(r.expiresAt)||r.expiresAt<Date.now())return null;
-    const [guest,host]=await Promise.all([
+    const [guest,host,lobby]=await Promise.all([
      readPrivate('duels/'+r.code+'/guest.json',{fresh:true}),
-     readPrivate('duels/'+r.code+'/presence/'+r.hostId+'.json',{fresh:true})
+     readPrivate('duels/'+r.code+'/presence/'+r.hostId+'.json',{fresh:true}),
+     readPrivate('duels/'+r.code+'/lobby.json',{fresh:true})
     ]);
-    if(host?.leftAt)return null;
+    if(host?.leftAt||!host?.at||Date.now()-host.at>60000)return null;
     return {code:r.code,name:r.roomName||'공개 대결방',
      host:r.hostName||'플레이어',title:r.hostTitle||'국어 새내기',
      type:r.settings?.type||'mixed',form:r.settings?.form||'auto',
      count:r.settings?.count||10,seconds:r.settings?.seconds||25,
      players:guest?2:1,capacity:2,
-     status:guest?'playing':'waiting',createdAt:r.createdAt||0};
+     status:lobby?.startedAt?'playing':guest?'full':'waiting',createdAt:r.createdAt||0};
    }catch{return null}
   }));
   return res.status(200).json({rooms:rows.filter(Boolean).sort((a,b)=>b.createdAt-a.createdAt).slice(0,80)});

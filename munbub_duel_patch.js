@@ -235,7 +235,7 @@
   dialog.querySelector('#mb-duel-again')?.addEventListener('click',showLobby);
  }
  async function heartbeat(){
-  if(!roomCode||(!status?.answerTicket&&!(status?.publicRoom&&status?.players?.length===2))||!dialog.open||heartbeatBusy||
+  if(!roomCode||!status||!dialog.open||heartbeatBusy||
      Date.now()-lastHeartbeat<5200)return;
   const code=roomCode;heartbeatBusy=true;lastHeartbeat=Date.now();
   try{
@@ -669,10 +669,11 @@
   putHTML(html);
   if(newPhase==='waiting'&&status.publicRoom){
    lastChatPoll=0;loadChat();
-   dialog.querySelector('#mb-public-ready')?.addEventListener('click',async()=>{
+   dialog.querySelector('#mb-public-ready')?.addEventListener('click',async event=>{
+    const button=event.currentTarget;button.disabled=true;
     const ready=status.lobbyReady||{},mine=status.role==='host'?ready.host:ready.guest;
     try{await api({action:'lobbyReady',code:roomCode,ready:!mine});lastViewKey='';await updateRoom()}
-    catch(e){showError(e.message)}
+    catch(e){showError(e.message)}finally{if(button.isConnected)button.disabled=false}
    });
    dialog.querySelector('#mb-public-start')?.addEventListener('click',async()=>{
     try{await api({action:'lobbyStart',code:roomCode});lastViewKey='';await updateRoom()}

@@ -46,16 +46,17 @@ const css=document.createElement('style');css.id='mb-public-css';css.textContent
 .sidebar-nav .mb-public-nav,.mobile-drawer .mb-public-nav{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:65px;padding:9px 4px;background:linear-gradient(#ffe8be,#d4a57c);border:3px double #91644c;border-radius:11px;color:#482e28;font-weight:950;font-size:17px}
 @media(max-width:730px){#mb-public-dialog{width:100vw;max-height:100dvh;height:100dvh;padding:12px;border-radius:0}#mb-public-dialog .mb-pub-layout{grid-template-columns:1fr}#mb-public-dialog .mb-pub-side{display:none}#mb-public-dialog .mb-pub-actions{justify-content:flex-start}#mb-public-dialog .mb-pub-room{grid-template-columns:minmax(0,1fr) auto;gap:7px}#mb-public-dialog .mb-pub-people{display:none}#mb-public-dialog .mb-pub-field{grid-template-columns:1fr;gap:4px}#mb-public-dialog #mb-pub-list{max-height:52dvh}}
 `;document.head.append(css);
-let rooms=[],filter='all',query='',screen='list',busy=false,lastCheck=0;
+let rooms=[],filter='all',query='',screen='list',busy=false,refreshing=false,lastCheck=0;
 const typeNames={mixed:'혼합',spelling:'맞춤법',idiom:'사자성어'};
 function button(text,id,kind=''){return '<button type="button" class="mb-pub-btn '+kind+'" id="'+id+'">'+text+'</button>'}
 function shell(body){roomsDialog.innerHTML='<div class="mb-pub-top"><h2>🏮 맛춘범 공개방</h2>'+button('✕ 닫기','mb-pub-close')+'</div>'+body+'<p id="mb-pub-message" class="mb-pub-message" role="status"></p>';$('#mb-pub-close').onclick=()=>roomsDialog.close()}
 function message(s){const p=$('mb-pub-message');if(p)p.textContent=s}
+function matchingRooms(){return rooms.filter(r=>(filter==='all'||(filter==='waiting'?r.status==='waiting':r.type===filter))&&
+ (!query||(r.name+' '+r.host).toLowerCase().includes(query.toLowerCase())))}
 function drawRooms(){
  const list=$('mb-pub-list');if(!list)return;
- const shown=rooms.filter(r=>(filter==='all'||(filter==='waiting'?r.status==='waiting':r.type===filter))&&
- (!query||(r.name+' '+r.host).toLowerCase().includes(query.toLowerCase())));
- list.innerHTML=shown.length?shown.map(r=>'<article class="mb-pub-room"><div><strong>📜 '+esc(r.name)+'</strong><small>방장 '+esc(r.host)+' · '+esc(typeNames[r.type]||'혼합')+' · '+r.count+'문제 · '+r.seconds+'초</small></div><span class="mb-pub-people">'+r.players+'/2</span><button type="button" class="mb-pub-btn '+(r.status==='waiting'?'primary':'')+'" data-mb-pub-join="'+esc(r.code)+'" '+(r.status!=='waiting'||r.players>=2?'disabled':'')+'>'+(r.status==='waiting'?'입장':'게임 중')+'</button></article>').join(''):'<div style="padding:38px;text-align:center;color:#e6c9a7">조건에 맞는 공개방이 없어. 새 방을 만들어 봐!</div>';
+ const shown=matchingRooms();
+ list.innerHTML=shown.length?shown.map(r=>'<article class="mb-pub-room"><div><strong>📜 '+esc(r.name)+'</strong><small>방장 '+esc(r.host)+' · '+esc(typeNames[r.type]||'혼합')+' · '+r.count+'문제 · '+r.seconds+'초</small></div><span class="mb-pub-people">'+r.players+'/2</span><button type="button" class="mb-pub-btn '+(r.status==='waiting'?'primary':'')+'" data-mb-pub-join="'+esc(r.code)+'" '+(r.status!=='waiting'||r.players>=2?'disabled':'')+'>'+(r.status==='waiting'?'입장':r.status==='full'?'인원 가득':'게임 중')+'</button></article>').join(''):'<div style="padding:38px;text-align:center;color:#e6c9a7">조건에 맞는 공개방이 없어. 새 방을 만들어 봐!</div>';
  const count=$('mb-pub-count');if(count)count.textContent='공개방 '+rooms.length+'개 · 입장 가능 '+rooms.filter(r=>r.status==='waiting'&&r.players<2).length+'개';
 }
 function listView(){
@@ -67,7 +68,7 @@ function listView(){
   '<aside class="mb-pub-panel mb-pub-side"><h3>📖 공개방 이용 안내</h3><p>새 방을 생성하면 모든 이용자가 목록에서 확인할 수 있어.<br>실제 채팅과 준비 기능은 대기실에서 작동해.<br>한 방에서 최대 2명까지 서버 채점 대결이 가능해.</p><p>4인 대전은 별도 동기화 기능이 필요하므로 현재 지원하지 않아.</p></aside></div>');
  $('#mb-pub-search').oninput=e=>{query=e.target.value;drawRooms()};
  $('#mb-pub-refresh').onclick=()=>refresh();
- $('#mb-pub-quick').onclick=()=>{const r=rooms.find(x=>x.status==='waiting'&&x.players<2);r?join(r.code):message('입장 가능한 방이 없어.')};
+ $('#mb-pub-quick').onclick=()=>{const r=matchingRooms().find(x=>x.status==='waiting'&&x.players<2);r?join(r.code):message('선택한 조건에 맞는 입장 가능한 방이 없어.')};
  $('#mb-pub-code').onclick=codeView;$('#mb-pub-create').onclick=createView;
  roomsDialog.querySelectorAll('[data-mb-pub-filter]').forEach(b=>b.onclick=()=>{
   filter=b.dataset.mbPubFilter;roomsDialog.querySelectorAll('[data-mb-pub-filter]').forEach(x=>x.classList.toggle('active',x===b));drawRooms();
@@ -107,13 +108,15 @@ async function request(url,body){
  if(!res.ok)throw Error(data.error||'서버와 통신할 수 없어.');return data;
 }
 async function refresh(){
- if(!roomsDialog.open)return;
- try{const data=await request('/api/public-rooms');rooms=Array.isArray(data.rooms)?data.rooms:[];lastCheck=Date.now();if(screen==='list')drawRooms();message('실시간 공개방 목록이 갱신됐어.')}
+ if(!roomsDialog.open||screen!=='list'||refreshing)return;
+ refreshing=true;
+ try{const data=await request('/api/public-rooms');rooms=Array.isArray(data.rooms)?data.rooms:[];lastCheck=Date.now();if(roomsDialog.open&&screen==='list'){drawRooms();message('실시간 공개방 목록이 갱신됐어.')}}
  catch(e){message(e.message)}
+ finally{refreshing=false}
 }
 async function enterDuel(code){
- roomsDialog.close();
  if(typeof window.mbDuelEnterRoom!=='function')throw Error('1대1 대전 모듈을 불러오지 못했어. 새로고침해 줘.');
+ roomsDialog.close();
  await window.mbDuelEnterRoom(code);
 }
 async function join(code){
@@ -134,8 +137,9 @@ async function open(){
 function mount(){
  const row=document.querySelector('#homeScreen .mb-online-actions');
  if(row&&!$('#mb-public-open')){const btn=document.createElement('button');btn.type='button';btn.id='mb-public-open';btn.textContent='🏮 공개방';btn.addEventListener('click',open);row.append(btn)}
- const side=document.querySelector('.sidebar-nav');
- if(side&&!side.querySelector('.mb-public-nav')){const btn=document.createElement('button');btn.type='button';btn.className='mb-public-nav';btn.textContent='🏮 공개방';btn.addEventListener('click',open);side.append(btn)}
+ for(const side of document.querySelectorAll('.sidebar-nav')){
+ if(!side.querySelector('.mb-public-nav')){const btn=document.createElement('button');btn.type='button';btn.className='mb-public-nav';btn.textContent='🏮 공개방';btn.addEventListener('click',open);side.append(btn)}
+ }
  const mobile=document.querySelector('.mobile-drawer');
  if(mobile&&!mobile.querySelector('.mb-public-nav')){const btn=document.createElement('button');btn.type='button';btn.className='mb-public-nav';btn.textContent='🏮 공개방';btn.addEventListener('click',open);mobile.append(btn)}
  return !!row;
