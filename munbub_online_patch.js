@@ -7,6 +7,13 @@
  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  let me=null,run=null,chain=Promise.resolve(),failed='',active=false,lastQ=null,statusText='';
  const style=document.createElement('style');style.id='mb-online-css';style.textContent="\n#mb-online-modal{box-sizing:border-box;width:min(93vw,680px);max-height:84vh;overflow:auto;padding:20px;border:4px double #976a54;border-radius:18px;background:#fff0d9;color:#412b28;box-shadow:0 16px 55px #160e1a99}\n#mb-online-modal::backdrop{background:#130d18bf}\n#mb-online-modal h2{margin:0 0 12px;font-size:clamp(21px,3vw,28px)}\n#mb-online-modal label{display:block;font-weight:800;margin-top:12px}\n#mb-online-modal input,#mb-online-modal textarea{box-sizing:border-box;display:block;width:100%;max-width:100%;padding:10px;border:2px solid #b78f73;border-radius:10px;background:#fffaf2;color:#3d2825;margin-top:6px;font:inherit}\n#mb-online-modal button{display:inline-block;margin:8px 6px 5px 0;min-height:44px;padding:10px 14px;border:2px solid #8f6550;border-radius:10px;background:#f4d1b0;color:#402825;font-weight:850;cursor:pointer}\n#mb-online-modal .mb-tip{font-size:13px;color:#765348;line-height:1.55}\n#mb-online-modal table{width:100%;border-collapse:collapse;font-size:clamp(12px,1.2vw,15px)}\n#mb-online-modal th,#mb-online-modal td{padding:8px 5px;text-align:left;border-bottom:1px solid #dab79a}\n#mb-online-status{margin:12px 0;padding:11px;border:3px solid #bd9c75;border-radius:12px;background:#ffecd2;color:#512d29;font-size:14px;font-weight:850}\n";
+ style.textContent += [
+  '#mb-online-modal .mb-ranking-tabs{display:flex;gap:6px;align-items:stretch;justify-content:center;flex-wrap:wrap;margin:4px 32px 10px 0}',
+  '#mb-online-modal .mb-ranking-tabs button{flex:1 1 125px;min-height:42px;padding:8px 6px;margin:0;border-radius:10px;background:#f6dfbb;color:#5a382d;border:2px solid #926846;font-weight:900;font-size:clamp(12px,1.5vw,15px)}',
+  '#mb-online-modal .mb-ranking-tabs button.selected{background:#533039;color:#ffe9c5;border-color:#d29b65;box-shadow:inset 0 0 0 2px #8c5a46}',
+  '#mb-online-modal .mb-ranking-desc{margin:4px 0 10px;text-align:center;color:#fbe2c2!important;font-size:clamp(11px,1.4vw,14px);font-weight:800}',
+  '@media(max-width:530px){#mb-online-modal .mb-ranking-tabs{margin-right:0;gap:4px}#mb-online-modal .mb-ranking-tabs button{flex:1 1 28%;font-size:11px;padding:7px 3px}}'
+ ].join('\\n');
  document.head.append(style);
  const modal=document.createElement('dialog');modal.id='mb-online-modal';document.body.append(modal);
  async function api(url,data){
@@ -126,15 +133,52 @@
    }catch(err){msg.textContent=err.message}
   });
  }
+ const RANK_TABS=[
+  ['hardcore','⚔ 하드코어','점수'],
+  ['timed60','⏱ 타임어택 1분','정답'],
+  ['infinite','∞ 무한모드','정답']
+ ];
+ let selectedRanking='hardcore',rankRequestId=0;
  function leaderboard(){
-  open('<h2 class="mb-ranking-heading">🏆 온라인 하드 랭킹</h2><p class="mb-tip">서버에서 정답과 답변 시간을 계산하며 계정별 최고 점수만 표시해.</p><div class="mb-ranking-board"><div id="mb-online-list" class="mb-ranking-rows" role="status">랭킹을 불러오는 중...</div></div>');
-  api('/api/leaderboard').then(x=>{
-   const el=$('mb-online-list');if(!el)return;
-   const list=Array.isArray(x.scores)?x.scores:[];
-   el.innerHTML=list.length?list.slice(0,30).map((r,i)=>'<div class="mb-board-row"><span>'+(i+1)+'</span><span>'+esc(r.name)+'</span><span>'+Math.max(0,Number(r.score)||0)+'</span></div>').join(''):'<p class="mb-board-empty">아직 온라인 기록이 없어. 첫 하드모드 기록을 남겨 봐!</p>';
-  }).catch(e=>{if($('mb-online-list'))$('mb-online-list').textContent=e.message});
+  const tabs='<div class="mb-ranking-tabs" role="group" aria-label="랭킹 모드 선택">'+
+   RANK_TABS.map(([id,name])=>'<button type="button" data-ranking-mode="'+id+'">'+name+'</button>').join('')+'</div>';
+  open('<h2 class="mb-ranking-heading">🏆 온라인 모드별 랭킹</h2>'+tabs+
+   '<p id="mb-ranking-desc" class="mb-ranking-desc"></p>'+
+   '<div class="mb-ranking-board"><div id="mb-online-list" class="mb-ranking-rows" role="status">랭킹을 불러오는 중...</div></div>');
+  modal.querySelectorAll('[data-ranking-mode]').forEach(button=>{
+   button.addEventListener('click',()=>loadRanking(button.dataset.rankingMode));
+  });
+  loadRanking(selectedRanking);
  }
- document.addEventListener('click',event=>{
+ async function loadRanking(mode){
+  if(!RANK_TABS.some(([id])=>id===mode))return;
+  selectedRanking=mode;
+  const id=++rankRequestId;
+  for(const button of modal.querySelectorAll('[data-ranking-mode]')){
+   const active=button.dataset.rankingMode===mode;
+   button.classList.toggle('selected',active);
+   button.setAttribute('aria-pressed',String(active));
+  }
+  const desc=$('mb-ranking-desc');
+  if(desc)desc.textContent=mode==='hardcore'?
+   '서버 채점 · 한 사람의 최고 점수':mode==='timed60'?
+   '서버가 확인한 1분 동안의 최다 정답 · 로그인 후 도전':
+   '서버가 확인한 무한모드 최고 정답 · 로그인 후 도전';
+  const el=$('mb-online-list');if(!el)return;
+  el.textContent='랭킹을 불러오는 중...';
+  try{
+   const x=await api('/api/leaderboard?mode='+encodeURIComponent(mode));
+   if(id!==rankRequestId||!modal.open||!$('mb-online-list'))return;
+   const list=Array.isArray(x.scores)?x.scores:[];
+   el.innerHTML=list.length?list.slice(0,30).map((r,i)=>
+    '<div class="mb-board-row"><span>'+(i+1)+'</span><span>'+esc(r.name)+
+    '</span><span>'+Math.max(0,Number(r.score)||0)+'</span></div>'
+   ).join(''):'<p class="mb-board-empty">아직 이 모드의 온라인 기록이 없어. 첫 번째 기록을 남겨 봐!</p>';
+  }catch(e){
+   if(id===rankRequestId&&$('mb-online-list'))el.textContent=e.message;
+  }
+ }
+  document.addEventListener('click',event=>{
   const b=event.target.closest?.('#mb-account-open,#mb-rank-open,#mb-hard-leaderboard');
   if(!b)return;
   event.preventDefault();event.stopImmediatePropagation();
