@@ -35,7 +35,13 @@
   '#view-setup #mb-ranked-entry button{border:3px solid #e2b387;border-radius:11px;padding:11px 16px;background:#f1d3a7;color:#462c2a;font-weight:1000;font-size:clamp(15px,1.75vw,19px);cursor:pointer}',
   '#view-setup #mb-ranked-entry p{margin:5px 0;font-size:13px;color:#ffe2c6}',
   '@media(max-width:540px){#mb-ranked-dialog .mb-ranked-modes{grid-template-columns:1fr}#mb-ranked-dialog .mb-ranked-choices{grid-template-columns:1fr}#mb-ranked-dialog .mb-ranked-modes button{padding:8px}#mb-ranked-dialog .mb-ranked-question{padding:13px;min-height:70px}}'
- ].join('\n');document.head.append(style);
+ ].join('\n');style.textContent += [
+  '.sidebar-nav .mb-ranked-nav,.mobile-drawer .mb-ranked-nav{box-sizing:border-box!important;display:block!important;flex:none!important;width:100%!important;min-height:0!important;aspect-ratio:3/1!important;padding:0!important;margin:2px auto!important;border:0!important;border-radius:0!important;background:transparent url("/ui-assets/mb_ranking_ui.webp") center/contain no-repeat!important;box-shadow:none!important;color:transparent!important;font-size:0!important;text-indent:-9999px!important;overflow:hidden!important;cursor:pointer;transition:filter .14s,transform .14s}',
+  '.sidebar-nav .mb-ranked-nav:hover,.mobile-drawer .mb-ranked-nav:hover{filter:brightness(1.13)!important;transform:scale(1.04)}',
+  '.sidebar-nav .mb-ranked-nav.active,.mobile-drawer .mb-ranked-nav.active{filter:brightness(.78)!important;outline:0!important;transform:scale(.98)}',
+  '@media(max-width:700px){.sidebar-nav .mb-ranked-nav,.mobile-drawer .mb-ranked-nav{max-height:66px!important}}'
+ ].join('\n');
+document.head.append(style);
  let selected='infinite',run=null,active=false,busy=false,mode=null,qid=null,
      correct=0,answered=0,score=0,deadline=null,lastResult=null,tickId=null,generation=0;
  const now=()=>Date.now();
@@ -237,13 +243,13 @@
     nicknameMode();
    },true);
   };
-  make(document.querySelector('#homeScreen .sidebar-nav')||document.querySelector('.sidebar-nav'),'desktop');
+  document.querySelectorAll('.sidebar-nav').forEach(nav=>make(nav,'desktop'));
   make($('mobileDrawer'),'mobile');
  }
  // The menu shell is stable, but a mutation may replace its navigation nodes.
  // Observe only the relevant navigation containers, never the whole document.
  rankedMenu();
- for(const nav of [document.querySelector('.sidebar-nav'),$('mobileDrawer')]){
+ for(const nav of [...document.querySelectorAll('.sidebar-nav'),$('mobileDrawer')]){
   if(nav)new MutationObserver(()=>rankedMenu()).observe(nav,{childList:true});
  }
  dialog.addEventListener('close',()=>window.__mbMarkRoute?.('home'));
