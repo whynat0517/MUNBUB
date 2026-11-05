@@ -9,11 +9,12 @@ const MS_PER_QUESTION=25000;
 const COUNTS=[5,10,15,20,30];
 const SECONDS=[10,15,25,30,40,60];
 const TYPES=['mixed','spelling','idiom'];
+const FORMS=['auto','two','four','text'];
 function validSettings(input){
  const count=Number(input?.count??10),seconds=Number(input?.seconds??25);
- const type=String(input?.type??'mixed');
- return COUNTS.includes(count)&&SECONDS.includes(seconds)&&TYPES.includes(type)
-  ?{count,seconds,type}:null;
+ const type=String(input?.type??'mixed'),form=String(input?.form??'auto');
+ return COUNTS.includes(count)&&SECONDS.includes(seconds)&&TYPES.includes(type)&&FORMS.includes(form)
+  ?{count,seconds,type,form}:null;
 }
 function roomSettings(room){return validSettings(room?.settings)||{count:10,seconds:25,type:'mixed'}}
 const REVIEW_MS=10000;
@@ -36,6 +37,7 @@ const guestPath=c=>PREFIX+c+'/guest.json';
 const stepPath=(c,id,index)=>PREFIX+c+'/steps/'+id+'/'+index+'.json';
 const progressPath=(c,id)=>PREFIX+c+'/progress/'+id+'.json';
 const emotePath=(c,id)=>PREFIX+c+'/emotes/'+id+'.json';
+const presencePath=(c,id)=>PREFIX+c+'/presence/'+id+'.json';
 const hasExpired=room=>!room||!Number.isFinite(room.expiresAt)||room.expiresAt<Date.now();
 
 function pickQuestions(settings){
@@ -110,7 +112,7 @@ async function state(c,room,guest,me){
   // session and verifies ticket owner/room/expiry on every signal request.
   signalTicket:token({
    kind:'duel-signal',code:c,viewerId:me.id,
-   opponentId:other?.id||null,exp:room.expiresAt
+   opponentId:other?.id||null,version:room.version||3,exp:room.expiresAt
   }),
   // Server-signed immutable room parameters eliminate two Blob reads from
   // every answer POST without weakening authentication or anti-duplicate writes.
@@ -148,9 +150,11 @@ export default async function handler(req,res){
       serverNow:Date.now()
      });
     }
-    const [progress,emote]=await Promise.all([
+    const [progress,emote,presence]=await Promise.all([
      readPrivate(progressPath(claim.code,claim.opponentId),{fresh:true}),
-     req.query?.reactions==='1'?readPrivate(emotePath(claim.code,claim.opponentId),{fresh:true}):Promise.resolve(null)
+     req.query?.reactions==='1'?readPrivate(emotePath(claim.code,claim.opponentId),{fresh:true}):Promise.resolve(null),
+     req.query?.reactions==='1'&&claim.version>=6
+      ?readPrivate(presencePath(claim.code,claim.opponentId),{fresh:true}):Promise.resolve(null)
     ]);
     return res.status(200).json({
      ready:true,answered:progress?.answered||0,correct:progress?.correct||0,
@@ -159,6 +163,10 @@ export default async function handler(req,res){
      // 30 old turns out of the 350ms response cuts bandwidth and parsing.
      answers:(progress?.answers||[]).slice(-2).map(x=>({index:x.index,at:x.at,readyAt:x.readyAt||null})),
      ...(req.query?.reactions==='1'?{emote:emote?.id&&EMOTE_IDS.has(emote.id)?emote:null}:{}),
+     ...(req.query?.reactions==='1'&&claim.version>=6?{
+      opponentLeft:!!presence?.leftAt,
+      opponentOffline:!!presence?.at&&Date.now()-presence.at>26000
+     }:{}),
      serverNow:Date.now()
     });
    }catch(e){
@@ -188,17 +196,18 @@ export default async function handler(req,res){
    if(!settings)return sendError(res,400,'문제 수·시간·유형 중 지원하지 않는 설정이 있어.');
    const code=codeNew(),now=Date.now();
    await put(roomPath(code),JSON.stringify({
-    version:5,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
+    version:6,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
    // Create the initial compact read model; avoids a list of empty steps on every poll.
    await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
+   await writePrivate(presencePath(code,me.id),{at:Date.now(),leftAt:null}).catch(()=>null);
    return res.status(201).json({code,settings,expiresAt:now+ROOM_LIFETIME});
   }
   const code=String(body.code||'').trim().toUpperCase();
   if(!codeOK(code))return sendError(res,400,'올바른 8자리 방 코드를 입력해 줘.');
   let room,guest;
-  if((body.action==='answer'||body.action==='ready'||body.action==='emote')&&body.answerTicket){
+  if(['answer','ready','emote','pulse','leave'].includes(body.action)&&body.answerTicket){
    const verified=verify(String(body.answerTicket));
    if(!verified||verified.kind!=='duel-answer'||
     verified.code!==code||verified.viewerId!==me.id||
@@ -241,12 +250,28 @@ export default async function handler(req,res){
    try{
     await writePrivate(progressPath(code,me.id),
      {answered:0,score:0,correct:0,lastAt:null,answers:[]},{overwrite:true});
+    await writePrivate(presencePath(code,me.id),{at:Date.now(),leftAt:null},{overwrite:true});
    }catch(e){
     // Guest registration already succeeded; a delayed progress record must
     // not turn a successful join into a misleading failure.
     console.error('Duel guest progress init failed',e?.message);
    }
    return res.status(200).json({code,joined:true});
+  }
+  if(body.action==='pulse'||body.action==='leave'){
+   if(!guest||room.version<6)return sendError(res,409,'방에 먼저 참가해 줘.');
+   if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'방 참가자가 아니야.');
+   const path=presencePath(code,me.id),previous=await readPrivate(path,{fresh:true});
+   const now=Date.now();
+   if(previous?.leftAt)return res.status(200).json({ended:true,at:previous.leftAt});
+   if(body.action==='leave'){
+    const leftAt=now;
+    await writePrivate(path,{at:previous?.at||now,leftAt},{overwrite:true});
+    return res.status(200).json({ended:true,at:leftAt});
+   }
+   if(previous?.at&&now-previous.at<4500)return res.status(200).json({alive:true});
+   await writePrivate(path,{at:now,leftAt:null},{overwrite:true});
+   return res.status(200).json({alive:true});
   }
   if(body.action==='emote'){
    if(!guest||room.version<5)return sendError(res,409,'이 방에서는 이모티콘을 사용할 수 없어.');
