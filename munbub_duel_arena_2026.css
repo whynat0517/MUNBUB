@@ -306,6 +306,12 @@
   vertical-align:middle!important;
 }
 #mb-duel-dialog .mb-duel-emotes button:hover {transform:translateY(-4px) scale(1.08)!important;filter:brightness(1.07)!important}
+#mb-duel-dialog .mb-duel-emotes.mb-duel-emotes-expanded{
+ flex-wrap:wrap!important;align-content:start!important;
+ overflow-x:hidden!important;overflow-y:auto!important;
+ max-height:260px!important;
+}
+
 #mb-duel-dialog .mb-duel-round-indicator {
   box-sizing:border-box!important;
   display:flex!important;
@@ -348,7 +354,7 @@
   font-size:0!important;
   overflow:hidden!important;
 }
-#mb-duel-dialog #mb-duel-new{background-image:url("/ui-assets/duel-parts/15_chat_button.webp")!important}
+#mb-duel-dialog #mb-duel-new{background-image:url("/ui-assets/duel-parts/18_home_button.webp")!important}
 #mb-duel-dialog #mb-duel-emoji-toggle{background-image:url("/ui-assets/duel-parts/16_emoji_button.webp")!important}
 #mb-duel-dialog #mb-duel-exit{background-image:url("/ui-assets/duel-parts/17_exit_button.webp")!important}
 #mb-duel-dialog .mb-duel-footer-actions button:hover {filter:brightness(1.13)!important;transform:translateY(-2px)!important}
