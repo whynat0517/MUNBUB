@@ -4,6 +4,8 @@ import { list, put } from '@vercel/blob';
 import { configured, noCache, sameOrigin, session, token, verify, readPrivate, writePrivate, answerCorrect, duelQuestionIds } from '../lib/mb-server.js';
 
 const PREFIX='duels/';
+const TITLE_NAMES=new Set(['국어 새내기','훈민정음 수련생','맞춤법 탐험가','정답 감별사','문제 사냥꾼','시간의 지배자','사자성어 도전자','국어 고수','백문백답','연승 장인','말풍선 장인']);
+const titleOf=v=>TITLE_NAMES.has(String(v||''))?String(v):'국어 새내기';
 const MAX_QUESTIONS=10;
 const MS_PER_QUESTION=25000;
 const COUNTS=[5,10,15,20,30];
@@ -58,7 +60,7 @@ function pickQuestions(settings){
 
 async function state(c,room,guest,me){
  const settings=roomSettings(room);
- const members=[{id:room.hostId,name:room.hostName},...(guest?[{id:guest.id,name:guest.name}]:[])];
+ const members=[{id:room.hostId,name:room.hostName,title:titleOf(room.hostTitle)},...(guest?[{id:guest.id,name:guest.name,title:titleOf(guest.title)}]:[])];
  const isMember=members.some(x=>x.id===me.id);
  if(!isMember)return null;
  const records=await Promise.all(members.map(async member=>{
@@ -75,7 +77,7 @@ async function state(c,room,guest,me){
   }
   if(!summary)summary={answered:0,correct:0,score:0,lastAt:null,answers:[]};
   return {
-   id:member.id,name:member.name,
+   id:member.id,name:member.name,title:member.title,
    answered:summary.answered||0,
    correct:summary.correct||0,
    score:summary.score||0,
@@ -195,10 +197,18 @@ export default async function handler(req,res){
    const settings=validSettings(body.settings);
    if(!settings)return sendError(res,400,'문제 수·시간·유형 중 지원하지 않는 설정이 있어.');
    const code=codeNew(),now=Date.now();
+   const publicRoom=body.publicRoom===true;
+   const roomName=String(body.roomName||'').replace(/[<>\x00-\x1f]/g,'').trim().slice(0,36)||me.name+'의 대결방';
+   const hostTitle=titleOf(body.title);
    await put(roomPath(code),JSON.stringify({
-    version:6,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
+    version:6,settings,code,hostId:me.id,hostName:me.name,hostTitle,
+    publicRoom,roomName,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
+   if(publicRoom)await writePrivate('public-rooms/'+code+'.json',{
+    code,roomName,hostName:me.name,hostTitle,createdAt:now,
+    expiresAt:now+ROOM_LIFETIME,settings
+   },{overwrite:true});
    // Create the initial compact read model; avoids a list of empty steps on every poll.
    await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
    await writePrivate(presencePath(code,me.id),{at:Date.now(),leftAt:null}).catch(()=>null);
@@ -241,7 +251,7 @@ export default async function handler(req,res){
    if(guest?.id===me.id)return res.status(200).json({code,joined:true,reconnected:true});
    if(guest)return sendError(res,409,'이미 다른 계정이 참가한 방이야. 새 방 코드를 받아 줘.');
    try{
-    await put(guestPath(code),JSON.stringify({id:me.id,name:me.name,joinedAt:Date.now()}),
+    await put(guestPath(code),JSON.stringify({id:me.id,name:me.name,title:titleOf(body.title),joinedAt:Date.now()}),
      {access:'private',addRandomSuffix:false,allowOverwrite:false,contentType:'application/json'});
    }catch(e){
     // Blob writes are conditional; concurrent callers cannot take the same seat.
