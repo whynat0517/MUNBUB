@@ -10,7 +10,7 @@ export default async function handler(req,res){
  try{
   if(body.action==='start'){
    const qid=String(body.qid||'');
-   if(answerCorrect(qid,'')===null)return res.status(400).json({error:'기본 맞춤법·사자성어만 가능해.'});
+   if(!/^[si]\d+$/.test(qid)||answerCorrect(qid,'')===null)return res.status(400).json({error:'기본 맞춤법·사자성어만 가능해.'});
    const run={kind:'run',id:me.id,runId:newId(),qid,score:0,correct:0,phase:'question',startedAt:now,createdAt:now,exp:now+7200000};
    return res.status(200).json({run:token(run),score:0,correct:0})
   }
@@ -18,7 +18,7 @@ export default async function handler(req,res){
   if(state?.kind!=='run'||state.id!==me.id||state.createdAt<now-7200000||state.correct>2500)return res.status(401).json({error:'랭킹 세션이 만료되었어.'});
   if(body.action==='next'){
    const qid=String(body.qid||'');
-   if(state.phase!=='next'||answerCorrect(qid,'')===null)return res.status(409).json({error:'다음 문제 순서가 맞지 않아.'});
+   if(state.phase!=='next'||!/^[si]\d+$/.test(qid)||answerCorrect(qid,'')===null)return res.status(409).json({error:'다음 문제 순서가 맞지 않아.'});
    return res.status(200).json({run:token({...state,qid,phase:'question',startedAt:now}),score:state.score,correct:state.correct})
   }
   if(body.action==='answer'){
