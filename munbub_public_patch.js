@@ -124,8 +124,15 @@ async function refresh(){
 }
 async function enterDuel(code){
  if(typeof window.mbDuelEnterRoom!=='function')throw Error('1대1 대전 모듈을 불러오지 못했어. 새로고침해 줘.');
- await window.mbDuelEnterRoom(code);
- roomsDialog.close();
+ // Never stack two modal dialogs: close the public-room browser FIRST.
+ // The originating route is passed to duel so Settings / Exit returns here.
+ const wasOpen=roomsDialog.open;
+ if(wasOpen)roomsDialog.close();
+ try{await window.mbDuelEnterRoom(code,{origin:'public'})}
+ catch(error){
+  if(wasOpen&&!roomsDialog.open)roomsDialog.showModal();
+  throw error;
+ }
 }
 async function join(code){
  if(busy)return;code=String(code||'').trim().toUpperCase();if(!/^[A-HJ-NP-Z2-9]{8}$/.test(code))return message('8자리 방 코드를 확인해 줘.');
@@ -161,18 +168,19 @@ async function open(){
  await refresh();
 }finally{opening=false}
 }
+window.mbPublicOpen=open;
 document.addEventListener('mb:auth-changed',event=>{
  if(event.detail?.loggedIn&&pendingAccount){pendingAccount=false;open()}
  if(!event.detail?.loggedIn)pendingAccount=false;
 });
 function mount(){
  const row=document.querySelector('#homeScreen .mb-online-actions');
- if(row&&!$('#mb-public-open')){const btn=document.createElement('button');btn.type='button';btn.id='mb-public-open';btn.textContent='🏮 공개방';btn.addEventListener('click',open);row.append(btn)}
+ if(row&&!$('#mb-public-open')){const btn=document.createElement('button');btn.type='button';btn.id='mb-public-open';btn.classList.add('mb-art-button');btn.innerHTML='<img class="mb-art-button-img" src="/ui-assets/public-button-final.png" width="1148" height="292" alt="공개방">';btn.addEventListener('click',open);row.append(btn)}
  for(const side of document.querySelectorAll('.sidebar-nav')){
- if(!side.querySelector('.mb-public-nav')){const btn=document.createElement('button');btn.type='button';btn.className='mb-public-nav';btn.textContent='🏮 공개방';btn.addEventListener('click',open);side.append(btn)}
+ if(!side.querySelector('.mb-public-nav')){const btn=document.createElement('button');btn.type='button';btn.className='mb-public-nav';btn.classList.add('mb-art-button');btn.innerHTML='<img class="mb-art-button-img" src="/ui-assets/public-button-final.png" width="1148" height="292" alt="공개방">';btn.addEventListener('click',open);side.append(btn)}
  }
  const mobile=document.querySelector('.mobile-drawer');
- if(mobile&&!mobile.querySelector('.mb-public-nav')){const btn=document.createElement('button');btn.type='button';btn.className='mb-public-nav';btn.textContent='🏮 공개방';btn.addEventListener('click',open);mobile.append(btn)}
+ if(mobile&&!mobile.querySelector('.mb-public-nav')){const btn=document.createElement('button');btn.type='button';btn.className='mb-public-nav';btn.classList.add('mb-art-button');btn.innerHTML='<img class="mb-art-button-img" src="/ui-assets/public-button-final.png" width="1148" height="292" alt="공개방">';btn.addEventListener('click',open);mobile.append(btn)}
  return !!row;
 }
 mount();const interval=setInterval(()=>{if(mount())clearInterval(interval)},250);setTimeout(()=>clearInterval(interval),16000);

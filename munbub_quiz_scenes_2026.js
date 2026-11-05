@@ -5,17 +5,20 @@
  const quiz=document.getElementById('view-quiz');if(!quiz)return;
  const workspace=document.getElementById('workspace');
  const css=document.createElement('link');css.rel='stylesheet';css.href='./munbub_quiz_scenes_2026.css';css.id='mb-quiz-scenes-css';document.head.append(css);
+ const artwork=document.createElement('link');artwork.rel='stylesheet';artwork.href='./munbub_art_refresh_20261106.css';artwork.id='mb-art-refresh-css';document.head.append(artwork);
  const timer=document.createElement('img');
  timer.className='mb-quiz-hourglass';timer.id='mb-timed-hourglass';
  timer.src='./ui-assets/hourglass_loop.webp';timer.alt='모래가 흐르고 뒤집히는 모래시계';
  timer.loading='eager';timer.decoding='async';
- // Keep the animated hourglass beside the actual timer, not floating at
- // the upper-right corner of the page/background.
+ // This is the original server/session-driven countdown element; do not
+ // create a second timer. Anchor it over the sandglass in scene_timed.webp.
  const clock=document.getElementById('quizTimer');
- if(clock&&clock.parentElement){
-  const group=document.createElement('span');group.className='mb-quiz-timer-group';
-  clock.parentElement.insertBefore(group,clock);
-  group.append(clock,timer);
+ if(clock){
+  const group=document.createElement('span');
+  group.className='mb-quiz-timer-group';
+  group.setAttribute('aria-label','남은 시간');
+  workspace.append(group);
+  group.append(timer,clock);
  }else quiz.prepend(timer);
  const CLASSES=['mb-scene-spelling','mb-scene-idiom','mb-scene-infinite','mb-scene-hard','mb-scene-timed'];
  function refresh(){

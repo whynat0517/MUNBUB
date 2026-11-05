@@ -69,11 +69,13 @@ style.textContent += '\n'+[
  '@media(max-height:500px){#mb-ranked-dialog.mb-ranked-playing .mb-ranked-question{font-size:17px;padding:6px}#mb-ranked-dialog.mb-ranked-playing .mb-ranked-stat>span:first-child{display:none}#mb-ranked-dialog.mb-ranked-playing .mb-ranked-hourglass{width:30px;height:30px}}'
 ].join('\n');
 document.head.append(style);
+ const visualCss=document.createElement('link');visualCss.rel='stylesheet';visualCss.href='./munbub_ranked_visual_20261106.css';document.head.append(visualCss);
  let selected='infinite',run=null,active=false,busy=false,mode=null,qid=null,
      correct=0,answered=0,score=0,deadline=null,lastResult=null,tickId=null,generation=0;
  const now=()=>Date.now();
  const safeMode=x=>MODES[x]?x:'infinite';
  function frame(title,content){
+  dialog.classList.remove('mb-ranked-visual-open');
   dialog.classList.toggle('mb-ranked-playing',active);
   dialog.innerHTML='<div class="mb-ranked-head"><h2>'+esc(title)+'</h2><button id="mb-ranked-close" type="button" aria-label="랭킹전 닫기">✕</button></div>'+
    '<div class="mb-ranked-body">'+
@@ -89,24 +91,65 @@ document.head.append(style);
  async function checkLogin(){
   try{const r=await fetch('/api/account',{credentials:'same-origin'}),j=await r.json();return !!j.loggedIn}catch{return false}
  }
+ let rankingPeriod='all',rankFetchSerial=0;
+ function rankPeriodLabel(p){return {all:'전체',day:'일간',week:'주간'}[p]||'전체'}
+ function renderRankBoard(mode=selected,period=rankingPeriod){
+  const target=dialog.querySelector('#mb-ranked-stage-rows');if(!target)return;
+  const serial=++rankFetchSerial;
+  target.textContent='랭킹 불러오는 중…';
+  fetch('/api/leaderboard?mode='+encodeURIComponent(mode),{credentials:'same-origin'})
+   .then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'랭킹 서버 연결 오류');return d})
+   .then(data=>{
+    if(serial!==rankFetchSerial||!dialog.open||!dialog.querySelector('#mb-ranked-stage-rows'))return;
+    const all=Array.isArray(data.scores)?data.scores:[];
+    // Historical server keeps each player's best result and its timestamp.
+    // These tabs filter that stored best-result date, not a fresh per-day competition.
+    const min=period==='day'?Date.now()-86400000:period==='week'?Date.now()-604800000:0;
+    const scores=all.filter(x=>(Number(x.at)||0)>=min).slice(0,7);
+    target.innerHTML=scores.length?scores.map((r,i)=>'<div class="mb-ranked-stage-row"><span>'+(i+1)+'</span><span>'+esc(r.name||'이름 없음')+'</span><strong>'+Math.max(0,Number(r.score)||0)+'</strong></div>').join(''):
+      '<p class="mb-ranked-empty">'+(all.length?'이 기간에 등록된 최고 기록이 없어.':'아직 등록된 기록이 없어. 첫 도전에 나서 봐!')+'</p>';
+   })
+   .catch(e=>{if(serial===rankFetchSerial&&dialog.querySelector('#mb-ranked-stage-rows'))target.textContent=e.message});
+ }
  function showLobby(message=''){
   active=false;run=null;mode=null;deadline=null;lastResult=null;
+  dialog.classList.remove('mb-ranked-playing');
+  dialog.classList.add('mb-ranked-visual-open');
   delete dialog.dataset.mbRankedMode;
-  frame('🏆 랭킹전 도전', '<p class="mb-ranked-help">랭킹전은 일반 학습 기록과 별개야. 세 모드 모두 <strong>맞춤법 · 사자성어 · 응용문제</strong>를 섞어서 출제하고 정답은 서버에서 검증해.</p>'+
-   '<div class="mb-ranked-modes">'+Object.entries(MODES).map(([key,opt])=>
-    '<button type="button" data-rank-pick="'+key+'" class="'+(key===selected?'selected':'')+'">'+esc(opt.title)+
-    '<small>'+esc(opt.detail)+'</small></button>').join('')+'</div>'+
-   '<p class="mb-ranked-error" id="mb-ranked-error" role="status">'+esc(message)+'</p>'+
-   '<button id="mb-ranked-begin" class="mb-ranked-primary" type="button">🏁 선택한 랭킹전 시작</button>'+ 
-   '<button id="mb-ranked-login" type="button">🔐 로그인·계정 확인</button>');
-  dialog.querySelectorAll('[data-rank-pick]').forEach(btn=>btn.addEventListener('click',()=>{
-   selected=safeMode(btn.dataset.rankPick);
-   dialog.querySelectorAll('[data-rank-pick]').forEach(b=>b.classList.toggle('selected',b.dataset.rankPick===selected));
+  dialog.innerHTML='<section class="mb-ranked-lobby" aria-label="한옥 랭킹모드">'+
+   '<img class="mb-ranked-lobby-art" src="/ui-assets/ranked-stage-final.png" alt="한옥 정원의 랭킹모드 화면" width="1672" height="941">'+
+   '<button type="button" id="mb-ranked-stage-back" class="mb-ranked-hit" aria-label="돌아가기"></button>'+
+   '<button type="button" id="mb-ranked-stage-guide" class="mb-ranked-hit" aria-label="랭킹 안내"></button>'+
+   '<button type="button" id="mb-ranked-stage-reward" class="mb-ranked-hit" aria-label="보상 안내"></button>'+
+   '<button type="button" id="mb-ranked-stage-rules" class="mb-ranked-hit" aria-label="규칙 안내"></button>'+
+   '<div class="mb-ranked-stage-modes" role="group" aria-label="랭킹 모드 선택">'+
+    [['timed60','ranked-time-button.png','시간제한'],['hardcore','ranked-hard-button.png','하드코어'],['infinite','ranked-infinite-button.png','무한']].map(([id,img,label])=>
+     '<button type="button" class="mb-ranked-stage-mode '+(selected===id?'selected':'')+'" data-rank-pick="'+id+'" aria-pressed="'+(selected===id)+'" title="'+label+' 랭킹전"><img src="/ui-assets/'+img+'" alt="'+label+' 랭킹전" width="1100" height="380"></button>').join('')+'</div>'+
+   '<div class="mb-ranked-stage-tabs" role="tablist" aria-label="랭킹 집계 기간">'+
+    [['all','전체'],['day','일간'],['week','주간']].map(([id,label])=>'<button type="button" role="tab" class="mb-ranked-stage-tab '+(rankingPeriod===id?'selected':'')+'" data-rank-period="'+id+'" aria-selected="'+(rankingPeriod===id)+'" aria-label="'+label+' 랭킹"></button>').join('')+'</div>'+
+   '<div class="mb-ranked-stage-rows" id="mb-ranked-stage-rows" aria-live="polite"></div>'+
+   '<p class="mb-ranked-stage-note" id="mb-ranked-stage-note" role="status">'+esc(message||'')+'</p>'+
+   '<button type="button" class="mb-ranked-hit" id="mb-ranked-begin" aria-label="선택한 랭킹전 도전하기"></button>'+
+   '<div class="mb-ranked-stage-mobileinfo">모드 선택 · 랭킹 조회 · 도전 시작</div>'+
+   '</section>';
+  const btn=id=>dialog.querySelector('#'+id);
+  dialog.querySelectorAll('[data-rank-pick]').forEach(button=>button.addEventListener('click',()=>{
+   selected=safeMode(button.dataset.rankPick);
+   dialog.querySelectorAll('[data-rank-pick]').forEach(b=>{let on=b.dataset.rankPick===selected;b.classList.toggle('selected',on);b.setAttribute('aria-pressed',String(on))});
+   renderRankBoard();
   }));
-  $('mb-ranked-begin')?.addEventListener('click',start);
-  $('mb-ranked-login')?.addEventListener('click',()=>{
-   dialog.close();document.getElementById('mb-account-open')?.click();
-  });
+  dialog.querySelectorAll('[data-rank-period]').forEach(button=>button.addEventListener('click',()=>{
+   rankingPeriod=button.dataset.rankPeriod;
+   dialog.querySelectorAll('[data-rank-period]').forEach(b=>{let on=b.dataset.rankPeriod===rankingPeriod;b.classList.toggle('selected',on);b.setAttribute('aria-selected',String(on))});
+   renderRankBoard();
+  }));
+  btn('mb-ranked-stage-back').onclick=()=>dialog.close();
+  const guide=(t,msg)=>{const note=btn('mb-ranked-stage-note');if(note)note.textContent=t+' · '+msg};
+  btn('mb-ranked-stage-guide').onclick=()=>guide('랭킹','계정별 모드 최고 점수 기준으로 순위를 표시해.');
+  btn('mb-ranked-stage-reward').onclick=()=>guide('보상','현재는 공식 보상 시스템이 없어.');
+  btn('mb-ranked-stage-rules').onclick=()=>guide('규칙','무한·1분 제한·하드코어 중 골라서 서버 채점에 도전해. 일간·주간은 최고기록 갱신 날짜를 기준으로 표시돼.');
+  btn('mb-ranked-begin').onclick=start;
+  renderRankBoard();
  }
  function nicknameMode(){
   if(!dialog.open)dialog.showModal();
@@ -241,12 +284,7 @@ document.head.append(style);
    '<button id="mb-ranked-again" class="mb-ranked-primary" type="button">다른 랭킹전 도전하기</button>'+
    '<button id="mb-ranked-view-leaderboard" type="button">🏆 이 모드 랭킹 보기</button>');
   $('mb-ranked-again')?.addEventListener('click',()=>showLobby());
-  $('mb-ranked-view-leaderboard')?.addEventListener('click',()=>{
-   const tab=mode;
-   dialog.close();
-   $('mb-rank-open')?.click();
-   setTimeout(()=>document.querySelector('[data-ranking-mode="'+tab+'"]')?.click(),80);
-  });
+  $('mb-ranked-view-leaderboard')?.addEventListener('click',()=>{selected=safeMode(mode);showLobby();});
  }
  function stopWithoutPause(){
   if(active&&run){

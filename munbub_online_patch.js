@@ -148,6 +148,8 @@
  ];
  let selectedRanking='hardcore',rankRequestId=0;
  function leaderboard(){
+  // Keep all online rank entry points on the illustrated interactive board.
+  if(typeof window.__mbRankedOpen==='function'){window.__mbRankedOpen();return;}
   const tabs='<div class="mb-ranking-tabs" role="group" aria-label="랭킹 모드 선택">'+
    RANK_TABS.map(([id,name])=>'<button type="button" data-ranking-mode="'+id+'">'+name+'</button>').join('')+'</div>';
   open('<h2 class="mb-ranking-heading">🏆 온라인 모드별 랭킹</h2>'+tabs+

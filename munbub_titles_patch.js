@@ -56,7 +56,7 @@ dialog.addEventListener('click',e=>{
  if(e.target===dialog)dialog.close();
 });
 function mount(){const row=document.querySelector('#homeScreen .mb-online-actions');if(!row||document.getElementById('mb-title-open'))return false;
- const b=document.createElement('button');b.id='mb-title-open';b.type='button';b.textContent='🏅 칭호 선택';b.title='착용 중: '+getTitle();
+ const b=document.createElement('button');b.id='mb-title-open';b.type='button';b.classList.add('mb-art-button');b.innerHTML='<img class="mb-art-button-img" src="/ui-assets/title-button-final.png" width="2048" height="682" alt="칭호 선택">';b.title='착용 중: '+getTitle();
  b.addEventListener('click',()=>{render();dialog.showModal()});row.append(b);return true;}
 if(!mount()){const timer=setInterval(()=>{if(mount())clearInterval(timer)},200);setTimeout(()=>clearInterval(timer),16000)}
 })();
