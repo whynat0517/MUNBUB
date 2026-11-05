@@ -184,6 +184,15 @@ style.textContent=[
   return out;
  };
  setupUI('standard');updateHardButton();
+ // Keep the original question and record engines intact. Load the print-based
+ // application choice extension only after all mode result hooks are in place.
+ if(!document.getElementById('mb-app-records-loader')){
+  const extension=document.createElement('script');
+  extension.id='mb-app-records-loader';
+  extension.src='./munbub_application_records_patch.js';
+  extension.onerror=()=>console.error('응용 맞춤법·최고 기록 확장 파일을 불러오지 못했어.');
+  document.body.append(extension);
+ }
  // Load online account/leaderboard only after the core hard-mode wrappers exist.
  if(!document.getElementById('mb-online-module-script')){
   const onlineScript=document.createElement('script');
