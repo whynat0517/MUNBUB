@@ -75,12 +75,16 @@ document.head.append(style);
     '<button type="button" data-rank-pick="'+key+'" class="'+(key===selected?'selected':'')+'">'+esc(opt.title)+
     '<small>'+esc(opt.detail)+'</small></button>').join('')+'</div>'+
    '<p class="mb-ranked-error" id="mb-ranked-error" role="status">'+esc(message)+'</p>'+
-   '<button id="mb-ranked-begin" class="mb-ranked-primary" type="button">🏁 선택한 랭킹전 시작</button>');
+   '<button id="mb-ranked-begin" class="mb-ranked-primary" type="button">🏁 선택한 랭킹전 시작</button>'+ 
+   '<button id="mb-ranked-login" type="button">🔐 로그인·계정 확인</button>');
   dialog.querySelectorAll('[data-rank-pick]').forEach(btn=>btn.addEventListener('click',()=>{
    selected=safeMode(btn.dataset.rankPick);
    dialog.querySelectorAll('[data-rank-pick]').forEach(b=>b.classList.toggle('selected',b.dataset.rankPick===selected));
   }));
   $('mb-ranked-begin')?.addEventListener('click',start);
+  $('mb-ranked-login')?.addEventListener('click',()=>{
+   dialog.close();document.getElementById('mb-account-open')?.click();
+  });
  }
  function nicknameMode(){
   if(!dialog.open)dialog.showModal();
@@ -141,7 +145,8 @@ document.head.append(style);
   busy=true;
   const button=$('mb-ranked-begin');if(button){button.disabled=true;button.textContent='⏳ 문제를 준비하고 있어…'}
   try{
-   if(!await checkLogin())throw Error('닉네임·비밀번호로 로그인한 뒤 랭킹전에 참가해 줘.');
+   // Ranked POST validates the login cookie itself. Avoid a separate GET
+   // race that previously blocked a valid account during brief network errors.
    const out=await api({action:'start',rankedChallenge:true,mode:selected});
    mode=selected;run=out.run;qid=out.qid;correct=0;answered=0;score=0;deadline=out.deadline||null;
    dialog.dataset.mbRankedMode=mode;
