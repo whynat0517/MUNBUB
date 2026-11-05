@@ -51,8 +51,11 @@
   return store.modeRecords;
  }
  function recordAttempt(h,{score=null,at=null}={}){
-  if(!h||h.abandoned||!h.cfg||!Number.isFinite(Number(h.answered))||
+  if(!h||!h.cfg||!Number.isFinite(Number(h.answered))||
      Number(h.answered)<1)return false;
+  // In infinite mode there is no built-in finish: older sessions were often
+  // archived as "abandoned" when switching modes. Their earned answers count.
+  if(h.abandoned&&!(h.cfg.infinite&&!h.cfg.hard&&!h.cfg.timed))return false;
   const r=records(),cfg=h.cfg,correct=finiteNonnegative(h.correct);
   const answered=finiteNonnegative(h.answered);
   const date=Number(at||h.date||h.startedAt)||Date.now();
