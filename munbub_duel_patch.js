@@ -470,6 +470,10 @@
   }
   updateOpponentSignal();
   refreshReview();
+  const points=status?.players||[];
+  const left=dialog.querySelector('#mb-duel-score-left'),right=dialog.querySelector('#mb-duel-score-right');
+  if(left)left.textContent=hidden?'?':String(points[0]?.score||0);
+  if(right)right.textContent=hidden?'?':String(points[1]?.score||0);
  }
   const EMOTES={
   wave:['👋','인사'],cheer:['🙌','만세'],laugh:['😂','웃음'],
@@ -573,9 +577,12 @@
   const options=status.settings||{count:count(),seconds:25,type:'mixed'};
   const typeLabel={mixed:'맞춤법+사자성어',spelling:'맞춤법만',idiom:'사자성어만'};
   const formLabel={auto:'문제별 자동',two:'2지선다',four:'4지선다',text:'서술형'};
-  let html='<div class="mb-duel-panel"><p>친구 초대 코드 <strong class="mb-duel-code" id="mb-duel-code">'+esc(roomCode)+'</strong> <button id="mb-duel-copy" type="button">복사</button></p>'+
-   '<p class="mb-duel-note">⚙ '+count()+'문제 · 문제당 '+options.seconds+'초 · '+esc(typeLabel[options.type]||'혼합')+' · '+esc(formLabel[options.form]||'문제별 자동')+'</p>';
-  html+=scoreboard()+emotePalette();
+  let html='<div class="mb-duel-panel mb-duel-arena"><div class="mb-duel-roommeta"><p>친구 초대 코드 <strong class="mb-duel-code" id="mb-duel-code">'+esc(roomCode)+'</strong> <button id="mb-duel-copy" type="button">복사</button></p>'+
+   '<p class="mb-duel-note">⚙ '+count()+'문제 · 문제당 '+options.seconds+'초 · '+esc(typeLabel[options.type]||'혼합')+' · '+esc(formLabel[options.form]||'문제별 자동')+'</p></div>';
+  html+='<section class="mb-duel-hud">'+scoreboard()+
+   '<div class="mb-duel-vs-bar" aria-label="양쪽 점수 비교"><span id="mb-duel-score-left">'+
+   (concealedScore()?'?':(status.players[0]?.score||0))+'</span><span class="mb-duel-vs-caption">VS</span>'+
+   '<span id="mb-duel-score-right">'+(concealedScore()?'?':(status.players[1]?.score||0))+'</span></div></section>';
   if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
   if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 답안 제출 완료! 상대방도 답을 고르면 정답과 해설을 함께 공개해.</p><p class="mb-duel-note">답안은 서버에 접수됐어. 결과는 아직 공개되지 않아.</p>';
   if(newPhase==='countdown')html+='<section class="mb-duel-start-box" aria-label="대결 시작 카운트다운"><div class="mb-duel-start-label">⚔ 대결 시작까지</div>'+
@@ -624,7 +631,12 @@
     '<p class="mb-duel-result '+(win&&!draw?'good':'bad')+'">'+(draw?'🤝 무승부!':win?'🎉 승리!':'⚔ 다음에는 승리해 보자!')+
     '</p><p>최종 결과: '+esc(players[0].name)+' '+players[0].score+'점 / '+esc(players[1].name)+' '+players[1].score+'점</p>';
   }
-  html+='<div class="mb-duel-round-indicator">ROUND '+Math.min(qidx+1,count())+' / '+count()+'</div><div class="mb-duel-actions"><button id="mb-duel-new" type="button">새 대결 / 코드 입력</button></div><p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
+  html+='<footer class="mb-duel-footer">'+emotePalette()+
+   '<div class="mb-duel-round-indicator">ROUND '+Math.min(qidx+1,count())+' / '+count()+'</div>'+
+   '<div class="mb-duel-footer-actions"><button id="mb-duel-new" type="button">방 선택</button>'+
+   '<button id="mb-duel-emoji-toggle" type="button" aria-expanded="false">이모티콘</button>'+
+   '<button id="mb-duel-exit" type="button">나가기</button></div></footer>'+
+   '<p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
   putHTML(html);
   renderRemoteEmote();
   updateOpponentSignal();
@@ -634,6 +646,12 @@
    try{await navigator.clipboard.writeText(roomCode);showError('방 코드가 복사됐어.')}catch(_){showError('복사가 제한됐어. 위 코드를 직접 알려 줘.')}
   });
   dialog.querySelector('#mb-duel-new')?.addEventListener('click',showLobby);
+  dialog.querySelector('#mb-duel-exit')?.addEventListener('click',()=>dialog.close());
+  dialog.querySelector('#mb-duel-emoji-toggle')?.addEventListener('click',()=>{
+   const palette=dialog.querySelector('.mb-duel-emotes');if(!palette)return;
+   palette.classList.toggle('mb-duel-emotes-expanded');
+   dialog.querySelector('#mb-duel-emoji-toggle')?.setAttribute('aria-expanded',String(palette.classList.contains('mb-duel-emotes-expanded')));
+  });
   dialog.querySelectorAll('[data-duel-answer]').forEach(btn=>btn.addEventListener('click',()=>sendAnswer(btn.dataset.duelAnswer)));
   dialog.querySelector('#mb-duel-written-form')?.addEventListener('submit',e=>{
    e.preventDefault();sendAnswer(dialog.querySelector('#mb-duel-written-answer')?.value||'');
