@@ -249,7 +249,8 @@
   busy=true;showError(action==='create'?'대결방 생성 중...':'친구 방에 참가하는 중...');
   try{
    const code=String(value||'').trim().toUpperCase();
-   const result=await api(action==='create'?{action:'create',settings:value}:{action:'join',code});
+   const title=window.mbGetEquippedTitle?.()||'국어 새내기';
+   const result=await api(action==='create'?{action:'create',settings:value,title}:{action:'join',code,title});
    await enterRoom(result.code);
   }catch(e){showError(e.message)}finally{busy=false}
  }
@@ -455,7 +456,8 @@
   const hidden=concealedScore();
   return '<div class="mb-duel-scoreboard">'+(status?.players||[]).map(p=>
    '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+
-   '<span class="mb-duel-player-name">'+esc(p.name)+(p.id===status.me?' (나)':'')+'</span>'+
+   '<span class="mb-duel-player-name">'+esc(p.name)+(p.id===status.me?' (나)':'')+'</span>'+ 
+    '<span class="mb-duel-player-title">'+esc(p.title||'국어 새내기')+'</span>'+
    '<strong class="mb-duel-score-value">'+(hidden?'🔒 공개 대기':p.score+'점')+'</strong>'+
    '<small class="mb-duel-progress">'+(hidden?'상대 답변 후 점수 공개 · '+p.answered+'/'+count():'정답 '+p.correct+' · '+p.answered+'/'+count())+'</small>'+
    (p.id===status.me?
@@ -593,10 +595,22 @@
    '<div class="mb-duel-vs-bar" aria-label="양쪽 점수 비교"><span id="mb-duel-score-left">'+
    (concealedScore()?'?':(status.players[0]?.score||0))+'</span><span class="mb-duel-vs-caption">VS</span>'+
    '<span id="mb-duel-score-right">'+(concealedScore()?'?':(status.players[1]?.score||0))+'</span></div></section>';
-  if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
+  if(newPhase==='waiting'&&status.publicRoom){
+   const ready=status.lobbyReady||{},mine=status.role==='host'?ready.host:ready.guest;
+   html+='<section class="mb-public-waiting"><h3>🏮 '+esc(status.roomName||'공개방 대기실')+'</h3>'+
+    '<p class="mb-public-wait-desc">방 코드 '+esc(roomCode)+' · 두 명이 준비하면 방장이 시작할 수 있어.</p>'+
+    '<div class="mb-public-players"><div>👑 '+esc(status.hostName||'방장')+' <b>'+(ready.host?'✅ 준비 완료':'⏳ 준비 중')+'</b></div>'+
+    '<div>📖 '+esc(status.guestName||'참가자 대기 중')+' <b>'+(ready.guest?'✅ 준비 완료':'⏳ 준비 중')+'</b></div></div>'+
+    '<div class="mb-public-ready-actions"><button id="mb-public-ready" type="button" class="mb-duel-primary" '+(!status.guestName?'disabled':'')+'>'+(mine?'✓ 준비 취소':'✓ 준비 완료')+'</button>'+
+    (status.role==='host'?'<button id="mb-public-start" type="button" '+(!ready.host||!ready.guest?'disabled':'')+'>▶ 게임 시작</button>':'<span>방장 시작 대기 중</span>')+'</div>'+
+    '<div class="mb-public-chat"><strong>💬 대기실 채팅</strong><div id="mb-public-chatlog" role="log" aria-live="polite">채팅 불러오는 중...</div>'+
+    '<form id="mb-public-chatform"><input id="mb-public-chattext" maxlength="80" autocomplete="off" placeholder="메시지 입력 · 80자 이내"><button type="submit">전송</button></form>'+
+    '<div class="mb-public-quickchat"><button type="button" data-public-emoji="👋">👋</button><button type="button" data-public-emoji="😄">😄</button><button type="button" data-public-emoji="🔥">🔥</button><button type="button" data-public-emoji="👏">👏</button></div></div></section>';
+  }
+  if(newPhase==='waiting'&&!status.publicRoom)html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
   if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 답안 제출 완료! 상대방도 답을 고르면 정답과 해설을 함께 공개해.</p><p class="mb-duel-note">답안은 서버에 접수됐어. 결과는 아직 공개되지 않아.</p>';
   if(newPhase==='countdown')html+='<section class="mb-duel-start-box" aria-label="대결 시작 카운트다운"><div class="mb-duel-start-label">⚔ 대결 시작까지</div>'+
-   '<div id="mb-duel-countdown" class="mb-duel-start-number" role="timer">'+Math.max(0,Math.ceil((status.turnStartsAt-now())/1000))+'</div>'+
+   '<div id="mb-duel-countdown" class="mb-duel-start-number" role="timer">'+Math.max(0,Math.ceil((status.turnStartsAt-now())/1000))+'초 후 시작</div>'+
    '<div class="mb-duel-start-note">같은 문제를 동시에 시작해!</div></section>';
   if(newPhase==='question'){
    const q=MAP.get(status.questionIds[qidx]);
@@ -648,6 +662,28 @@
    '<button id="mb-duel-exit" type="button">나가기</button></div></footer>'+
    '<p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
   putHTML(html);
+  if(newPhase==='waiting'&&status.publicRoom){
+   lastChatPoll=0;loadChat();
+   dialog.querySelector('#mb-public-ready')?.addEventListener('click',async()=>{
+    const ready=status.lobbyReady||{},mine=status.role==='host'?ready.host:ready.guest;
+    try{await api({action:'lobbyReady',code:roomCode,ready:!mine});lastViewKey='';await updateRoom()}
+    catch(e){showError(e.message)}
+   });
+   dialog.querySelector('#mb-public-start')?.addEventListener('click',async()=>{
+    try{await api({action:'lobbyStart',code:roomCode});lastViewKey='';await updateRoom()}
+    catch(e){showError(e.message)}
+   });
+   dialog.querySelector('#mb-public-chatform')?.addEventListener('submit',async e=>{
+    e.preventDefault();const input=dialog.querySelector('#mb-public-chattext');if(!input)return;
+    const message=input.value.trim();if(!message)return;
+    try{await api({action:'chat',code:roomCode,message});input.value='';await loadChat()}
+    catch(e){showError(e.message)}
+   });
+   dialog.querySelectorAll('[data-public-emoji]').forEach(btn=>btn.addEventListener('click',async()=>{
+    try{await api({action:'chat',code:roomCode,message:btn.dataset.publicEmoji});await loadChat()}
+    catch(e){showError(e.message)}
+   }));
+  }
   renderRemoteEmote();
   updateOpponentSignal();
   refreshReview();
@@ -760,15 +796,30 @@
    showGame();
   }catch(e){lastViewKey='';showError('답변 처리 실패: '+e.message);await updateRoom()}finally{busy=false}
  }
+ let chatBusy=false,lastChatPoll=0;
+ async function loadChat(){
+  if(chatBusy||!dialog.open||!roomCode||!status?.publicRoom||phase!=='waiting')return;
+  chatBusy=true;lastChatPoll=Date.now();const code=roomCode;
+  try{
+   const res=await fetch('/api/duel?chat='+encodeURIComponent(code),{credentials:'same-origin'});
+   const data=await res.json();if(!res.ok)throw Error(data.error||'채팅을 불러오지 못했어.');
+   if(code!==roomCode)return;
+   const view=dialog.querySelector('#mb-public-chatlog');if(!view)return;
+   view.innerHTML=(data.messages||[]).map(m=>'<div><strong>'+esc(m.name||'플레이어')+':</strong> '+esc(m.message||'')+'</div>').join('')||'<p>아직 메시지가 없어. 먼저 인사해 봐!</p>';
+   view.scrollTop=view.scrollHeight;
+  }catch(e){const view=dialog.querySelector('#mb-public-chatlog');if(view&&!view.children.length)view.textContent=e.message}
+  finally{chatBusy=false}
+ }
  function tick(){
   if(!dialog.open||!roomCode||!status||document.hidden)return;
+  if(phase==='waiting'&&status.publicRoom&&Date.now()-lastChatPoll>2800)loadChat();
   if(recentRemoteEmote&&Date.now()-recentRemoteEmote.received>=2900){
    recentRemoteEmote=null;renderRemoteEmote();
   }
   if(phase==='countdown'){
    const left=Math.max(0,Math.ceil((status.turnStartsAt-now())/1000));
    const el=dialog.querySelector('#mb-duel-countdown');
-   if(el&&el.textContent!==String(left))el.textContent=String(left);
+   if(el&&el.textContent!==left+'초 후 시작')el.textContent=left+'초 후 시작';
    if(left<=0){lastViewKey='';showGame()}
   }else if(phase==='question'){
    const ms=remaining(),el=dialog.querySelector('#mb-duel-clock');
@@ -814,4 +865,9 @@
  },{once:true});
  setInterval(heartbeat,6500);
  setInterval(tick,210);
+ // Public-room browser is a separate module; route joined games here.
+ window.mbDuelEnterRoom=async code=>{
+  if(!dialog.open)dialog.showModal();
+  await enterRoom(code);
+ };
 })();
