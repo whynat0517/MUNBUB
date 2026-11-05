@@ -200,14 +200,57 @@
    if(out.ended)status('🌐 온라인 랭킹 등록 완료! 서버 점수 '+out.score+'점 / '+out.answers+'문제');
   }).catch(e=>{failed=e.message;status('오프라인 기록은 유지돼. 온라인 기록: '+e.message)});
  }
+ // Reuse this module's existing engine hooks for server-verified rankings.
+ // No extra global wrappers or duplicate click listeners are installed.
+ let rankedJob=null;
+ const rankedMode=cfg=>cfg?.hard?null:cfg?.timed&&Number(cfg.timeSeconds)===60
+  ?'timed60':cfg?.infinite&&!cfg?.timed?'infinite':null;
+ function enqueueRank(job,action,fields={}){
+  if(!job)return;
+  job.chain=job.chain.then(async()=>{
+   if(job.error||job.done)return;
+   const payload={action,...fields};
+   if(action==='start')payload.mode=job.mode;
+   else{
+    if(!job.run)throw Error('온라인 도전 인증을 받지 못했어.');
+    payload.run=job.run;
+   }
+   const out=await api('/api/ranked',payload);
+   if(out.run)job.run=out.run;
+   if(out.ended||action==='finish'){
+    job.done=true;job.active=false;
+    const best=out.best;
+    status('🌐 '+(job.mode==='timed60'?'1분 타임어택':'무한모드')+
+     ' 온라인 기록 '+(out.recorded?'등록 완료: 최고 '+best+'문제':'확인 완료')+
+     (out.isNewBest?' · 개인 신기록! 🎉':''));
+   }
+  }).catch(e=>{
+   job.error=e.message;job.active=false;
+   status('오프라인 결과는 유지돼. 온라인 순위 기록: '+e.message);
+  });
+ }
  const start=window.startSession,render=window.renderQuestion,judge=window.judge,finish=window.finishSession;
  if(![start,render,judge,finish].every(x=>typeof x==='function'))return;
  window.startSession=function(...args){
-  const prior=store.active;const output=start.apply(this,args);const a=store.active;
+  const prior=store.active,previousJob=rankedJob;
+  rankedJob=null;
+  const output=start.apply(this,args),a=store.active;
+  if(a===prior){rankedJob=previousJob;return output}
+  if(previousJob?.active)enqueueRank(previousJob,'finish');
   if(a&&a!==prior&&a.cfg?.hard){
    run=null;failed='';active=true;lastQ=current()?.id;chain=Promise.resolve();
    statusText='🌐 온라인 검증 진행 중...';
    submit('start',{qid:lastQ});
+  }else active=false;
+  const mode=rankedMode(a?.cfg);
+  if(a&&a!==prior&&mode&&me?.name){
+   const q=current();
+   if(q){
+    const job={mode,session:a,run:null,chain:Promise.resolve(),
+     active:true,done:false,error:null,lastQ:q.id};
+    rankedJob=job;
+    enqueueRank(job,'start',{qid:q.id});
+   }
   }
   return output;
  };
@@ -215,20 +258,47 @@
   const output=render.apply(this,args);
   const q=active&&store.active?.cfg?.hard?current():null;
   if(q&&q.id!==lastQ){lastQ=q.id;submit('next',{qid:q.id})}
+  const a=store.active,job=rankedJob;
+  const next=job?.active&&job.session===a?current():null;
+  if(next&&next.id!==job.lastQ){
+   job.lastQ=next.id;enqueueRank(job,'next',{qid:next.id});
+  }
   return output;
  };
  window.judge=function(answer){
   const a=store.active,q=active&&a?.cfg?.hard&&!a.lastFeedback?current():null;
+  const job=rankedJob;
+  const rankedQ=job?.active&&job.session===a&&!a?.lastFeedback?current():null;
   const output=judge.apply(this,arguments);
   if(q){
    submit('answer',{qid:q.id,answer:String(answer??''),form:q.form});
    if(a.lastFeedback&&!a.lastFeedback.good)active=false;
   }
+  if(rankedQ&&a.lastFeedback)enqueueRank(job,'answer',{
+   qid:rankedQ.id,answer:String(answer??'')
+  });
   return output;
  };
  window.finishSession=function(...args){
-  const a=store.active;const output=finish.apply(this,args);
+  const a=store.active,job=rankedJob;
+  const output=finish.apply(this,args);
   if(a?.cfg?.hard){active=false;status(statusText||'🌐 온라인 검증 중...')}
+  if(job&&job.session===a){
+   job.active=false;rankedJob=null;
+   enqueueRank(job,'finish');
+   status('🌐 '+(job.mode==='timed60'?'1분 타임어택':'무한모드')+
+    ' 최고 기록을 서버에서 확인 중...');
+  }
   return output;
  };
+ // Mobile users may close the browser while an infinite-mode run is active.
+ // Flush the current verified signed run without depending on unload handlers.
+ window.addEventListener('pagehide',()=>{
+  const job=rankedJob;
+  if(job?.active&&job.run&&navigator.sendBeacon){
+   navigator.sendBeacon('/api/ranked',new Blob([
+    JSON.stringify({action:'finish',run:job.run})
+   ],{type:'application/json'}));
+  }
+ });
 })();
