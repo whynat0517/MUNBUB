@@ -206,7 +206,7 @@ export default async function handler(req,res){
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
    if(publicRoom)await writePrivate('public-rooms/'+code+'.json',{
-    code,roomName,hostName:me.name,hostTitle,createdAt:now,
+    code,roomName,hostId:me.id,hostName:me.name,hostTitle,createdAt:now,
     expiresAt:now+ROOM_LIFETIME,settings
    },{overwrite:true});
    // Create the initial compact read model; avoids a list of empty steps on every poll.
