@@ -97,6 +97,26 @@
   }
   if(changed)persist();
  }
+ // Infinite mode has no natural finish. Keep the best answered/correct
+ // record up to date as soon as the player picks an answer, even if they
+ // return home, switch tabs, or close their browser afterward.
+ const oldJudge=window.judge;
+ if(typeof oldJudge==='function'){
+  window.judge=function(...args){
+   const before=store.active;
+   const result=oldJudge.apply(this,args);
+   const active=store.active;
+   if(before&&active===before&&active.cfg?.infinite&&
+      !active.cfg?.hard&&!active.cfg?.timed&&
+      active.answeredCount>0&&active.lastFeedback){
+    if(recordAttempt({
+     cfg:active.cfg,answered:active.answeredCount,correct:active.correctCount,
+     date:Date.now(),abandoned:false
+    }))persist();
+   }
+   return result;
+  };
+ }
  const oldFinish=window.finishSession;
  if(typeof oldFinish==='function'){
   window.finishSession=function(...args){
