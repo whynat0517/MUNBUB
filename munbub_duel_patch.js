@@ -435,7 +435,8 @@
   const btn=dialog.querySelector('#mb-duel-next-ready');
   if(btn){
    const disabled=!!info.readyAt||busy;
-   const label=info.readyAt?'✅ 바로 넘어가기 동의 완료':'⚡ 바로 다음 문제로 넘어가기 동의';
+   const finalRound=info.index===count()-1;
+   const label=info.readyAt?(finalRound?'✅ 결과 확인 동의 완료':'✅ 바로 넘어가기 동의 완료'):(finalRound?'🏆 결과 확인하기':'⚡ 바로 다음 문제로 넘어가기 동의');
    if(btn.disabled!==disabled)btn.disabled=disabled;
    if(btn.textContent!==label)btn.textContent=label;
   }
@@ -634,9 +635,8 @@
   }
   if(newPhase==='waiting'&&!status.publicRoom)html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
   if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 답안 제출 완료! 상대방도 답을 고르면 정답과 해설을 함께 공개해.</p><p class="mb-duel-note">답안은 서버에 접수됐어. 결과는 아직 공개되지 않아.</p>';
-  if(newPhase==='countdown')html+='<section class="mb-duel-start-box" aria-label="대결 시작 카운트다운"><div class="mb-duel-start-label">⚔ 대결 시작까지</div>'+
-   '<div id="mb-duel-countdown" class="mb-duel-start-number" role="timer">'+Math.max(0,Math.ceil((status.turnStartsAt-now())/1000))+'초 후 시작</div>'+
-   '<div class="mb-duel-start-note">같은 문제를 동시에 시작해!</div></section>';
+  if(newPhase==='countdown')html+='<section class="mb-duel-start-box" aria-label="대결 시작 카운트다운">'+
+   '<p id="mb-duel-countdown" class="mb-duel-start-number" role="timer">'+Math.max(0,Math.ceil((status.turnStartsAt-now())/1000))+'초 뒤에 시작...</p></section>';
   if(newPhase==='question'){
    const q=MAP.get(status.questionIds[qidx]);
    if(!q){html+='<p id="mb-duel-info">문제를 불러오지 못했어.</p>'}
@@ -664,10 +664,10 @@
     (q?.note?'<p class="mb-duel-note">해설: '+esc(q.note)+'</p>':'')+
     '<div id="mb-duel-review-clock" class="mb-duel-review-clock" role="timer"></div>'+
     '<p id="mb-duel-review-status" class="mb-duel-review-status" aria-live="polite"></p>'+
-    '<button type="button" id="mb-duel-next-ready">⚡ 바로 다음 문제로 넘어가기 동의</button>'+
-    '<p class="mb-duel-note">둘 다 답한 뒤 '+(reviewMilliseconds()/1000)+'초 후 자동 진행! 둘 다 동의하면 바로 넘어가.</p></section>';
+    '<button type="button" id="mb-duel-next-ready">'+(qidx>=count()?'🏆 결과 확인하기':'⚡ 바로 다음 문제로 넘어가기 동의')+'</button>'+
+    '<p class="mb-duel-note">둘 다 답한 뒤 '+(reviewMilliseconds()/1000)+'초 후 '+(qidx>=count()?'결과를 공개해.':'자동으로 다음 문제로 넘어가.')+' 둘 다 동의하면 바로 진행해.</p></section>';
   }
-  if(newPhase==='feedback'){const good=feedback?.correct;html+='<p class="mb-duel-result '+(good?'good':'bad')+'">'+(good?'✔ 정답! +'+feedback.points+'점':'✖ 아쉬워! 0점')+'</p><p>다음 문제로 넘어가는 중...</p>'}
+  if(newPhase==='feedback'){const good=feedback?.correct;html+='<p class="mb-duel-result '+(good?'good':'bad')+'">'+(good?'✔ 정답! +'+feedback.points+'점':'✖ 아쉬워! 0점')+'</p><p>'+(qidx>=count()?'결과 확인하기':'다음 문제로 넘어가는 중...')+'</p>'}
   if(newPhase==='finished')html+='<p class="mb-duel-status">✅ '+count()+'문제를 모두 풀었어! 상대가 마칠 때까지 기다리고 있어.</p>';
   if(newPhase==='results'){
    const players=[...status.players].sort((a,b)=>b.score-a.score||b.correct-a.correct);
@@ -852,7 +852,7 @@
   if(phase==='countdown'){
    const left=Math.max(0,Math.ceil((status.turnStartsAt-now())/1000));
    const el=dialog.querySelector('#mb-duel-countdown');
-   if(el&&el.textContent!==left+'초 후 시작')el.textContent=left+'초 후 시작';
+   if(el&&el.textContent!==left+'초 뒤에 시작...')el.textContent=left+'초 뒤에 시작...';
    if(left<=0){lastViewKey='';showGame()}
   }else if(phase==='question'){
    const ms=remaining(),el=dialog.querySelector('#mb-duel-clock');
