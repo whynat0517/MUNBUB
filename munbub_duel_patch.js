@@ -9,6 +9,9 @@
  dialog.id='mb-duel-dialog';
  dialog.setAttribute('aria-label','맛춘범 온라인 1대1 대결');
  document.body.append(dialog);
+ const stickerProbe=new Image();
+ stickerProbe.addEventListener('error',()=>dialog.classList.add('mb-duel-no-sprites'),{once:true});
+ stickerProbe.src='/ui-assets/duel-emotes-sheet.webp';
  const css=document.createElement('style');
  css.id='mb-duel-styles';
  css.textContent=[
@@ -508,7 +511,8 @@
      '<span class="mb-duel-emote-art" style="'+spriteStyle(key)+'"><span class="mb-duel-emote-fallback">'+icon+'</span></span></button>';
    }).join('')+
    '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>'+
-   '<p id="mb-duel-remote-emote" class="mb-duel-remote-emote" role="status" aria-live="polite" hidden></p>';
+   '<p id="mb-duel-remote-emote" class="mb-duel-remote-emote" role="status" aria-live="polite" hidden></p>'+
+   '<p id="mb-duel-local-emote" class="mb-duel-remote-emote mb-duel-local-emote" role="status" hidden></p>';
  }
  async function sendEmote(id){
   if(!EMOTES[id]||!dialog.open||!roomCode||!status?.ready||
@@ -522,6 +526,9 @@
   try{
    await api({action:'emote',code:currentCode,emote:id,answerTicket:status.answerTicket});
    if(currentCode===roomCode){
+    const local=dialog.querySelector('#mb-duel-local-emote');
+    if(local){local.hidden=false;local.innerHTML='<span class="mb-duel-emote-art mb-duel-remote-sticker" style="'+spriteStyle(id)+'" role="img" aria-label="'+esc(EMOTES[id][1])+'"></span><strong>내 이모티콘</strong>';
+     setTimeout(()=>{if(local.isConnected)local.hidden=true},2700)}
     const label=dialog.querySelector('#mb-duel-emotes-state');
     if(label)label.textContent='전송 완료!';
    }
