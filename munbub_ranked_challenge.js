@@ -214,28 +214,38 @@
   const timer=$('mb-ranked-time');if(timer)timer.textContent='⏱ '+timeLeft()+'초';
   if(timeLeft()===0&&!busy)finish();
  },350);
- function inject(){
-  const setup=$('view-setup');
-  if(!setup||typeof BANK==='undefined'||!window.__mbAppRecords2026v1)return;
-  const route=window.__mbSelectedMenu?.()||'';
-  const activeRoute=route==='infinite'||(typeof section!=='undefined'&&section==='setup'&&
-   document.querySelector('[data-route="infinite"].active'));
-  let el=$('mb-ranked-entry');
-  if(!el){
-   el=document.createElement('section');el.id='mb-ranked-entry';
-   el.innerHTML='<div class="mb-ranked-entry-row"><div><strong>🏆 온라인 랭킹전</strong>'+
-    '<p>무한 · 하드코어 · 1분 타임어택 · 전부 혼합문제로 최고 기록을 세워 봐!</p></div>'+
-    '<button id="mb-ranked-open" type="button">🏁 랭킹전하기</button></div>';
-   el.querySelector('button').addEventListener('click',nicknameMode);
-   setup.prepend(el);
-  }
-  el.hidden=!activeRoute;
+ // Ranked play lives in its own navigation item, never nested in infinite mode.
+ function rankedMenu(){
+  document.querySelectorAll('#mb-ranked-entry').forEach(el=>el.remove());
+  const make=(container,aria)=>{
+   if(!container||container.querySelector('.mb-ranked-nav'))return;
+   const btn=document.createElement('button');
+   btn.type='button';btn.className='mb-ranked-nav navbtn';
+   btn.dataset.route='ranked';
+   btn.setAttribute('aria-label','랭킹전');
+   btn.title='온라인 랭킹전';
+   btn.textContent='🏆 랭킹전';
+   const timed=container.querySelector('[data-route="timed"]');
+   if(timed)timed.after(btn);else container.append(btn);
+   btn.addEventListener('click',e=>{
+    e.preventDefault();e.stopImmediatePropagation();
+    if(dialog.open)return;
+    window.navigate?.('home');
+    window.__mbMarkRoute?.('ranked');
+    const drawer=$('mobileDrawer');
+    if(drawer&&!drawer.hidden)drawer.hidden=true;
+    nicknameMode();
+   },true);
+  };
+  make(document.querySelector('#homeScreen .sidebar-nav')||document.querySelector('.sidebar-nav'),'desktop');
+  make($('mobileDrawer'),'mobile');
  }
- const observer=new MutationObserver(()=>{if(!$('mb-ranked-entry'))inject()});
- const root=$('view-setup');
- if(root)observer.observe(root,{childList:true});
- document.addEventListener('click',e=>{
-  if(e.target.closest?.('[data-route="infinite"]'))setTimeout(inject,90);
- },true);
- setTimeout(inject,150);
+ // The menu shell is stable, but a mutation may replace its navigation nodes.
+ // Observe only the relevant navigation containers, never the whole document.
+ rankedMenu();
+ for(const nav of [document.querySelector('.sidebar-nav'),$('mobileDrawer')]){
+  if(nav)new MutationObserver(()=>rankedMenu()).observe(nav,{childList:true});
+ }
+ dialog.addEventListener('close',()=>window.__mbMarkRoute?.('home'));
+ window.__mbRankedOpen=nicknameMode;
 })();
