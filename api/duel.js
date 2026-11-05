@@ -18,7 +18,7 @@ function validSettings(input){
 }
 function roomSettings(room){return validSettings(room?.settings)||{count:10,seconds:25,type:'mixed'}}
 const REVIEW_MS=10000;
-const EMOTE_IDS=new Set(['wave','cheer','laugh','wow','cry','fire','thumbs','thinking']);
+const EMOTE_IDS=new Set(['wave','cheer','laugh','wow','cry','fire','thumbs','thinking','cool','sleep','love','angry']);
 function nextTurnAt(roomVersion,ours,theirs){
  const lastAt=Math.max(Number(ours?.at)||0,Number(theirs?.at)||0);
  if(roomVersion<4)return lastAt+1500;
