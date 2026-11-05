@@ -102,24 +102,8 @@
  const duelLayout=document.createElement('link');
  duelLayout.rel='stylesheet';duelLayout.href='./munbub_duel_arena_2026.css';
  duelLayout.id='mb-duel-arena-2026-css';document.head.append(duelLayout);
- const artStyles=[
-  '#mb-duel-dialog h2{background-image:url("/ui-assets/duel-parts/01_title_1v1.webp"),linear-gradient(#684242,#32232b);background-size:100% 100%;background-repeat:no-repeat;min-height:62px;display:flex;align-items:center;justify-content:center}',
-  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){background-image:url("/ui-assets/duel-parts/02_player_left.webp"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){background-image:url("/ui-assets/duel-parts/03_player_right.webp"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-question-text{background-image:url("/ui-assets/duel-parts/05_question_board.webp"),linear-gradient(#fffaf0,#ffe7cb);background-size:100% 100%;background-repeat:no-repeat}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(1){background-image:url("/ui-assets/duel-parts/08_choice_a.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(2){background-image:url("/ui-assets/duel-parts/09_choice_b.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(3){background-image:url("/ui-assets/duel-parts/10_choice_c.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(4){background-image:url("/ui-assets/duel-parts/11_choice_d.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-round-indicator{background-image:url("/ui-assets/duel-parts/12_round_indicator_blank.webp"),linear-gradient(#5f3534,#48242a);background-size:100% 100%}',
-  '#mb-duel-dialog #mb-duel-close{background-image:url("/ui-assets/duel-parts/17_exit_button.webp");background-size:100% 100%;background-repeat:no-repeat}',
- ].join('\n');
- // Avoid nine 404 image requests and unnecessary repainting if the supplied
- // split PNGs have not yet been uploaded to the GitHub UI assets directory.
- fetch('/ui-assets/duel-parts/05_question_board.webp',{method:'HEAD',cache:'force-cache'})
-  .then(res=>{if(res.ok)css.textContent+='\n'+artStyles}).catch(()=>{});
- fetch('/ui-assets/duel-emotes-sheet.webp',{method:'HEAD',cache:'force-cache'})
-  .then(res=>{if(res.ok)css.textContent+='\n#mb-duel-dialog .mb-duel-emote-art{background-image:url("/ui-assets/duel-emotes-sheet.webp")!important;font-size:0}'}).catch(()=>{});
+ // All supplied images are committed to ui-assets. The linked arena CSS owns
+ // their sizes and overlays; do not re-inject an older set of competing rules.
  const homeRow=document.querySelector('#homeScreen .mb-online-actions');
  if(homeRow){
   const btn=document.createElement('button');
