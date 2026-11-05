@@ -19,7 +19,7 @@
   q.options.includes(q.answers[0])&&typeof q.note==='string'&&q.note.trim());
  const extra=seeded.map((q,i)=>({
   id:'a'+(211+i),type:'application',format:'choice',subtype:SUBTYPE,
-  prompt:q.prompt,options:[...q.options],answers:[...q.answers],
+  prompt:q.prompt.replace(/___\s+([.!?])/g,'___$1'),options:[...q.options],answers:[...q.answers],
   note:q.note,source:q.source||'학교 프린트',sourceId:q.id
  }));
  if(extra.length!==129||new Set(extra.map(q=>q.id)).size!==extra.length||
