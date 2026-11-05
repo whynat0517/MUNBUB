@@ -1,132 +1,267 @@
-/* Gameplay shares one viewport; only the mode menu and long explanations scroll. */
+/* Canonical gameplay composition — 2026-11-06.
+   One stylesheet owns all five gameplay screens, with one mobile breakpoint.
+   Keep home and generic setup routes untouched. */
 html:has(#workspace.mb-playing-scene:not([hidden])),
-body:has(#workspace.mb-playing-scene:not([hidden])){height:100dvh;min-height:100dvh;overflow:hidden;overscroll-behavior:none}
-body:has(#workspace.mb-playing-scene:not([hidden])) :is(.mobile-bottom,#mb-achievement-launch){display:none!important}
-#workspace.app-shell.mb-playing-scene[hidden]{display:none!important}
-#workspace.app-shell.mb-playing-scene{
- box-sizing:border-box!important;display:grid!important;position:fixed!important;inset:0!important;z-index:20!important;
- grid-template-columns:clamp(150px,16vw,230px) minmax(0,1fr)!important;
- width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;
- margin:0!important;border:0!important;overflow:hidden!important;
- background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;
+body:has(#workspace.mb-playing-scene:not([hidden])){
+ height:100dvh!important;min-height:100dvh!important;
+ overflow:hidden!important;overscroll-behavior:none!important;
 }
-#workspace.mb-playing-scene.mb-scene-spelling{background-image:url('/ui-assets/scene_spelling.webp')!important}
-#workspace.mb-playing-scene.mb-scene-idiom{background-image:url('/ui-assets/scene_idiom.webp')!important}
-#workspace.mb-playing-scene.mb-scene-infinite{background-image:url('/ui-assets/scene_infinite.webp')!important}
-#workspace.mb-playing-scene.mb-scene-hard{background-image:url('/ui-assets/scene_hard.webp')!important}
-#workspace.mb-playing-scene.mb-scene-timed{background-image:url('/ui-assets/scene_timed.webp')!important}
+#homeScreen.app-shell[hidden],#workspace.app-shell[hidden],#workspace .view[hidden]{display:none!important}
+#workspace#workspace.app-shell.mb-playing-scene:not([hidden]){
+ box-sizing:border-box!important;display:grid!important;position:fixed!important;
+ inset:0!important;z-index:30!important;width:100vw!important;height:100dvh!important;
+ max-width:none!important;min-height:0!important;margin:0!important;
+ grid-template-columns:clamp(150px,16vw,230px) minmax(0,1fr)!important;
+ overflow:hidden!important;background-position:center center!important;
+ background-size:cover!important;background-repeat:no-repeat!important;
+}
+#workspace#workspace.mb-playing-scene.mb-scene-spelling{background-image:url('/ui-assets/scene_spelling.webp')!important}
+#workspace#workspace.mb-playing-scene.mb-scene-idiom{background-image:url('/ui-assets/scene_idiom.webp')!important}
+#workspace#workspace.mb-playing-scene.mb-scene-infinite{background-image:url('/ui-assets/scene_infinite.webp')!important}
+#workspace#workspace.mb-playing-scene.mb-scene-hard{background-image:url('/ui-assets/scene_hard.webp')!important}
+/* User-supplied GIF replaces the old timed.webp, not an overlay. */
+#workspace#workspace.mb-playing-scene.mb-scene-timed{background-image:url('/ui-assets/timed-background-final.gif')!important}
 #workspace.mb-playing-scene .work-sidebar{
- display:block!important;position:relative!important;height:100dvh!important;min-height:0!important;
- overflow-y:auto!important;overscroll-behavior:contain!important;
+ display:block!important;min-width:0!important;height:100dvh!important;
+ overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+ scrollbar-gutter:stable!important;
 }
 #workspace.mb-playing-scene .work-main{
- box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
- min-width:0!important;min-height:0!important;height:100dvh!important;max-height:100dvh!important;
- padding:clamp(4px,1dvh,12px)!important;margin:0!important;background:transparent!important;overflow:hidden!important;
+ display:flex!important;flex-direction:column!important;box-sizing:border-box!important;
+ min-height:0!important;height:100dvh!important;max-height:100dvh!important;
+ min-width:0!important;margin:0!important;padding:clamp(4px,.8dvh,9px)!important;
+ overflow:hidden!important;background:transparent!important;
 }
 #workspace.mb-playing-scene .work-header{
- flex:0 0 auto!important;width:100%!important;min-height:0!important;margin:0 0 5px!important;
- padding:4px 10px!important;border:2px solid #d9b18a!important;border-radius:10px!important;
- background:#331e25df!important;
+ display:flex!important;align-items:center!important;flex:0 0 auto!important;
+ box-sizing:border-box!important;min-height:0!important;width:100%!important;
+ margin:0 0 5px!important;padding:5px 10px!important;
+ border:2px solid #d9b18a!important;border-radius:10px!important;
+ background:rgba(51,30,37,.89)!important;
 }
-#workspace.mb-playing-scene .work-header h1{margin:0!important;font-size:clamp(16px,1.8vw,23px)!important}
+#workspace.mb-playing-scene .work-header h1{font-size:clamp(16px,1.8vw,23px)!important;margin:0!important}
 #workspace.mb-playing-scene .work-header p{display:none!important}
-#workspace.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]){
- box-sizing:border-box!important;display:grid!important;
- grid-template-columns:minmax(0,1fr) clamp(105px,12vw,165px)!important;
- grid-template-rows:minmax(0,1fr)!important;gap:clamp(6px,1vw,16px)!important;align-items:start!important;
- flex:1 1 0!important;width:100%!important;min-width:0!important;min-height:0!important;
- max-height:none!important;padding:0!important;margin:0!important;background:none!important;overflow:hidden!important;
+#workspace#workspace.app-shell.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]){
+ display:grid!important;position:relative!important;box-sizing:border-box!important;
+ grid-template-columns:minmax(0,950px) clamp(175px,17.5vw,280px)!important;
+ grid-template-rows:minmax(0,1fr)!important;column-gap:clamp(10px,1.4vw,23px)!important;
+ justify-content:center!important;align-items:start!important;
+ flex:1 1 0!important;width:100%!important;height:100%!important;
+ min-width:0!important;min-height:0!important;max-height:none!important;
+ padding:0!important;margin:0!important;background:transparent!important;overflow:visible!important;
 }
-#workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{
- box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:clamp(3px,.7dvh,8px)!important;
- width:100%!important;height:min(72dvh,680px)!important;min-width:0!important;min-height:min(420px,calc(100dvh - 95px))!important;max-width:none!important;max-height:calc(100dvh - 76px)!important;
- margin:0 auto!important;padding:clamp(9px,1.5dvh,16px)!important;position:relative!important;overflow:hidden!important;
- border:4px double #ba8b66!important;border-radius:17px!important;background:#fff1ddf5!important;
- color:#3c2725!important;box-shadow:0 10px 28px #1b0e1755!important;
+/* No full-page translucent cream rectangle: only the question and answers are cards. */
+#workspace#workspace.app-shell.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{
+ display:flex!important;flex-direction:column!important;align-items:stretch!important;
+ position:relative!important;box-sizing:border-box!important;
+ width:100%!important;max-width:950px!important;
+ height:min(76dvh,705px)!important;min-height:0!important;
+ max-height:calc(100dvh - 90px)!important;
+ margin:clamp(26px,5.5dvh,60px) 0 0!important;
+ padding:0!important;gap:clamp(5px,.75dvh,9px)!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ overflow:visible!important;background:transparent!important;
 }
-#workspace.mb-playing-scene #view-quiz .quiz-meta{flex:0 0 auto!important;min-height:0!important;gap:5px!important;margin:0!important;color:#573b30!important;font-size:clamp(11px,1.2vw,15px)!important}
-#workspace.mb-playing-scene #view-quiz :is(.quiz-progress,.time-remaining-track){flex:0 0 auto!important;height:7px!important;margin:0!important}
+#workspace.mb-playing-scene #view-quiz .quiz-meta{
+ flex:0 0 auto!important;min-height:0!important;margin:0!important;
+ padding:4px 10px!important;gap:5px!important;border-radius:8px!important;
+ color:#4d322b!important;background:rgba(248,229,205,.92)!important;
+ font-size:clamp(11px,1.08vw,14px)!important;
+}
+#workspace.mb-playing-scene #view-quiz :is(.quiz-progress,.time-remaining-track){
+ flex:0 0 auto!important;height:6px!important;min-height:0!important;
+ margin:0 6px!important;border-radius:9px!important;
+}
 #workspace.mb-playing-scene #view-quiz .prompt{
- flex:0 0 auto!important;min-height:0!important;max-height:none!important;margin:clamp(3px,1dvh,12px) 0!important;
- color:#442b26!important;font-size:clamp(17px,1.65vw,25px)!important;line-height:1.32!important;overflow-wrap:anywhere!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 auto!important;box-sizing:border-box!important;width:100%!important;
+ min-height:clamp(90px,14dvh,150px)!important;max-height:23dvh!important;
+ margin:clamp(13px,2.3dvh,24px) 0 0!important;
+ padding:clamp(14px,2.4dvh,28px)!important;
+ border:4px double #b28b6b!important;border-radius:16px!important;
+ background:rgba(255,241,219,.94)!important;
+ box-shadow:0 9px 22px #190e1c45,inset 0 0 0 2px #fff9e7!important;
+ color:#442b26!important;font-size:clamp(19px,2.05vw,29px)!important;
+ font-weight:900!important;text-align:center!important;line-height:1.43!important;
+ overflow-y:auto!important;overflow-wrap:anywhere!important;
 }
-#workspace.mb-playing-scene #view-quiz .prompt-desc{flex:0 0 auto!important;margin:0!important;font-size:clamp(11px,1.2vw,14px)!important;line-height:1.3!important}
-#workspace.mb-playing-scene #view-quiz #answerArea{
- flex:1 1 auto!important;display:flex!important;flex-direction:column!important;justify-content:center!important;
- min-height:0!important;min-width:0!important;
+#workspace.mb-playing-scene #view-quiz .prompt-desc{
+ flex:0 0 auto!important;margin:0!important;padding:0 9px!important;
+ color:#fff2d9!important;text-align:center!important;
+ font-size:clamp(12px,1vw,14px)!important;font-weight:850!important;
+ line-height:1.4!important;text-shadow:0 1px 3px #170c14,0 2px 5px #170c14!important;
+}
+/* Bottom answer deck; never scaled to fill the map. */
+#workspace#workspace.mb-playing-scene #view-quiz #answerArea{
+ box-sizing:border-box!important;display:flex!important;flex:0 0 auto!important;
+ flex-direction:column!important;justify-content:center!important;
+ align-self:stretch!important;min-width:0!important;width:100%!important;
+ min-height:clamp(100px,15dvh,178px)!important;max-height:28dvh!important;
+ margin:auto 0 0!important;padding:clamp(8px,1.3dvh,14px)!important;
+ border:4px double #b28b6b!important;border-radius:17px!important;
+ background:rgba(255,241,219,.95)!important;
+ box-shadow:0 9px 22px #160c1755,inset 0 0 0 2px #fff9e7!important;
+ overflow-y:auto!important;
 }
 #workspace.mb-playing-scene #view-quiz :is(.option-list,.choice-grid){
- display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
- grid-auto-rows:minmax(40px,1fr)!important;gap:clamp(5px,1dvh,12px)!important;
- min-height:0!important;max-height:30dvh!important;margin:0!important;
+ display:grid!important;flex:1 1 auto!important;width:100%!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ grid-auto-rows:minmax(44px,1fr)!important;
+ min-height:0!important;max-height:none!important;
+ margin:0!important;gap:clamp(7px,1.05dvh,11px)!important;
 }
 #workspace.mb-playing-scene #view-quiz .option{
- display:flex!important;align-items:center!important;min-width:0!important;min-height:40px!important;
- padding:clamp(7px,1.4dvh,15px)!important;font-size:clamp(14px,1.5vw,22px)!important;line-height:1.3!important;
+ display:flex!important;align-items:center!important;min-width:0!important;
+ min-height:44px!important;padding:clamp(6px,1dvh,12px)!important;
+ font-size:clamp(14px,1.38vw,19px)!important;line-height:1.25!important;
 }
-#workspace.mb-playing-scene #view-quiz .feedback{
- flex:0 1 auto!important;min-height:0!important;max-height:27dvh!important;
+#workspace.mb-playing-scene #view-quiz #answerArea :is(input,textarea){
+ box-sizing:border-box!important;max-width:100%!important;
+ min-height:48px!important;font-size:clamp(16px,1.3vw,21px)!important;
+}
+#workspace.mb-playing-scene #view-quiz .feedback:not([hidden]){
+ position:absolute!important;left:0!important;right:0!important;
+ bottom:clamp(52px,8dvh,74px)!important;z-index:4!important;
+ box-sizing:border-box!important;max-height:24dvh!important;
  margin:0!important;padding:9px 12px!important;overflow-y:auto!important;
- font-size:clamp(12px,1.2vw,16px)!important;line-height:1.45!important;overscroll-behavior:contain;
+ border:2px solid #c6966d!important;border-radius:12px!important;
+ background:rgba(255,244,220,.98)!important;
+ box-shadow:0 4px 20px #20121470!important;
 }
-#workspace.mb-playing-scene #view-quiz .feedback :is(p,.mb-deep-note){margin:4px 0!important;padding:4px!important}
-#workspace.mb-playing-scene #view-quiz .quiz-bottom{flex:0 0 auto!important;gap:7px!important;margin:0!important}
-#workspace.mb-playing-scene #view-quiz .quiz-bottom button{min-height:35px!important;padding:6px 12px!important;font-size:clamp(12px,1.2vw,16px)!important}
-#workspace.mb-playing-scene #view-quiz .mb-quiz-companion{
- box-sizing:border-box!important;position:static!important;align-self:center!important;
- display:flex!important;flex-direction:column!important;align-items:center!important;gap:7px!important;
- width:100%!important;min-width:0!important;padding:4px!important;
+#workspace.mb-playing-scene #view-quiz .quiz-bottom{
+ display:flex!important;justify-content:center!important;flex:0 0 auto!important;
+ min-height:39px!important;gap:7px!important;margin:0!important;padding:5px!important;
+ border-radius:9px!important;background:rgba(255,231,205,.92)!important;
 }
-#workspace.mb-playing-scene #view-quiz .mb-mascot-button{width:100%!important;height:clamp(90px,18dvh,165px)!important}
-#workspace.mb-playing-scene #view-quiz .mb-quiz-speech{
- box-sizing:border-box!important;min-height:0!important;width:100%!important;
- padding:8px!important;border-width:2px!important;border-radius:10px!important;
- font-size:clamp(11px,1vw,14px)!important;line-height:1.35!important;text-align:center!important;
+#workspace.mb-playing-scene #view-quiz .quiz-bottom button{
+ min-height:36px!important;padding:4px 10px!important;
+ font-size:clamp(12px,1.2vw,16px)!important;
+}
+#workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-quiz-companion{
+ position:relative!important;align-self:start!important;justify-self:center!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;
+ width:100%!important;max-width:280px!important;min-width:0!important;
+ margin:clamp(78px,16dvh,160px) 0 0!important;padding:0!important;
+ gap:9px!important;background:transparent!important;
+}
+#workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-mascot-button{
+ width:100%!important;max-width:280px!important;
+ height:clamp(170px,30dvh,310px)!important;
+ background:transparent!important;border:0!important;
+}
+#workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-mascot-button img{
+ width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;
+}
+#workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-quiz-speech{
+ box-sizing:border-box!important;width:100%!important;max-width:280px!important;
+ min-height:60px!important;padding:10px!important;
+ font-size:clamp(12px,1.03vw,16px)!important;line-height:1.35!important;
 }
 #workspace.mb-playing-scene #view-quiz .mb-quiz-hint{display:none!important}
-#view-quiz .mb-quiz-hourglass{display:none!important;object-fit:contain;pointer-events:none}
-#view-quiz .mb-quiz-timer-group{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-#workspace.mb-playing-scene.mb-scene-timed #view-quiz>.panel{padding-top:clamp(50px,8dvh,77px)!important}
-#workspace.mb-playing-scene.mb-scene-timed #view-quiz .mb-quiz-timer-group{
- position:absolute!important;top:5px!important;left:50%!important;transform:translateX(-50%)!important;
- display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;
- padding:3px 12px!important;border:2px solid #af8462!important;border-radius:11px!important;background:#ffe9c6!important;
+/* The ORIGINAL timer is moved above the question; the decorative mini-hourglass is hidden. */
+#workspace#workspace.app-shell>.mb-quiz-timer-group{display:none!important}
+#workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed>.mb-quiz-timer-group{
+ position:absolute!important;display:flex!important;align-items:center!important;justify-content:center!important;
+ left:50%!important;top:clamp(70px,12dvh,115px)!important;right:auto!important;bottom:auto!important;
+ transform:translateX(-50%)!important;z-index:40!important;pointer-events:none!important;
+ box-sizing:border-box!important;min-width:102px!important;width:auto!important;height:auto!important;
+ max-height:48px!important;margin:0!important;padding:5px 13px!important;gap:0!important;
+ border:2px solid #e1b67d!important;border-radius:10px!important;
+ background:rgba(47,25,50,.9)!important;color:#ffecd5!important;
+ box-shadow:0 3px 9px #180c20a5!important;
 }
-#workspace.mb-playing-scene.mb-scene-timed #view-quiz .mb-quiz-hourglass{display:block!important;position:static!important;width:clamp(30px,5.8dvh,55px)!important;height:clamp(30px,5.8dvh,55px)!important;margin:0!important}
-#workspace.mb-playing-scene.mb-scene-timed #quizTimer{font-size:clamp(16px,2.4dvh,24px)!important;font-variant-numeric:tabular-nums}
+#workspace#workspace.mb-playing-scene>.mb-quiz-timer-group .mb-quiz-hourglass{display:none!important}
+#workspace#workspace.mb-playing-scene>.mb-quiz-timer-group #quizTimer{
+ display:block!important;font-size:clamp(16px,2.3dvh,25px)!important;
+ color:#ffe9bb!important;font-weight:1000!important;font-variant-numeric:tabular-nums!important;
+ white-space:nowrap!important;
+}
+#workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed #view-quiz>.panel{
+ margin-top:clamp(95px,15dvh,145px)!important;height:min(64dvh,590px)!important;
+}
+#workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed #view-quiz .prompt{
+ margin-top:clamp(8px,1.6dvh,20px)!important;
+}
+@media(min-width:701px) and (max-width:1100px){
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]){
+  grid-template-columns:minmax(0,1fr) clamp(150px,17vw,220px)!important;
+ }
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-quiz-companion{margin-top:13dvh!important}
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-mascot-button{height:clamp(160px,24dvh,260px)!important}
+}
 @media(max-width:700px){
- #workspace.app-shell.mb-playing-scene{grid-template-columns:minmax(0,1fr)!important}
+ #workspace#workspace.app-shell.mb-playing-scene:not([hidden]){grid-template-columns:minmax(0,1fr)!important}
  #workspace.mb-playing-scene .work-sidebar{display:none!important}
  #workspace.mb-playing-scene .work-main{padding:4px!important}
- #workspace.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]){grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) 56px!important;gap:5px!important}
- #workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{height:min(72dvh,620px)!important;min-height:min(360px,calc(100dvh - 125px))!important;padding:8px!important;border-radius:12px!important}
- #workspace.mb-playing-scene #view-quiz .prompt{font-size:clamp(16px,3.8vw,21px)!important;line-height:1.27!important;margin:3px 0!important}
- #workspace.mb-playing-scene #view-quiz .mb-quiz-companion{flex-direction:row!important;height:56px!important;padding:2px!important;gap:9px!important}
- #workspace.mb-playing-scene #view-quiz .mb-mascot-button{width:52px!important;height:52px!important}
- #workspace.mb-playing-scene #view-quiz .mb-quiz-speech{flex:0 1 280px!important;width:auto!important;max-height:52px!important;padding:5px 8px!important;font-size:12px!important;text-align:left!important}
- #workspace.mb-playing-scene #view-quiz .mb-quiz-speech::before{left:-8px!important;top:17px!important;width:10px!important;height:10px!important;border-top:0!important;border-bottom:2px solid #4b292b!important}
- #workspace.mb-playing-scene #view-quiz .option{font-size:clamp(13px,3.3vw,17px)!important;padding:6px!important}
- #workspace.mb-playing-scene.mb-scene-timed #view-quiz>.panel{padding-top:50px!important}
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]){
+  display:block!important;position:relative!important;grid-template-columns:minmax(0,1fr)!important;
+  width:100%!important;min-width:0!important;overflow:visible!important;
+ }
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{
+  box-sizing:border-box!important;width:100%!important;max-width:100%!important;
+  height:min(75dvh,625px)!important;max-height:calc(100dvh - 100px)!important;
+  margin:clamp(10px,3.5dvh,27px) 0 0!important;
+  padding:0!important;gap:5px!important;
+ }
+ #workspace.mb-playing-scene #view-quiz .quiz-meta{font-size:11px!important;padding:3px 6px!important}
+ #workspace.mb-playing-scene #view-quiz .prompt{
+  width:calc(100% - 118px)!important;min-height:clamp(110px,21dvh,177px)!important;
+  max-height:29dvh!important;margin:clamp(13px,2dvh,23px) 0 0!important;
+  padding:11px!important;font-size:clamp(16px,4vw,21px)!important;
+ }
+ #workspace.mb-playing-scene #view-quiz .prompt-desc{
+  width:calc(100% - 118px)!important;padding:0!important;font-size:11px!important;
+ }
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-quiz-companion{
+  position:absolute!important;top:clamp(84px,17dvh,142px)!important;
+  right:0!important;left:auto!important;width:112px!important;max-width:112px!important;
+  height:auto!important;margin:0!important;padding:0!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  gap:5px!important;z-index:2!important;
+ }
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-mascot-button{
+  width:110px!important;max-width:110px!important;height:clamp(126px,20dvh,177px)!important;
+ }
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-quiz-speech{
+  width:112px!important;max-width:112px!important;min-height:0!important;
+  max-height:105px!important;padding:6px!important;
+  font-size:10px!important;line-height:1.25!important;overflow:hidden!important;text-align:center!important;
+ }
+ #workspace.mb-playing-scene #view-quiz #answerArea{
+  width:100%!important;min-height:135px!important;max-height:32dvh!important;
+  margin:auto 0 0!important;padding:7px!important;
+ }
+ #workspace.mb-playing-scene #view-quiz :is(.option-list,.choice-grid){
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-auto-rows:minmax(45px,1fr)!important;gap:6px!important;
+ }
+ #workspace.mb-playing-scene #view-quiz .option{min-height:45px!important;font-size:clamp(12px,3vw,16px)!important;padding:5px!important}
+ #workspace.mb-playing-scene #view-quiz .quiz-bottom{min-height:35px!important;padding:3px!important}
+ #workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed>.mb-quiz-timer-group{
+  top:clamp(49px,8dvh,76px)!important;padding:3px 9px!important;
+ }
+ #workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed #view-quiz.mb-quiz-scene>.panel{
+  margin-top:clamp(65px,10dvh,92px)!important;
+  height:min(69dvh,565px)!important;
+ }
 }
-/* Keep the menu panel stable when a mode is hovered, pressed, or selected. */
-.sidebar-nav .navbtn,.sidebar-nav .navbtn:hover,.sidebar-nav .navbtn:active,
-.sidebar-nav .navbtn.active:not([data-route=home]),
-.mobile-drawer .navbtn,.mobile-drawer .navbtn:hover,.mobile-drawer .navbtn:active,
-.mobile-drawer .navbtn.active:not([data-route=home]){transform:none!important;transition:filter .16s ease!important}
-@media(max-height:540px){
- #workspace.mb-playing-scene .work-header{padding:1px 5px!important;margin-bottom:2px!important}
- #workspace.mb-playing-scene #view-quiz .prompt{font-size:clamp(15px,3.8dvh,21px)!important;margin:1px 0!important;line-height:1.22!important}
- #workspace.mb-playing-scene #view-quiz .quiz-meta{font-size:10px!important}
- #workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{gap:3px!important}
- #workspace.mb-playing-scene #view-quiz :is(.prompt-desc,#quizType){display:none!important}
- #workspace.mb-playing-scene #view-quiz .option{min-height:30px!important;padding:4px 7px!important;font-size:13px!important}
- #workspace.mb-playing-scene #view-quiz :is(.option-list,.choice-grid){grid-auto-rows:minmax(30px,1fr)!important;gap:3px!important}
- #workspace.mb-playing-scene #view-quiz .quiz-bottom button{min-height:29px!important;padding:3px 8px!important}
- #workspace.mb-playing-scene #view-quiz .feedback{max-height:24dvh!important;padding:5px!important}
- #workspace.mb-playing-scene.mb-scene-timed #view-quiz>.panel{padding-top:43px!important}
- #workspace.mb-playing-scene.mb-scene-timed #view-quiz .mb-quiz-hourglass{width:29px!important;height:29px!important}
+@media(max-height:570px){
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{
+  height:calc(100dvh - 95px)!important;margin-top:8px!important;
+ }
+ #workspace.mb-playing-scene #view-quiz .prompt{min-height:72px!important;max-height:22dvh!important;margin-top:3px!important}
+ #workspace.mb-playing-scene #view-quiz #answerArea{min-height:83px!important;max-height:30dvh!important}
+ #workspace#workspace.app-shell.mb-playing-scene #view-quiz .mb-mascot-button{height:min(26dvh,160px)!important}
 }
-#mb-ranked-dialog[data-mb-ranked-mode="infinite"] .mb-ranked-body{background:linear-gradient(#fff8e8eb,#fff8e8eb),url('/ui-assets/scene_infinite.webp') center/cover}
-#mb-ranked-dialog[data-mb-ranked-mode="hardcore"] .mb-ranked-body{background:linear-gradient(#fff8e8eb,#fff8e8eb),url('/ui-assets/scene_hard.webp') center/cover}
-#mb-ranked-dialog[data-mb-ranked-mode="timed60"] .mb-ranked-body{background:linear-gradient(#fff8e8eb,#fff8e8eb),url('/ui-assets/scene_timed.webp') center/cover}
+/* Achievement notifications must never cover answer options. */
+body:has(#workspace.mb-playing-scene:not([hidden])) #mb-achievement-toast{
+ top:78px!important;right:14px!important;bottom:auto!important;left:auto!important;
+ transform:none!important;animation:none!important;max-width:310px!important;
+ padding:9px 12px!important;font-size:13px!important;
+}
+@media(max-width:700px){
+ body:has(#workspace.mb-playing-scene:not([hidden])) #mb-achievement-toast{
+  top:98px!important;right:7px!important;max-width:220px!important;
+ }
+}

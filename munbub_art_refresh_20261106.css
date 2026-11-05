@@ -52,41 +52,8 @@ button.mb-art-button:focus-visible{outline:3px solid #ffde9a!important;outline-o
 }
 #mb-duel-dialog#mb-duel-dialog.mb-duel-live #mb-duel-score-left{left:25%!important}
 #mb-duel-dialog#mb-duel-dialog.mb-duel-live #mb-duel-score-right{left:75%!important}
-/* Supplied time limit GIF as background; remove decorative hourglass but retain original live countdown. */
-#workspace#workspace.mb-playing-scene.mb-scene-timed{
- background-image:url('/ui-assets/timed-background-final.gif')!important;
- background-position:center center!important;background-repeat:no-repeat!important;background-size:cover!important;
-}
-#workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed>.mb-quiz-timer-group{
- display:flex!important;position:absolute!important;left:50%!important;top:clamp(50px,12dvh,112px)!important;
- bottom:auto!important;right:auto!important;transform:translateX(-50%)!important;
- width:auto!important;min-width:100px!important;height:auto!important;max-height:52px!important;
- margin:0!important;padding:5px 14px!important;gap:0!important;
- z-index:38!important;pointer-events:none!important;
- border:2px solid #e1b67d!important;border-radius:10px!important;
- background:rgba(47,25,50,.9)!important;color:#ffecd5!important;
- box-shadow:0 3px 9px #180c20a5!important;
-}
-#workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed>.mb-quiz-timer-group .mb-quiz-hourglass{display:none!important}
-#workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed>.mb-quiz-timer-group #quizTimer{
- display:block!important;font-size:clamp(16px,2.3dvh,26px)!important;
- color:#ffe9bb!important;font-weight:1000!important;white-space:nowrap!important;
-}
-#workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed #view-quiz>.panel{padding-top:clamp(35px,9dvh,85px)!important}
-/* Shared illustrated ranked / infinite / hardcore UI: keep actual quiz answers interactive. */
-#workspace#workspace.mb-playing-scene:is(.mb-scene-infinite,.mb-scene-hard) #view-quiz>.panel{
- border:4px double #e1ab69!important;border-radius:15px!important;box-shadow:0 10px 36px #20101c8b!important;
- background:rgba(255,239,209,.88)!important;
-}
-#workspace#workspace.mb-playing-scene:is(.mb-scene-infinite,.mb-scene-hard) #view-quiz .prompt{border-color:#b8774f!important;background:rgba(255,245,229,.95)!important}
-@media(max-width:700px){
- #homeScreen .mb-online-actions :is(#mb-title-open,#mb-public-open).mb-art-button{max-width:min(42vw,190px)!important}
- #mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-vs-bar{width:min(94vw,490px)!important}
- #mb-duel-dialog#mb-duel-dialog.mb-duel-live :is(#mb-duel-score-left,#mb-duel-score-right){font-size:clamp(13px,4.5vw,24px)!important}
- #workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed>.mb-quiz-timer-group{top:clamp(44px,8dvh,74px)!important;padding:3px 9px!important}
- #workspace#workspace.app-shell.mb-playing-scene.mb-scene-timed #view-quiz>.panel{padding-top:clamp(30px,8dvh,59px)!important}
-}
-
+/* Timed backgrounds and quiz mode panels are managed exclusively by
+   munbub_quiz_scenes_2026.css; no duplicate rules here. */
 /* Waiting-room chat keeps emoji controls on the heading row, not underneath the input. */
 #mb-duel-dialog#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-public-chat{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto minmax(22px,1fr) auto!important;gap:3px!important;align-items:center!important}
 #mb-duel-dialog#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-public-chat>strong{grid-column:1!important;grid-row:1!important}

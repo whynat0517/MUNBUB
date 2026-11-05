@@ -1123,3 +1123,54 @@
   flex:0 0 38px!important;margin:0!important;padding:0!important;
  }
 }
+
+/* 2026-11-06 canonical duel emote placement: 2x visual size near each
+   player's lower OUTER corner; fixes prior top-overlap CSS. */
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard,
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score{
+ overflow:visible!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote{
+ box-sizing:border-box!important;position:absolute!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+ width:clamp(115px,16vw,200px)!important;min-height:clamp(120px,16vw,206px)!important;
+ height:auto!important;max-height:230px!important;
+ top:calc(100% + 8px)!important;bottom:auto!important;left:-4%!important;right:auto!important;
+ margin:0!important;padding:7px!important;
+ transform:translateX(-5%)!important;
+ border:3px solid #9b654c!important;border-radius:15px!important;
+ background:#ffedcc!important;color:#5d3a2e!important;font-size:clamp(12px,1.2vw,17px)!important;
+ line-height:1.1!important;box-shadow:0 8px 20px #1b1018aa!important;
+ z-index:130!important;pointer-events:none!important;overflow:visible!important;
+ animation:none!important;opacity:1!important;visibility:visible!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-portrait-emote{
+ left:auto!important;right:-4%!important;transform:translateX(5%)!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote[hidden]{display:none!important}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote .mb-duel-remote-sticker{
+ display:block!important;box-sizing:border-box!important;
+ width:clamp(94px,12vw,150px)!important;height:clamp(94px,12vw,150px)!important;
+ flex:0 0 auto!important;background-image:url('/ui-assets/duel-emotes-sheet.webp')!important;
+ background-size:400% 300%!important;background-repeat:no-repeat!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-start-box{
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ padding:0!important;min-height:0!important;max-width:none!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live #mb-duel-countdown{
+ display:block!important;width:auto!important;height:auto!important;padding:0!important;
+ margin:0 auto!important;background:none!important;border:0!important;box-shadow:none!important;
+ color:#fff0d3!important;font-size:clamp(19px,2.5vw,29px)!important;font-weight:800!important;
+ text-shadow:0 2px 5px #28111f!important;white-space:normal!important;
+}
+@media(max-width:700px){
+ #mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote{
+  width:clamp(86px,28vw,120px)!important;min-height:clamp(90px,27vw,123px)!important;
+  top:calc(100% + 5px)!important;bottom:auto!important;left:-2%!important;padding:3px!important;font-size:10px!important;
+ }
+ #mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-portrait-emote{right:-2%!important;left:auto!important}
+ #mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote .mb-duel-remote-sticker{
+  width:clamp(74px,22vw,108px)!important;height:clamp(74px,22vw,108px)!important;
+ }
+}
