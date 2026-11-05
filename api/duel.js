@@ -36,6 +36,8 @@ const codeOK=s=>typeof s==='string'&&/^[A-HJ-NP-Z2-9]{8}$/.test(s);
 const codeNew=()=>Array.from(randomBytes(8),v=>CHARS[v%CHARS.length]).join('');
 const roomPath=c=>PREFIX+c+'/room.json';
 const guestPath=c=>PREFIX+c+'/guest.json';
+const lobbyPath=c=>PREFIX+c+'/lobby.json';
+const chatPath=c=>PREFIX+c+'/chat/';
 const stepPath=(c,id,index)=>PREFIX+c+'/steps/'+id+'/'+index+'.json';
 const progressPath=(c,id)=>PREFIX+c+'/progress/'+id+'.json';
 const emotePath=(c,id)=>PREFIX+c+'/emotes/'+id+'.json';
@@ -60,6 +62,8 @@ function pickQuestions(settings){
 
 async function state(c,room,guest,me){
  const settings=roomSettings(room);
+ const lobby=room.publicRoom?await readPrivate(lobbyPath(c),{fresh:true}):null;
+ const actualStart=room.publicRoom?(Number(lobby?.startedAt)||null):guest?.joinedAt+6000;
  const members=[{id:room.hostId,name:room.hostName,title:titleOf(room.hostTitle)},...(guest?[{id:guest.id,name:guest.name,title:titleOf(guest.title)}]:[])];
  const isMember=members.some(x=>x.id===me.id);
  if(!isMember)return null;
@@ -92,20 +96,22 @@ async function state(c,room,guest,me){
  const other=records.find(x=>x.id!==me.id);
  const turn=mine?.answered||0;
  // The faster player waits for the slower player; the slower one may still answer.
- const turnReady=!!guest&&!!other&&turn<settings.count&&turn<=other.answered;
+ const turnReady=!!guest&&!!other&&!!actualStart&&turn<settings.count&&turn<=other.answered;
  const opponentAnswered=!!other&&other.answered>turn;
  const opponentAnsweredAt=opponentAnswered?(other._answerTimes[turn]||other.lastAt||null):null;
  const lastMine=turn>0?mine?._answerDetails[turn-1]:null;
  const lastOther=turn>0?other?._answerDetails[turn-1]:null;
- const turnStartsAt=turnReady?(turn===0?guest.joinedAt+6000:
+ const turnStartsAt=turnReady?(turn===0?actualStart:
   nextTurnAt(room.version||0,lastMine,lastOther)):null;
  const reviewReadyAt=Number(lastMine?.readyAt)||null;
  const opponentReviewReadyAt=Number(lastOther?.readyAt)||null;
  const finalReviewEndsAt=!!guest&&records.every(x=>x.finished)&&settings.count>0
   ?nextTurnAt(room.version||0,mine?._answerDetails[settings.count-1],other?._answerDetails[settings.count-1]):null;
  return {code:c,hostName:room.hostName,guestName:guest?.name||null,
+   publicRoom:!!room.publicRoom,roomName:room.roomName||null,
+   lobbyReady:room.publicRoom?{host:!!lobby?.hostReady,guest:!!lobby?.guestReady,startedAt:actualStart}:null,
   me:me.id,role:room.hostId===me.id?'host':'guest',
-  ready:!!guest,startsAt:guest?guest.joinedAt+6000:null,turnReady,turnStartsAt,
+  ready:!!guest&&!!actualStart,startsAt:actualStart||null,turnReady,turnStartsAt,
   opponentAnswered,opponentAnsweredAt,serverNow:Date.now(),settings,
   reviewMode:room.version>=5?'both-ready-or-10s':room.version>=4?'both-ready-or-5s':'legacy',
   reviewReadyAt,opponentReviewReadyAt,finalReviewEndsAt,
@@ -118,9 +124,9 @@ async function state(c,room,guest,me){
   }),
   // Server-signed immutable room parameters eliminate two Blob reads from
   // every answer POST without weakening authentication or anti-duplicate writes.
-  answerTicket:guest?token({
+  answerTicket:guest&&actualStart?token({
    kind:'duel-answer',code:c,viewerId:me.id,
-   hostId:room.hostId,guestId:guest.id,joinedAt:guest.joinedAt,
+   hostId:room.hostId,guestId:guest.id,joinedAt:room.publicRoom?actualStart-6000:guest.joinedAt,
    version:room.version||3,
    settings,questionIds:room.questionIds,exp:room.expiresAt
   }):null,
@@ -137,6 +143,20 @@ export default async function handler(req,res){
  if(req.method==='GET'){
   // Fast event channel: ONE Blob read instead of room+guest+2 progress reads.
   // The signed ticket was issued by a validated full room state response.
+  if(req.query?.chat){
+   const code=String(req.query.chat||'').toUpperCase();
+   if(!codeOK(code))return sendError(res,400,'방 코드가 올바르지 않아.');
+   const [room,guest]=await Promise.all([
+    readPrivate(roomPath(code),{fresh:true}),readPrivate(guestPath(code),{fresh:true})
+   ]);
+   if(hasExpired(room)||!room.publicRoom)return sendError(res,404,'공개 대기실을 찾을 수 없어.');
+   if(me.id!==room.hostId&&me.id!==guest?.id)return sendError(res,403,'대기실 참가자가 아니야.');
+   const listing=await list({prefix:chatPath(code),limit:100});
+   const messagePaths=listing.blobs.filter(x=>/\/\d+-[a-f0-9]+\.json$/.test(x.pathname))
+    .sort((a,b)=>a.pathname.localeCompare(b.pathname)).slice(-25);
+   const messages=(await Promise.all(messagePaths.map(p=>readPrivate(p.pathname).catch(()=>null)))).filter(Boolean);
+   return res.status(200).json({messages});
+  }
   if(req.query?.signal){
    const claim=verify(String(req.query.signal));
    if(!claim||claim.kind!=='duel-signal'||claim.viewerId!==me.id||
@@ -212,6 +232,7 @@ export default async function handler(req,res){
    // Create the initial compact read model; avoids a list of empty steps on every poll.
    await writePrivate(progressPath(code,me.id),{answered:0,score:0,correct:0,lastAt:null,answers:[]});
    await writePrivate(presencePath(code,me.id),{at:Date.now(),leftAt:null}).catch(()=>null);
+   if(publicRoom)await writePrivate(lobbyPath(code),{hostReady:false,guestReady:false,startedAt:null},{overwrite:true});
    return res.status(201).json({code,settings,expiresAt:now+ROOM_LIFETIME});
   }
   const code=String(body.code||'').trim().toUpperCase();
@@ -277,6 +298,36 @@ export default async function handler(req,res){
     console.error('Duel guest progress init failed',e?.message);
    }
    return res.status(200).json({code,joined:true});
+  }
+  if(body.action==='lobbyReady'||body.action==='lobbyStart'){
+   if(!room.publicRoom||!guest)return sendError(res,409,'공개 대기실에 두 플레이어가 들어와야 해.');
+   if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'방 참가자가 아니야.');
+   const path=lobbyPath(code),lobby=await readPrivate(path,{fresh:true});
+   if(!lobby||lobby.startedAt)return sendError(res,409,'이미 시작됐거나 대기실이 닫혔어.');
+   if(body.action==='lobbyReady'){
+    if(me.id===room.hostId)lobby.hostReady=!!body.ready;
+    else lobby.guestReady=!!body.ready;
+    await writePrivate(path,lobby,{overwrite:true});
+    return res.status(200).json({ready:true,lobby});
+   }
+   if(me.id!==room.hostId)return sendError(res,403,'방장만 대결을 시작할 수 있어.');
+   if(!lobby.hostReady||!lobby.guestReady)return sendError(res,409,'두 사람이 모두 준비해야 시작할 수 있어.');
+   const startedAt=Date.now()+6000;
+   await writePrivate(path,{...lobby,startedAt},{overwrite:true});
+   return res.status(200).json({startedAt});
+  }
+  if(body.action==='chat'){
+   if(!room.publicRoom||(me.id!==room.hostId&&me.id!==guest?.id))return sendError(res,403,'공개방 참가자만 채팅할 수 있어.');
+   const message=String(body.message??'').trim();
+   if(!message||message.length>80)return sendError(res,400,'채팅은 1~80자로 입력해 줘.');
+   const ratePath=chatPath(code)+'rate-'+me.id+'.json';
+   const recent=await readPrivate(ratePath,{fresh:true}),now=Date.now();
+   if(recent?.at&&now-recent.at<1200)return sendError(res,429,'채팅은 잠깐 간격을 두고 보내 줘.');
+   await writePrivate(ratePath,{at:now},{overwrite:true});
+   const id=now+'-'+randomBytes(4).toString('hex');
+   await put(chatPath(code)+id+'.json',JSON.stringify({name:me.name,message,at:now}),{
+    access:'private',addRandomSuffix:false,contentType:'application/json'});
+   return res.status(200).json({sent:true});
   }
   if(body.action==='pulse'||body.action==='leave'){
    if(room.version<6||(!guest&&!(body.action==='leave'&&room.hostId===me.id)))
