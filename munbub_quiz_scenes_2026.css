@@ -143,3 +143,153 @@
 #mb-ranked-dialog[data-mb-ranked-mode="timed60"] .mb-ranked-body{
  background:linear-gradient(rgba(255,248,232,.9),rgba(255,248,232,.92)),url('/ui-assets/scene_timed.webp') center/cover;
 }
+
+/* 2026-11-05: every gameplay screen fits the visible viewport.
+   Keep the original left-hand mode selector scrolling outside gameplay. */
+html:has(#workspace.mb-playing-scene:not([hidden])),
+body:has(#workspace.mb-playing-scene:not([hidden])){
+ width:100%!important;height:100%!important;overflow:hidden!important;overscroll-behavior:none!important;
+}
+#workspace.app-shell.mb-playing-scene{
+ height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+ overflow:hidden!important;overscroll-behavior:none!important;
+}
+#workspace.mb-playing-scene .work-main{
+ box-sizing:border-box!important;flex:1 1 auto!important;min-height:0!important;height:100dvh!important;
+ max-height:100dvh!important;overflow:hidden!important;
+ padding:clamp(3px,.7dvh,10px) clamp(4px,1vw,15px)!important;
+}
+#workspace.mb-playing-scene .work-header{
+ flex:0 0 auto!important;min-height:0!important;
+ margin:0 auto clamp(2px,.5dvh,6px)!important;
+ padding:3px 10px!important;
+}
+#workspace.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]){
+ box-sizing:border-box!important;flex:1 1 auto!important;
+ min-height:0!important;height:auto!important;max-height:none!important;
+ overflow:hidden!important;padding:clamp(2px,.45dvh,6px)!important;
+}
+#workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{
+ box-sizing:border-box!important;flex:1 1 auto!important;display:flex!important;
+ flex-direction:column!important;justify-content:space-between!important;
+ gap:clamp(3px,.5dvh,7px)!important;
+ width:min(100%,1080px)!important;max-width:1080px!important;
+ height:100%!important;max-height:100%!important;min-height:0!important;
+ overflow:hidden!important;position:relative!important;
+ margin:0 auto!important;padding:clamp(9px,1.6dvh,20px)!important;
+}
+#workspace.mb-playing-scene #view-quiz .quiz-meta{
+ flex:0 0 auto!important;min-height:0!important;gap:4px!important;
+ margin:0!important;font-size:clamp(11px,1.2vw,15px)!important;
+}
+#workspace.mb-playing-scene #view-quiz .quiz-progress{
+ flex:0 0 auto!important;height:clamp(7px,1.2dvh,11px)!important;
+ margin:clamp(2px,.4dvh,6px) 0!important;
+}
+#workspace.mb-playing-scene #view-quiz .time-remaining-track{
+ flex:0 0 auto!important;height:7px!important;margin:2px 0!important;
+}
+#workspace.mb-playing-scene #view-quiz .prompt{
+ flex:0 1 auto!important;min-height:0!important;max-height:24dvh!important;
+ margin:3px 0!important;overflow:hidden!important;
+ font-size:clamp(17px,2.35vw,30px)!important;line-height:1.3!important;
+}
+#workspace.mb-playing-scene #view-quiz .prompt-desc{
+ flex:0 0 auto!important;margin:0!important;
+ font-size:clamp(11px,1.15vw,13px)!important;line-height:1.25!important;
+}
+#workspace.mb-playing-scene #view-quiz #answerArea{
+ flex:1 1 auto!important;display:flex!important;flex-direction:column!important;
+ justify-content:center!important;min-height:0!important;overflow:hidden!important;
+}
+#workspace.mb-playing-scene #view-quiz .option-list{
+ box-sizing:border-box!important;display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ grid-auto-rows:minmax(0,1fr)!important;
+ align-content:stretch!important;gap:clamp(4px,.7dvh,9px)!important;
+ margin:clamp(2px,.5dvh,7px) 0!important;
+ max-height:30dvh!important;min-height:0!important;overflow:hidden!important;
+}
+#workspace.mb-playing-scene #view-quiz .option{
+ box-sizing:border-box!important;display:flex!important;
+ align-items:center!important;min-height:0!important;
+ padding:clamp(5px,.8dvh,11px) clamp(8px,1vw,14px)!important;
+ font-size:clamp(13px,1.6vw,18px)!important;line-height:1.2!important;
+}
+#workspace.mb-playing-scene #view-quiz .feedback{
+ box-sizing:border-box!important;flex:0 1 auto!important;
+ max-height:21dvh!important;min-height:0!important;
+ margin:2px 0!important;padding:clamp(6px,1dvh,11px)!important;
+ overflow-y:auto!important;font-size:clamp(12px,1.4vw,15px)!important;
+ line-height:1.4!important;
+}
+#workspace.mb-playing-scene #view-quiz .quiz-bottom{
+ flex:0 0 auto!important;gap:8px!important;margin:1px 0!important;
+}
+#workspace.mb-playing-scene #view-quiz .quiz-bottom button{
+ min-height:clamp(32px,5dvh,44px)!important;padding:5px 12px!important;
+ font-size:clamp(12px,1.25vw,16px)!important;
+}
+/* Position the animated sandglass and clock together over the *center* of the board. */
+#workspace.mb-playing-scene.mb-scene-timed #view-quiz>.panel{
+ padding-top:clamp(53px,8.5dvh,83px)!important;
+}
+#workspace.mb-playing-scene.mb-scene-timed #view-quiz .mb-quiz-timer-group{
+ box-sizing:border-box!important;position:absolute!important;
+ top:clamp(4px,.8dvh,11px)!important;left:50%!important;right:auto!important;
+ transform:translateX(-50%)!important;z-index:8!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ gap:clamp(5px,.7vw,10px)!important;
+ width:max-content!important;max-width:90%!important;
+ min-height:clamp(38px,6dvh,65px)!important;
+ padding:3px 11px!important;border:2px solid #af8462!important;
+ background:#ffe9c6f2!important;border-radius:13px!important;
+ box-shadow:0 3px 9px #3c1a202e!important;
+}
+#workspace.mb-playing-scene.mb-scene-timed #view-quiz .mb-quiz-hourglass{
+ display:block!important;position:static!important;
+ width:clamp(33px,5.9dvh,58px)!important;
+ height:clamp(33px,5.9dvh,58px)!important;
+ min-width:0!important;margin:0!important;
+}
+#workspace.mb-playing-scene.mb-scene-timed #view-quiz #quizTimer{
+ display:inline-block!important;font-size:clamp(15px,2.4dvh,24px)!important;
+ font-variant-numeric:tabular-nums!important;
+}
+/* The timer is moved visually; keep its original metadata row height. */
+#workspace.mb-playing-scene.mb-scene-timed #view-quiz .quiz-meta:has(.mb-quiz-timer-group){
+ min-height:clamp(15px,2dvh,23px)!important;
+}
+@media(max-width:700px){
+ #workspace.mb-playing-scene .work-main{padding:3px!important}
+ #workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{
+  padding:clamp(6px,1.1dvh,11px)!important;border-radius:12px!important;
+ }
+ #workspace.mb-playing-scene #view-quiz .prompt{
+  max-height:22dvh!important;font-size:clamp(15px,4vw,21px)!important;
+ }
+ #workspace.mb-playing-scene #view-quiz .option-list{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;max-height:33dvh!important;
+ }
+ #workspace.mb-playing-scene #view-quiz .option{
+  padding:5px 6px!important;font-size:clamp(12px,3.1vw,16px)!important;
+ }
+ #workspace.mb-playing-scene.mb-scene-timed #view-quiz>.panel{
+  padding-top:clamp(46px,7dvh,60px)!important;
+ }
+ #workspace.mb-playing-scene.mb-scene-timed #view-quiz .mb-quiz-hourglass{
+  width:clamp(31px,5dvh,43px)!important;height:clamp(31px,5dvh,43px)!important;
+ }
+}
+@media(max-height:650px){
+ #workspace.mb-playing-scene .work-header{padding:1px 5px!important}
+ #workspace.mb-playing-scene .work-header h1{font-size:16px!important}
+ #workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{padding:5px 9px!important}
+ #workspace.mb-playing-scene.mb-scene-timed #view-quiz>.panel{padding-top:43px!important}
+ #workspace.mb-playing-scene #view-quiz .quiz-progress{margin:1px 0!important}
+ #workspace.mb-playing-scene #view-quiz .prompt{margin:1px 0!important;max-height:21dvh!important;font-size:clamp(15px,3dvh,19px)!important}
+ #workspace.mb-playing-scene #view-quiz .option-list{max-height:30dvh!important;gap:3px!important}
+ #workspace.mb-playing-scene #view-quiz .quiz-bottom button{min-height:29px!important;padding:3px 9px!important}
+ #workspace.mb-playing-scene .mb-quiz-hourglass{width:30px!important;height:30px!important}
+ #workspace.mb-playing-scene.mb-scene-timed #view-quiz .mb-quiz-timer-group{min-height:34px!important;padding:2px 7px!important}
+}
