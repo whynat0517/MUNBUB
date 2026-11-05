@@ -99,24 +99,27 @@
   '@media(max-width:600px){#mb-duel-dialog .mb-duel-option-list{grid-template-columns:1fr}#mb-duel-dialog .mb-duel-option-list button{min-height:55px}#mb-duel-dialog .mb-duel-scoreboard{gap:6px}}'
  ].join('\n');
  document.head.append(css);
+ const duelLayout=document.createElement('link');
+ duelLayout.rel='stylesheet';duelLayout.href='./munbub_duel_arena_2026.css';
+ duelLayout.id='mb-duel-arena-2026-css';document.head.append(duelLayout);
  const artStyles=[
-  '#mb-duel-dialog h2{background-image:url("/ui-assets/duel-parts/01_title_1v1.png"),linear-gradient(#684242,#32232b);background-size:100% 100%;background-repeat:no-repeat;min-height:62px;display:flex;align-items:center;justify-content:center}',
-  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){background-image:url("/ui-assets/duel-parts/02_player_left.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){background-image:url("/ui-assets/duel-parts/03_player_right.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-question-text{background-image:url("/ui-assets/duel-parts/05_question_board.png"),linear-gradient(#fffaf0,#ffe7cb);background-size:100% 100%;background-repeat:no-repeat}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(1){background-image:url("/ui-assets/duel-parts/08_choice_a.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(2){background-image:url("/ui-assets/duel-parts/09_choice_b.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(3){background-image:url("/ui-assets/duel-parts/10_choice_c.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-option-list button:nth-child(4){background-image:url("/ui-assets/duel-parts/11_choice_d.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
-  '#mb-duel-dialog .mb-duel-round-indicator{background-image:url("/ui-assets/duel-parts/12_round_indicator_blank.png"),linear-gradient(#5f3534,#48242a);background-size:100% 100%}',
-  '#mb-duel-dialog #mb-duel-close{background-image:url("/ui-assets/duel-parts/17_exit_button.png");background-size:100% 100%;background-repeat:no-repeat}',
+  '#mb-duel-dialog h2{background-image:url("/ui-assets/duel-parts/01_title_1v1.webp"),linear-gradient(#684242,#32232b);background-size:100% 100%;background-repeat:no-repeat;min-height:62px;display:flex;align-items:center;justify-content:center}',
+  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){background-image:url("/ui-assets/duel-parts/02_player_left.webp"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){background-image:url("/ui-assets/duel-parts/03_player_right.webp"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-question-text{background-image:url("/ui-assets/duel-parts/05_question_board.webp"),linear-gradient(#fffaf0,#ffe7cb);background-size:100% 100%;background-repeat:no-repeat}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(1){background-image:url("/ui-assets/duel-parts/08_choice_a.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(2){background-image:url("/ui-assets/duel-parts/09_choice_b.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(3){background-image:url("/ui-assets/duel-parts/10_choice_c.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(4){background-image:url("/ui-assets/duel-parts/11_choice_d.webp"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-round-indicator{background-image:url("/ui-assets/duel-parts/12_round_indicator_blank.webp"),linear-gradient(#5f3534,#48242a);background-size:100% 100%}',
+  '#mb-duel-dialog #mb-duel-close{background-image:url("/ui-assets/duel-parts/17_exit_button.webp");background-size:100% 100%;background-repeat:no-repeat}',
  ].join('\n');
  // Avoid nine 404 image requests and unnecessary repainting if the supplied
  // split PNGs have not yet been uploaded to the GitHub UI assets directory.
- fetch('/ui-assets/duel-parts/05_question_board.png',{method:'HEAD',cache:'force-cache'})
+ fetch('/ui-assets/duel-parts/05_question_board.webp',{method:'HEAD',cache:'force-cache'})
   .then(res=>{if(res.ok)css.textContent+='\n'+artStyles}).catch(()=>{});
- fetch('/ui-assets/duel-emotes-sheet.png',{method:'HEAD',cache:'force-cache'})
-  .then(res=>{if(res.ok)css.textContent+='\n#mb-duel-dialog .mb-duel-emote-art{background-image:url("/ui-assets/duel-emotes-sheet.png")!important;font-size:0}'}).catch(()=>{});
+ fetch('/ui-assets/duel-emotes-sheet.webp',{method:'HEAD',cache:'force-cache'})
+  .then(res=>{if(res.ok)css.textContent+='\n#mb-duel-dialog .mb-duel-emote-art{background-image:url("/ui-assets/duel-emotes-sheet.webp")!important;font-size:0}'}).catch(()=>{});
  const homeRow=document.querySelector('#homeScreen .mb-online-actions');
  if(homeRow){
   const btn=document.createElement('button');
@@ -135,7 +138,7 @@
  const roomSettingsKey='mb_duel_host_settings_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
  function showError(message){const place=statusEl();if(place)place.textContent=message;else renderNotice(message)}
- function makeHeader(){return '<button class="mb-duel-close" type="button" id="mb-duel-close">✕ 닫기</button><h2>🎮 1대1 맞춤법 대결</h2>'}
+ function makeHeader(){return '<button class="mb-duel-close" type="button" id="mb-duel-close" aria-label="대결 나가기">✕ 닫기</button><h2 aria-label="1대1 모드">1대1 모드</h2>'}
  function putHTML(content){
   dialog.innerHTML=makeHeader()+content;
   dialog.querySelector('#mb-duel-close')?.addEventListener('click',()=>dialog.close());
@@ -474,12 +477,15 @@
   thumbs:['👍','좋아요'],thinking:['🤔','고민'],
   cool:['😎','멋짐'],sleep:['💤','졸림'],love:['💗','하트'],angry:['😤','화남']
  };
+ const EMOTE_ORDER=['wave','thumbs','laugh','angry','cry','wow','fire','thinking','cool','sleep','love','cheer'];
+ const spriteStyle=id=>{const index=EMOTE_ORDER.indexOf(id);return index<0?'':
+  'background-position:'+((index%4)*100/3)+'% '+(Math.floor(index/4)*50)+'%'};
  function renderRemoteEmote(){
   const el=dialog.querySelector('#mb-duel-remote-emote');
   if(!el)return;
   const live=recentRemoteEmote&&Date.now()-recentRemoteEmote.received<2900;
   el.hidden=!live;
-  if(live)el.textContent='상대방: '+EMOTES[recentRemoteEmote.id]?.[0]+' '+EMOTES[recentRemoteEmote.id]?.[1];
+  if(live)el.innerHTML='<strong>상대방</strong> <span class="mb-duel-emote-art mb-duel-remote-sticker" style="'+spriteStyle(recentRemoteEmote.id)+'" role="img" aria-label="'+esc(EMOTES[recentRemoteEmote.id]?.[1]||'이모티콘')+'"></span>';
  }
  function receiveEmote(emote){
   if(!emote||!EMOTES[emote.id]||!Number.isFinite(emote.at)||
@@ -492,10 +498,11 @@
   if(!status?.ready||!status.answerTicket)return '';
   return '<div class="mb-duel-emotes" aria-label="상대에게 이모티콘 보내기">'+
    '<span class="mb-duel-emotes-label">이모티콘</span>'+
-   Object.entries(EMOTES).map(([key,[icon,name]],i)=>
-    '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'">'+
-    '<span class="mb-duel-emote-art" style="background-position:'+((i%4)*100/3)+'% '+(Math.floor(i/4)*50)+'%">'+icon+'</span></button>'
-   ).join('')+
+   EMOTE_ORDER.map(key=>{
+    const [icon,name]=EMOTES[key];
+    return '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'">'+
+     '<span class="mb-duel-emote-art" style="'+spriteStyle(key)+'">'+icon+'</span></button>';
+   }).join('')+
    '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>'+
    '<p id="mb-duel-remote-emote" class="mb-duel-remote-emote" role="status" aria-live="polite" hidden></p>';
  }
@@ -612,7 +619,7 @@
    const win=players[0]?.id===status.me;
    html+='<h3>🏆 대결 종료!</h3>'+
     '<img class="mb-duel-result-hero" alt="'+(draw?'무승부':win?'승리한 선비':'패배한 선비')+
-    '" src="'+(win&&!draw?'/ui-assets/duel-winner.png':'/ui-assets/duel-loser.png')+
+    '" src="'+(win&&!draw?'/ui-assets/duel-winner.webp':'/ui-assets/duel-loser.webp')+
     '" onerror="this.onerror=null;this.src=\'/ui-assets/mascot-character.png\'">'+
     '<p class="mb-duel-result '+(win&&!draw?'good':'bad')+'">'+(draw?'🤝 무승부!':win?'🎉 승리!':'⚔ 다음에는 승리해 보자!')+
     '</p><p>최종 결과: '+esc(players[0].name)+' '+players[0].score+'점 / '+esc(players[1].name)+' '+players[1].score+'점</p>';
