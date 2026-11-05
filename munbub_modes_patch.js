@@ -207,6 +207,14 @@ style.textContent=[
   onlineScript.id='mb-online-module-script';
   onlineScript.src='./munbub_online_patch.js';
   document.body.append(onlineScript);
+  // Load cosmetic titles and the actual public-room lobby once, after core mode setup.
+  for(const [id,src] of [['mb-titles-loader','./munbub_titles_patch.js'],['mb-public-loader','./munbub_public_patch.js']]){
+   if(document.getElementById(id))continue;
+   const script=document.createElement('script');
+   script.id=id;script.src=src;
+   script.onerror=()=>console.error('추가 모듈을 불러오지 못했어: '+src);
+   document.body.append(script);
+  }
   import('./munbub_nav_patch.js').catch(error=>console.warn('Navigation extension unavailable',error));
  }
 })();
