@@ -66,7 +66,7 @@ export default async function handler(req,res){
     exp:now+(mode==='timed60'?8*60*1000:3*3600*1000)
    };
    if(rankedChallenge){state.qid=chooseQuestion(state);state.recent=[state.qid]}
-   return res.status(200).json({run:token(state),qid:state.qid,correct:0,answered:0,mode,rankedChallenge});
+   return res.status(200).json({run:token(state),qid:state.qid,correct:0,answered:0,mode,rankedChallenge,deadline:state.deadline,serverNow:now});
   }
   const st=verify(body.run);
   if(!st||st.kind!=='ranked'||st.id!==me.id||
@@ -97,7 +97,7 @@ export default async function handler(req,res){
     return err(res,409,'온라인 랭킹은 최근 출제된 문제를 반복해서 점수를 올릴 수 없어.');
    const next={...st,qid,phase:'question',startedAt:now,
     recent:[...st.recent.slice(-(MAX_RECENT-1)),qid]};
-   return res.status(200).json({run:token(next),qid,correct:next.correct,answered:next.answered});
+   return res.status(200).json({run:token(next),qid,correct:next.correct,answered:next.answered,deadline:next.deadline,serverNow:now});
   }
   if(body.action==='answer'){
    const qid=String(body.qid||'');
