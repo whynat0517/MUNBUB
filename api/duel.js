@@ -6,8 +6,8 @@ import { configured, noCache, sameOrigin, session, token, verify, readPrivate, w
 const PREFIX='duels/';
 const MAX_QUESTIONS=10;
 const MS_PER_QUESTION=25000;
-const COUNTS=[5,10,15,20];
-const SECONDS=[10,15,25,40];
+const COUNTS=[5,10,15,20,30];
+const SECONDS=[10,15,25,30,40,60];
 const TYPES=['mixed','spelling','idiom'];
 function validSettings(input){
  const count=Number(input?.count??10),seconds=Number(input?.seconds??25);
@@ -155,7 +155,9 @@ export default async function handler(req,res){
     return res.status(200).json({
      ready:true,answered:progress?.answered||0,correct:progress?.correct||0,
      score:progress?.score||0,lastAt:progress?.lastAt||null,
-     answers:(progress?.answers||[]).map(x=>({index:x.index,at:x.at,readyAt:x.readyAt||null})),
+     // Only the latest two turns are needed for opponent signals. Keeping
+     // 30 old turns out of the 350ms response cuts bandwidth and parsing.
+     answers:(progress?.answers||[]).slice(-2).map(x=>({index:x.index,at:x.at,readyAt:x.readyAt||null})),
      ...(req.query?.reactions==='1'?{emote:emote?.id&&EMOTE_IDS.has(emote.id)?emote:null}:{}),
      serverNow:Date.now()
     });
