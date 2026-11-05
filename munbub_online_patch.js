@@ -203,7 +203,7 @@
  // Reuse this module's existing engine hooks for server-verified rankings.
  // No extra global wrappers or duplicate click listeners are installed.
  let rankedJob=null;
- const rankedMode=cfg=>cfg?.hard?null:cfg?.timed&&Number(cfg.timeSeconds)===60
+ const rankedMode=cfg=>!cfg?.ranked||cfg.hard?null:cfg?.timed&&Number(cfg.timeSeconds)===60
   ?'timed60':cfg?.infinite&&!cfg?.timed?'infinite':null;
  function enqueueRank(job,action,fields={}){
   if(!job)return;
