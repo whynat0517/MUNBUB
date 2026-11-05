@@ -140,7 +140,7 @@ style.textContent=[
     html+='</p><p>✅ 복습: 문제의 뜻과 정답을 함께 소리 내어 읽어 보자.</p>';
    }
   }else{
-   if(q.note)html+='<strong>✅ 바른 표현의 이유</strong><p>'+esc(q.note)+'</p>';
+   if(q.note&&q.subtype!=='헷갈리는 맞춤법')html+='<strong>✅ 바른 표현의 이유</strong><p>'+esc(q.note)+'</p>';
    if(q.prompt?.includes('___')&&q.answers?.length)html+='<strong>바르게 완성한 문장</strong><p>'+esc(q.prompt.replace('___',q.answers[0]))+'</p>';
    if(!f.good){
     const correct=(q.answers||[])[0]||'';
