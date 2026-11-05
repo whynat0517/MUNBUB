@@ -13,7 +13,7 @@
   '#mb-online-modal .mb-ranking-tabs button.selected{background:#533039;color:#ffe9c5;border-color:#d29b65;box-shadow:inset 0 0 0 2px #8c5a46}',
   '#mb-online-modal .mb-ranking-desc{margin:4px 0 10px;text-align:center;color:#fbe2c2!important;font-size:clamp(11px,1.4vw,14px);font-weight:800}',
   '@media(max-width:530px){#mb-online-modal .mb-ranking-tabs{margin-right:0;gap:4px}#mb-online-modal .mb-ranking-tabs button{flex:1 1 28%;font-size:11px;padding:7px 3px}}'
- ].join('\\n');
+ ].join(' ');
  document.head.append(style);
  const modal=document.createElement('dialog');modal.id='mb-online-modal';document.body.append(modal);
  async function api(url,data){
