@@ -191,6 +191,14 @@ style.textContent=[
   extension.id='mb-app-records-loader';
   extension.src='./munbub_application_records_patch.js';
   extension.onerror=()=>console.error('응용 맞춤법·최고 기록 확장 파일을 불러오지 못했어.');
+  extension.addEventListener('load',()=>{
+   if(document.getElementById('mb-ranked-script'))return;
+   const ranked=document.createElement('script');
+   ranked.id='mb-ranked-script';
+   ranked.src='./munbub_ranked_challenge.js';
+   ranked.onerror=()=>console.error('랭킹전 게임을 불러오지 못했어.');
+   document.body.append(ranked);
+  },{once:true});
   document.body.append(extension);
  }
  // Load online account/leaderboard only after the core hard-mode wrappers exist.
