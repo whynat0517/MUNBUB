@@ -88,6 +88,10 @@
   '#mb-duel-dialog .mb-duel-emotes button:active{transform:scale(.9)}',
   '#mb-duel-dialog .mb-duel-remote-emote{margin:7px 0;padding:8px 13px;background:#ffe8bc;border:2px solid #a66b48;border-radius:12px;color:#5a352b;font-weight:900;font-size:17px;line-height:1.4}',
   '#mb-duel-dialog .mb-duel-remote-emote[hidden]{display:none!important}',
+  '#mb-duel-dialog .mb-duel-remote-emote{animation:mb-scholar-emote .42s cubic-bezier(.2,1.2,.3,1) both;transform-origin:center bottom;box-shadow:0 7px 22px #3b202040}',
+  '@keyframes mb-scholar-emote{0%{opacity:0;transform:translateY(22px) scale(.45) rotate(-9deg)}65%{opacity:1;transform:translateY(-7px) scale(1.08) rotate(3deg)}100%{transform:translateY(0) scale(1)}}',
+  '#mb-duel-dialog .mb-duel-emotes .mb-duel-emote-art{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;background-image:url("/ui-assets/duel-emotes-sheet.png");background-size:400% 300%;background-repeat:no-repeat;vertical-align:middle;image-rendering:auto}',
+  '#mb-duel-dialog .mb-duel-result-hero{filter:drop-shadow(1px 5px 3px #421e2d70)}',
   '#mb-duel-dialog .mb-duel-emotes-state{font-size:12px;color:#805b48;min-width:65px}',
   '@media(max-width:460px){#mb-duel-dialog .mb-duel-emotes{gap:3px;padding:5px}#mb-duel-dialog .mb-duel-emotes button{font-size:22px;min-width:36px;min-height:37px}#mb-duel-dialog .mb-duel-emotes-label{width:100%}}',
   '@media(max-width:600px){#mb-duel-dialog .mb-duel-option-list{grid-template-columns:1fr}#mb-duel-dialog .mb-duel-option-list button{min-height:55px}#mb-duel-dialog .mb-duel-scoreboard{gap:6px}}'
@@ -447,7 +451,8 @@
   const EMOTES={
   wave:['👋','인사'],cheer:['🙌','만세'],laugh:['😂','웃음'],
   wow:['😮','놀람'],cry:['😢','아쉬움'],fire:['🔥','불꽃'],
-  thumbs:['👍','좋아요'],thinking:['🤔','고민']
+  thumbs:['👍','좋아요'],thinking:['🤔','고민'],
+  cool:['😎','멋짐'],sleep:['💤','졸림'],love:['💗','하트'],angry:['😤','화남']
  };
  function renderRemoteEmote(){
   const el=dialog.querySelector('#mb-duel-remote-emote');
@@ -467,8 +472,9 @@
   if(!status?.ready||!status.answerTicket)return '';
   return '<div class="mb-duel-emotes" aria-label="상대에게 이모티콘 보내기">'+
    '<span class="mb-duel-emotes-label">이모티콘</span>'+
-   Object.entries(EMOTES).map(([key,[icon,name]])=>
-    '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'">'+icon+'</button>'
+   Object.entries(EMOTES).map(([key,[icon,name]],i)=>
+    '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'">'+
+    '<span class="mb-duel-emote-art" style="background-position:'+((i%4)*100/3)+'% '+(Math.floor(i/4)*50)+'%">'+icon+'</span></button>'
    ).join('')+
    '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>'+
    '<p id="mb-duel-remote-emote" class="mb-duel-remote-emote" role="status" aria-live="polite" hidden></p>';
