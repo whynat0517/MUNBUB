@@ -105,6 +105,7 @@
  // 1대1 대결은 홈 캐릭터 아래 버튼에서만 진입한다.
  let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null,serverOffset=0;
  let emoteBusy=false,lastEmoteSentAt=0,lastRemoteEmoteAt=0,recentRemoteEmote=null,signalTickCount=0;
+ let leaving=false,heartbeatBusy=false,lastHeartbeat=0;
  let signalBusy=false,signalLastAt=0,signalFailures=0,lastOpponentSignal=null;
  const currentRoomKey='mb_duel_last_room_v1';
  const roomSettingsKey='mb_duel_host_settings_v1';
@@ -127,6 +128,7 @@
   try{const r=await fetch('/api/account',{credentials:'same-origin'});const j=await r.json();return !!j.loggedIn}catch{return false}
  }
  function showLobby(){
+  reportLeave();
   roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;recentRemoteEmote=null;lastRemoteEmoteAt=0;signalTickCount=0;
   const last=localStorage.getItem(currentRoomKey)||'';
   putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고 같은 문제로 대결해 봐! 방장이 문제 수와 시간, 유형을 정할 수 있어.</p>'+
@@ -176,9 +178,43 @@
   openLobby();
  },true);
  dialog.addEventListener('close',()=>{
+  reportLeave();
   if(typeof window.__mbMarkRoute==='function')window.__mbMarkRoute(previousSelection||'home');
   previousSelection=null;
  });
+ function reportLeave(){
+  if(!roomCode||leaving)return;
+  const code=roomCode,payload={action:'leave',code,
+   ...(status?.answerTicket?{answerTicket:status.answerTicket}:{})};
+  leaving=true;
+  try{
+   const body=JSON.stringify(payload);
+   const beacon=navigator.sendBeacon?.('/api/duel',new Blob([body],{type:'application/json'}));
+   if(!beacon)fetch('/api/duel',{method:'POST',credentials:'same-origin',
+    headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});
+  }catch(_){}
+  setTimeout(()=>{leaving=false},1500);
+ }
+ function opponentGone(offline){
+  if(!roomCode)return;
+  roomCode=null;status=null;phase='opponent-left';feedback=null;lastViewKey='';
+  const message=offline?'상대방의 연결이 끊겨 대결을 종료했어.':'상대방이 대결방에서 나갔어. 1대1 대결이 종료됐어.';
+  putHTML('<div class="mb-duel-panel"><h3>🚪 상대방 퇴장 · 대결 종료</h3>'+
+   '<p class="mb-duel-status">'+esc(message)+'</p>'+
+   '<p class="mb-duel-note">더 이상 상대의 답변을 기다리지 않아. 새 방을 만들거나 다른 방에 참가해 줘.</p>'+
+   '<button id="mb-duel-again" type="button">다른 대결방 만들기 / 참가하기</button></div>');
+  dialog.querySelector('#mb-duel-again')?.addEventListener('click',showLobby);
+ }
+ async function heartbeat(){
+  if(!roomCode||!status?.answerTicket||!dialog.open||heartbeatBusy||
+     Date.now()-lastHeartbeat<5200)return;
+  const code=roomCode;heartbeatBusy=true;lastHeartbeat=Date.now();
+  try{
+   const out=await api({action:'pulse',code,answerTicket:status.answerTicket});
+   if(out.ended&&roomCode===code)opponentGone(false);
+  }catch(_){/* transient connection failures must not interrupt the user's answer */}
+  finally{heartbeatBusy=false}
+ }
  async function startAction(action,value){
   if(busy)return;
   busy=true;showError(action==='create'?'대결방 생성 중...':'친구 방에 참가하는 중...');
@@ -208,6 +244,7 @@
    if(Number.isFinite(next.serverNow))serverOffset=next.serverNow-Date.now();
    const firstSignal=!status?.signalTicket&&!!next.signalTicket;
    status=next;
+   if(firstSignal&&status?.answerTicket)heartbeat();
    showGame();
    // Don't wait up to 1.4s for the old idle poll timer after room entry.
    if(firstSignal){
@@ -244,6 +281,7 @@
    const opponent=status.players.find(p=>p.id!==status.me);
    if(!me||!opponent||!Number.isInteger(signal.answered))return;
    if(signal.emote)receiveEmote(signal.emote);
+   if(signal.opponentLeft||signal.opponentOffline){opponentGone(!!signal.opponentOffline);return;}
    if(signal.answered<opponent.answered)return; // Ignore stale Blob copies.
    const previousSignal=lastOpponentSignal;
    lastOpponentSignal=signal;
@@ -706,7 +744,8 @@
  let fullTimer=setTimeout(backgroundPoll,900);
  let fastTimer=setTimeout(signalPoll,520);
  window.addEventListener('pagehide',()=>{
-  clearTimeout(fullTimer);clearTimeout(fastTimer);
+  reportLeave();clearTimeout(fullTimer);clearTimeout(fastTimer);
  },{once:true});
+ setInterval(heartbeat,6500);
  setInterval(tick,210);
 })();
