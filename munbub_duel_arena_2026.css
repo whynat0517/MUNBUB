@@ -773,7 +773,7 @@
 #mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:first-child{
  background-image:url('/ui-assets/player-nameplate-left.png')!important
 }
-#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:last-child{
+#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2){
  background-image:url('/ui-assets/player-nameplate-right.png')!important
 }
 #mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-player-name{
@@ -787,7 +787,7 @@
  text-align:center!important;white-space:normal!important;overflow-wrap:anywhere!important;
  word-break:break-word!important;overflow:hidden!important;
 }
-#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:last-child .mb-duel-player-name{
+#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-player-name{
  left:6%!important;right:auto!important;text-align:center!important;
 }
 #mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-player-title{
@@ -799,7 +799,7 @@
  line-height:1.15!important;text-align:center!important;white-space:normal!important;
  overflow-wrap:anywhere!important;overflow:hidden!important;text-shadow:none!important;
 }
-#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:last-child .mb-duel-player-title{
+#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-player-title{
  left:6%!important;
 }
 #mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score strong.mb-duel-score-value,
@@ -934,7 +934,7 @@
  z-index:120!important;pointer-events:none!important;overflow:visible!important;
  animation:mb-scholar-emote .32s ease-out both!important;
 }
-#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:last-child .mb-duel-portrait-emote{
+#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-portrait-emote{
  left:84%!important;
 }
 #mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote[hidden]{display:none!important}
@@ -950,11 +950,12 @@
  font-size:0!important;
 }
 #mb-duel-dialog.mb-duel-live .mb-duel-start-box{
- flex:1 1 auto!important;display:flex!important;flex-direction:column!important;
+ flex:0 0 auto!important;display:flex!important;flex-direction:column!important;
  align-items:center!important;justify-content:center!important;gap:6px!important;
  max-width:500px!important;min-height:0!important;max-height:30dvh!important;
- margin:auto!important;padding:10px 16px!important;border:2px solid #d6ac83!important;
- border-radius:12px!important;background:#f8e4cce8!important;box-shadow:none!important;
+ margin:auto!important;padding:8px!important;border:0!important;
+ border-radius:0!important;background:none!important;box-shadow:none!important;
+ color:#fff0d3!important;text-shadow:0 2px 4px #230e17!important;
 }
 #mb-duel-dialog.mb-duel-live .mb-duel-start-label{font-size:clamp(15px,2vw,22px)!important}
 #mb-duel-dialog.mb-duel-live .mb-duel-start-number{
@@ -962,7 +963,7 @@
  width:auto!important;height:auto!important;padding:0!important;margin:0!important;
  border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
  font-size:clamp(19px,3.6dvh,32px)!important;line-height:1.1!important;
- color:#55312b!important;text-shadow:none!important;letter-spacing:normal!important;
+ color:#fff0d3!important;text-shadow:0 2px 4px #230e17!important;letter-spacing:normal!important;
 }
 #mb-duel-dialog.mb-duel-live .mb-duel-start-note{font-size:clamp(11px,1.4vw,14px)!important}
 #mb-duel-dialog.mb-duel-live .mb-duel-review{
