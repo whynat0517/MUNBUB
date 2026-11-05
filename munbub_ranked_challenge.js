@@ -184,8 +184,15 @@
    '<p>정답: <strong>'+correct+'문제</strong> / 도전: '+answered+'문제</p>'+
    (mode==='hardcore'?'<p>하드코어 점수: <strong>'+score+'점</strong></p>':'')+
    '<p>'+(out.recorded?'온라인 순위 기록 저장 완료 · 최고 '+(out.best??correct)+(mode==='hardcore'?'점':'문제'):'온라인 기록은 정답이 있을 때 등록돼.')+'</p></div>'+
-   '<button id="mb-ranked-again" class="mb-ranked-primary" type="button">다른 랭킹전 도전하기</button>');
+   '<button id="mb-ranked-again" class="mb-ranked-primary" type="button">다른 랭킹전 도전하기</button>'+
+   '<button id="mb-ranked-view-leaderboard" type="button">🏆 이 모드 랭킹 보기</button>');
   $('mb-ranked-again')?.addEventListener('click',()=>showLobby());
+  $('mb-ranked-view-leaderboard')?.addEventListener('click',()=>{
+   const tab=mode;
+   dialog.close();
+   $('mb-rank-open')?.click();
+   setTimeout(()=>document.querySelector('[data-ranking-mode="'+tab+'"]')?.click(),80);
+  });
  }
  function stopWithoutPause(){
   if(active&&run){
