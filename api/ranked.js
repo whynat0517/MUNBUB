@@ -8,7 +8,11 @@ import {configured,noCache,sameOrigin,session,token,verify,newId,
 const MODES=['timed60','infinite','hardcore'];
 const CATEGORIES=['s','i','a'];
 const BANK_IDS=duelQuestionIds().filter(id=>/^[sia]\d{1,4}$/.test(id)&&
- (id[0]!=='i'||Number(id.slice(1))<=95));
+ (id[0]!=='i'||Number(id.slice(1))<=95)&&
+ (id[0]!=='a'||Number(id.slice(1))<=210));
+// Ranked play must choose from the base bank always shipped in index.html.
+// Extra application questions depend on a separately loaded optional script;
+// choosing them could create a server run before the client knows the question.
 function chooseQuestion(st){
  const target=CATEGORIES[st.answered%3];
  const permitted=BANK_IDS.filter(id=>id.startsWith(target)&&!st.recent.includes(id));
