@@ -1,53 +1,139 @@
-/* One scene per quiz mode, no DOM duplication. Original user-supplied panoramas. */
-#view-quiz.mb-quiz-scene{
- position:relative; isolation:isolate; box-sizing:border-box;
- min-height:clamp(530px,74vh,840px); overflow:hidden;
- padding:clamp(18px,2vw,30px); margin:0 auto;
- border:3px solid #664039; border-radius:16px;
- background-color:#2a1926;
- background-position:center center;
- background-size:cover;
- background-repeat:no-repeat;
+/* Full-bleed quiz play scenes: mode artwork covers the entire workspace,
+   not just the question panel. The regular sidebar returns outside gameplay. */
+#workspace.app-shell.mb-playing-scene {
+ box-sizing:border-box!important;
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr)!important;
+ width:100vw!important;
+ max-width:100vw!important;
+ min-height:100dvh!important;
+ margin:0!important;
+ border:0!important;
+ box-shadow:none!important;
+ background-repeat:no-repeat!important;
+ background-position:center center!important;
+ background-size:cover!important;
+ background-attachment:fixed!important;
 }
-#view-quiz.mb-quiz-scene.mb-scene-spelling{background-image:url('/ui-assets/scene_spelling.webp')}
-#view-quiz.mb-quiz-scene.mb-scene-idiom{background-image:url('/ui-assets/scene_idiom.webp')}
-#view-quiz.mb-quiz-scene.mb-scene-infinite{background-image:url('/ui-assets/scene_infinite.webp')}
-#view-quiz.mb-quiz-scene.mb-scene-hard{background-image:url('/ui-assets/scene_hard.webp')}
-#view-quiz.mb-quiz-scene.mb-scene-timed{background-image:url('/ui-assets/scene_timed.webp')}
-#view-quiz.mb-quiz-scene>.panel{
- position:relative; z-index:2; box-sizing:border-box;
- width:min(100%,880px); min-width:0; max-width:880px;
- margin:clamp(42px,8vh,93px) auto 5px;
- padding:clamp(13px,2.3vw,29px);
- border:4px double #ba8b66; border-radius:18px;
- background:linear-gradient(160deg,rgba(255,247,226,.94),rgba(255,238,209,.92))!important;
- color:#3c2725; box-shadow:0 12px 38px rgba(32,17,28,.42);
- backdrop-filter:blur(2px);
+#workspace.mb-playing-scene.mb-scene-spelling{background-image:url('/ui-assets/scene_spelling.webp')!important}
+#workspace.mb-playing-scene.mb-scene-idiom{background-image:url('/ui-assets/scene_idiom.webp')!important}
+#workspace.mb-playing-scene.mb-scene-infinite{background-image:url('/ui-assets/scene_infinite.webp')!important}
+#workspace.mb-playing-scene.mb-scene-hard{background-image:url('/ui-assets/scene_hard.webp')!important}
+#workspace.mb-playing-scene.mb-scene-timed{background-image:url('/ui-assets/scene_timed.webp')!important}
+#workspace.mb-playing-scene .work-sidebar{display:none!important}
+#workspace.mb-playing-scene .work-main{
+ box-sizing:border-box!important;
+ display:flex!important;
+ flex-direction:column!important;
+ width:100%!important;
+ max-width:none!important;
+ min-width:0!important;
+ min-height:100dvh!important;
+ margin:0!important;
+ padding:clamp(7px,1.2vw,16px)!important;
+ background:transparent!important;
 }
-#view-quiz.mb-quiz-scene .prompt,#view-quiz.mb-quiz-scene .quiz-meta,
-#view-quiz.mb-quiz-scene #quizCategory,#view-quiz.mb-quiz-scene #quizType{
- color:#4b2e2b; text-shadow:none;
+#workspace.mb-playing-scene .work-header {
+ flex:0 0 auto;
+ box-sizing:border-box;
+ max-width:min(100%,1160px)!important;
+ min-height:0!important;
+ margin:0 auto 5px!important;
+ padding:4px 9px!important;
+ background:rgba(51,30,37,.80)!important;
+ border:2px solid #d9b18a!important;
+ border-radius:12px!important;
+ backdrop-filter:blur(4px);
 }
-#view-quiz.mb-scene-infinite>.panel{border-color:#a88bd0;background:linear-gradient(145deg,rgba(252,244,255,.94),rgba(238,226,250,.93))!important}
-#view-quiz.mb-scene-hard>.panel{border-color:#a35c68;background:linear-gradient(160deg,rgba(255,241,228,.94),rgba(248,220,213,.93))!important}
-#view-quiz.mb-scene-timed>.panel{margin-top:clamp(95px,14vh,150px)}
-#view-quiz .mb-quiz-hourglass{
- display:none; pointer-events:none; user-select:none;
- position:absolute; z-index:1; top:6px; right:clamp(10px,3vw,46px);
- width:clamp(92px,12vw,180px); height:auto; aspect-ratio:1/1;
- object-fit:contain; filter:drop-shadow(0 8px 14px #170d2044);
+#workspace.mb-playing-scene .work-header h1 {font-size:clamp(16px,2vw,23px)!important;margin:0!important}
+#workspace.mb-playing-scene .work-header p{display:none!important}
+#workspace.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]) {
+ box-sizing:border-box!important;
+ display:flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+ flex:1 1 auto!important;
+ min-height:0!important;
+ width:100%!important;
+ max-width:none!important;
+ margin:0!important;
+ padding:clamp(4px,1.5vw,15px)!important;
+ border:0!important;
+ border-radius:0!important;
+ background:none!important;
+ box-shadow:none!important;
+ overflow:visible!important;
 }
-#view-quiz.mb-scene-timed .mb-quiz-hourglass{display:block}
+#workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel {
+ position:relative!important;
+ box-sizing:border-box!important;
+ flex:0 1 970px!important;
+ width:min(100%,970px)!important;
+ max-width:970px!important;
+ min-width:0!important;
+ min-height:0!important;
+ max-height:calc(100dvh - 90px)!important;
+ overflow-y:auto!important;
+ margin:0 auto!important;
+ padding:clamp(15px,2.4vw,32px)!important;
+ border:4px double #ba8b66!important;
+ border-radius:21px!important;
+ background:linear-gradient(150deg,rgba(255,247,229,.95),rgba(253,233,207,.92))!important;
+ color:#3c2725!important;
+ box-shadow:0 15px 48px rgba(27,14,23,.50)!important;
+ backdrop-filter:blur(3px);
+}
+#workspace.mb-playing-scene.mb-scene-infinite #view-quiz>.panel{border-color:#a88bd0!important;background:linear-gradient(145deg,rgba(252,244,255,.95),rgba(238,226,250,.92))!important}
+#workspace.mb-playing-scene.mb-scene-hard #view-quiz>.panel{border-color:#a35c68!important;background:linear-gradient(150deg,rgba(255,241,228,.94),rgba(248,220,213,.92))!important}
+#view-quiz.mb-quiz-scene .prompt,
+#view-quiz.mb-quiz-scene .quiz-meta,
+#view-quiz.mb-quiz-scene #quizCategory,
+#view-quiz.mb-quiz-scene #quizType{color:#4b2e2b!important;text-shadow:none!important}
+#view-quiz .mb-quiz-timer-group{
+ display:inline-flex!important;
+ flex:0 0 auto!important;
+ align-items:center!important;
+ justify-content:center!important;
+ gap:clamp(4px,.7vw,9px)!important;
+ padding:2px 6px!important;
+ border-radius:10px!important;
+ background:rgba(255,242,221,.75)!important;
+ color:#573b30!important;
+ white-space:nowrap!important;
+}
+#view-quiz .mb-quiz-hourglass {
+ display:none!important;
+ position:static!important;
+ flex:0 0 auto!important;
+ width:clamp(42px,5.5vw,68px)!important;
+ height:clamp(42px,5.5vw,68px)!important;
+ aspect-ratio:1/1!important;
+ margin:0!important;
+ padding:0!important;
+ object-fit:contain!important;
+ pointer-events:none!important;
+ user-select:none!important;
+ filter:drop-shadow(0 4px 7px #341b2040)!important;
+}
+#view-quiz.mb-scene-timed .mb-quiz-hourglass{display:block!important}
 #view-quiz.mb-quiz-scene .choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media(max-width:700px){
- #view-quiz.mb-quiz-scene{border-radius:8px;padding:8px;min-height:600px; background-position:center center;}
- #view-quiz.mb-quiz-scene>.panel{margin:clamp(46px,9vw,77px) auto 8px;padding:clamp(11px,3vw,18px);width:100%}
- #view-quiz.mb-scene-timed>.panel{margin-top:clamp(110px,27vw,160px)}
- #view-quiz .mb-quiz-hourglass{top:8px;right:calc(50% - 52px);width:104px}
+ #workspace.app-shell.mb-playing-scene{background-attachment:scroll!important;min-height:100dvh!important}
+ #workspace.mb-playing-scene .work-main{padding:6px!important;min-height:100dvh!important}
+ #workspace.mb-playing-scene .work-header{margin:0 4px 5px!important;padding:4px 7px!important}
+ #workspace.mb-playing-scene #view-quiz.mb-quiz-scene:not([hidden]){padding:4px!important}
+ #workspace.mb-playing-scene #view-quiz.mb-quiz-scene>.panel{
+  padding:clamp(12px,3vw,18px)!important;
+  border-radius:14px!important;
+  max-height:calc(100dvh - 65px)!important;
+ }
+ #view-quiz .mb-quiz-hourglass{width:43px!important;height:43px!important}
+ #view-quiz .mb-quiz-timer-group{gap:4px!important;padding:1px 3px!important}
 }
 @media(prefers-reduced-motion:reduce){
- #view-quiz .mb-quiz-hourglass{animation:none}
+ #view-quiz .mb-quiz-hourglass{animation:none!important}
 }
+
 #mb-ranked-dialog[data-mb-ranked-mode="infinite"] .mb-ranked-body{
  background:linear-gradient(rgba(255,248,232,.9),rgba(255,248,232,.92)),url('/ui-assets/scene_infinite.webp') center/cover;
 }
