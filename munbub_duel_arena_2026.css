@@ -866,3 +866,18 @@
   font-size:clamp(14px,3.7vw,19px)!important;
  }
 }
+
+/* Emotes appear above both players like arena reactions, not behind the footer. */
+#mb-duel-dialog .mb-duel-remote-emote.mb-duel-local-emote{
+ left:clamp(10px,3vw,50px)!important;
+ right:auto!important;
+ flex-direction:column!important;
+}
+#mb-duel-dialog .mb-duel-local-emote[hidden]{display:none!important}
+#mb-duel-dialog .mb-duel-emotes button:disabled{
+ opacity:.52!important;visibility:visible!important;
+}
+@media(max-width:560px){
+ #mb-duel-dialog .mb-duel-local-emote{left:8px!important;right:auto!important}
+ #mb-duel-dialog .mb-duel-remote-emote:not(.mb-duel-local-emote){right:8px!important;left:auto!important}
+}
