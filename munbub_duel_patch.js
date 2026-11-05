@@ -450,7 +450,8 @@
  function scoreboard(){
   const hidden=concealedScore();
   return '<div class="mb-duel-scoreboard">'+(status?.players||[]).map(p=>
-   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+
+   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+
+   '<span class="mb-duel-player-name">'+esc(p.name)+(p.id===status.me?' (나)':'')+'</span>'+
    '<strong class="mb-duel-score-value">'+(hidden?'🔒 공개 대기':p.score+'점')+'</strong>'+
    '<small class="mb-duel-progress">'+(hidden?'상대 답변 후 점수 공개 · '+p.answered+'/'+count():'정답 '+p.correct+' · '+p.answered+'/'+count())+'</small></div>').join('')+'</div>';
  }
@@ -504,7 +505,7 @@
     const [icon,name]=EMOTES[key];
     return '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'"'+
      (!status?.ready||!status.answerTicket?' disabled':'')+'>'+
-     '<span class="mb-duel-emote-art" style="'+spriteStyle(key)+'">'+icon+'</span></button>';
+     '<span class="mb-duel-emote-art" style="'+spriteStyle(key)+'"><span class="mb-duel-emote-fallback">'+icon+'</span></span></button>';
    }).join('')+
    '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>'+
    '<p id="mb-duel-remote-emote" class="mb-duel-remote-emote" role="status" aria-live="polite" hidden></p>';
