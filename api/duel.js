@@ -255,6 +255,12 @@ export default async function handler(req,res){
     await writePrivate(progressPath(code,me.id),
      {answered:0,score:0,correct:0,lastAt:null,answers:[]},{overwrite:true});
     await writePrivate(presencePath(code,me.id),{at:Date.now(),leftAt:null},{overwrite:true});
+    // The host may have waited for the invitation to be accepted for minutes
+    // before receiving an answer ticket and starting heartbeats. Prevent a
+    // freshly joined guest from treating that as an immediate disconnect.
+    const hostSeen=await readPrivate(presencePath(code,room.hostId),{fresh:true});
+    if(!hostSeen?.leftAt)
+     await writePrivate(presencePath(code,room.hostId),{at:Date.now(),leftAt:null},{overwrite:true});
    }catch(e){
     // Guest registration already succeeded; a delayed progress record must
     // not turn a successful join into a misleading failure.
