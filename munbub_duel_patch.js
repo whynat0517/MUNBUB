@@ -336,24 +336,34 @@
     notice.textContent='⚡ 상대가 먼저 답했어! 남은 시간이 2배 빠르게 줄어들어!';
   }
  }
+ function concealedScore(){
+  const ps=status?.players||[];
+  // Correctness and points are private until both people submit.
+  return ps.length===2&&ps[0].answered!==ps[1].answered;
+ }
  function scoreboard(){
+  const hidden=concealedScore();
   return '<div class="mb-duel-scoreboard">'+(status?.players||[]).map(p=>
-   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+'<strong class="mb-duel-score-value">'+p.score+'점</strong><small class="mb-duel-progress">정답 '+p.correct+' · '+p.answered+'/'+count()+'</small></div>').join('')+'</div>';
+   '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+esc(p.name)+(p.id===status.me?' (나)':'')+
+   '<strong class="mb-duel-score-value">'+(hidden?'🔒 공개 대기':p.score+'점')+'</strong>'+
+   '<small class="mb-duel-progress">'+(hidden?'상대 답변 후 점수 공개 · '+p.answered+'/'+count():'정답 '+p.correct+' · '+p.answered+'/'+count())+'</small></div>').join('')+'</div>';
  }
  function refreshScoreboard(){
-  // Never replace the active question merely because the opponent scored.
+  const hidden=concealedScore();
   for(const p of status?.players||[]){
    const card=dialog.querySelector('[data-duel-player="'+p.id+'"]');
    if(!card)continue;
    const points=card.querySelector('.mb-duel-score-value');
    const progress=card.querySelector('.mb-duel-progress');
-   if(points)points.textContent=p.score+'점';
-   if(progress)progress.textContent='정답 '+p.correct+' · '+p.answered+'/'+count();
+   if(points)points.textContent=hidden?'🔒 공개 대기':p.score+'점';
+   if(progress)progress.textContent=hidden?
+    '상대 답변 후 점수 공개 · '+p.answered+'/'+count():
+    '정답 '+p.correct+' · '+p.answered+'/'+count();
   }
   updateOpponentSignal();
   refreshReview();
  }
- function showGame(){
+  function showGame(){
   if(!dialog.open||!roomCode||!status)return;
   const me=status.players.find(x=>x.id===status.me);
   const qidx=me?.answered||0;
@@ -361,12 +371,15 @@
   // Local feedback may show first, but the new round is server-gated.
   const other=status.players.find(x=>x.id!==status.me);
   const unlocked=!!status.turnReady&&!!other&&qidx<=other.answered;
-  const showReview=newReview()&&qidx>0&&qidx<count()&&
-   (!unlocked||!status.turnStartsAt||now()<status.turnStartsAt);
+  const bothSubmitted=!!other&&other.answered>=qidx;
+  const reviewEnd=qidx>=count()?status.finalReviewEndsAt:status.turnStartsAt;
+  // Reveal correctness only after BOTH players have submitted this question.
+  const showReview=newReview()&&qidx>0&&bothSubmitted&&
+   (!reviewEnd||now()<reviewEnd);
   const newPhase=!status.ready?'waiting'
+   :showReview?'review'
    :status.finished?'results'
    :qidx>=count()?'finished'
-   :showReview?'review'
    :!newReview()&&Date.now()<feedbackUntil?'feedback'
    :!unlocked?'opponent'
    :now()<status.turnStartsAt?'countdown':'question';
@@ -379,7 +392,7 @@
    '<p class="mb-duel-note">⚙ '+count()+'문제 · 문제당 '+options.seconds+'초 · '+esc(typeLabel[options.type]||'혼합')+'</p>';
   html+=scoreboard();
   if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
-  if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 상대가 현재 문제를 제출할 때까지 대기 중이야. 둘 다 풀어야 다음 문제로 넘어가!</p><p class="mb-duel-note">상대방 진행 상황은 위 점수판에서 확인해 줘.</p>';
+  if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 답안 제출 완료! 상대방도 답을 고르면 정답과 해설을 함께 공개해.</p><p class="mb-duel-note">답안은 서버에 접수됐어. 결과는 아직 공개되지 않아.</p>';
   if(newPhase==='countdown')html+='<section class="mb-duel-start-box" aria-label="대결 시작 카운트다운"><div class="mb-duel-start-label">⚔ 대결 시작까지</div>'+
    '<div id="mb-duel-countdown" class="mb-duel-start-number" role="timer">'+Math.max(0,Math.ceil((status.turnStartsAt-now())/1000))+'</div>'+
    '<div class="mb-duel-start-note">같은 문제를 동시에 시작해!</div></section>';
@@ -398,12 +411,16 @@
    const info=reviewInfo();
    const good=info?.own?.correct??feedback?.correct;
    const points=info?.own?.points??feedback?.points??0;
+   const q=status.questionIds?.[qidx-1]?MAP.get(status.questionIds[qidx-1]):null;
+   const solution=q?(q.type==='idiom'?q.answer:(q.answers||[]).join(' / ')):'';
    html+='<section class="mb-duel-review" aria-label="문제 풀이 후 대기">'+
     '<p class="mb-duel-result '+(good?'good':'bad')+'">'+(good?'✔ 정답! +'+points+'점':'✖ 오답! 0점')+'</p>'+
+    '<p class="mb-duel-solution">정답: <strong>'+esc(solution)+'</strong></p>'+
+    (q?.note?'<p class="mb-duel-note">해설: '+esc(q.note)+'</p>':'')+
     '<div id="mb-duel-review-clock" class="mb-duel-review-clock" role="timer"></div>'+
     '<p id="mb-duel-review-status" class="mb-duel-review-status" aria-live="polite"></p>'+
     '<button type="button" id="mb-duel-next-ready">⚡ 바로 다음 문제로 넘어가기 동의</button>'+
-    '<p class="mb-duel-note">기본은 둘 다 답을 고른 뒤 5초 후 자동 진행! 둘 다 동의하면 바로 넘어가.</p></section>';
+    '<p class="mb-duel-note">둘 다 답한 뒤 '+(reviewMilliseconds()/1000)+'초 후 자동 진행! 둘 다 동의하면 바로 넘어가.</p></section>';
   }
   if(newPhase==='feedback'){const good=feedback?.correct;html+='<p class="mb-duel-result '+(good?'good':'bad')+'">'+(good?'✔ 정답! +'+feedback.points+'점':'✖ 아쉬워! 0점')+'</p><p>다음 문제로 넘어가는 중...</p>'}
   if(newPhase==='finished')html+='<p class="mb-duel-status">✅ '+count()+'문제를 모두 풀었어! 상대가 마칠 때까지 기다리고 있어.</p>';
@@ -522,9 +539,9 @@
    if(ms<=0&&!busy)sendAnswer('');
   }else if(phase==='review'){
    refreshReview();
-   if(status.turnReady&&status.turnStartsAt&&now()>=status.turnStartsAt){
-    lastViewKey='';feedback=null;showGame();
-   }
+   const done=status?.players?.find(p=>p.id===status.me)?.answered>=count();
+   const end=done?status.finalReviewEndsAt:status.turnStartsAt;
+   if(end&&now()>=end){lastViewKey='';feedback=null;showGame()}
   }else if(phase==='feedback'&&Date.now()>=feedbackUntil){lastViewKey='';feedback=null;showGame()}
  }
  // Fast opponent signals are deliberately small and serial (no overlapping
