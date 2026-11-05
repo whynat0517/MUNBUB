@@ -80,6 +80,7 @@
  }
  // 1대1 대결은 홈 캐릭터 아래 버튼에서만 진입한다.
  let roomCode=null,status=null,busy=false,lastViewKey='',phase='lobby',feedback=null,feedbackUntil=0,pollBusy=false,previousSelection=null,serverOffset=0;
+ let emoteBusy=false,lastEmoteSentAt=0,lastRemoteEmoteAt=0,recentRemoteEmote=null,signalTickCount=0;
  let signalBusy=false,signalLastAt=0,signalFailures=0,lastOpponentSignal=null;
  const currentRoomKey='mb_duel_last_room_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
@@ -101,7 +102,7 @@
   try{const r=await fetch('/api/account',{credentials:'same-origin'});const j=await r.json();return !!j.loggedIn}catch{return false}
  }
  function showLobby(){
-  roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;
+  roomCode=null;status=null;phase='lobby';feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;recentRemoteEmote=null;lastRemoteEmoteAt=0;signalTickCount=0;
   const last=localStorage.getItem(currentRoomKey)||'';
   putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고 같은 문제로 대결해 봐! 방장이 문제 수와 시간, 유형을 정할 수 있어.</p>'+
    '<form id="mb-duel-create-form"><div class="mb-duel-config">'+
@@ -154,7 +155,7 @@
  async function enterRoom(code){
   roomCode=String(code||'').trim().toUpperCase();
   if(!roomCode)return showLobby();
-  phase='room';status=null;feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;
+  phase='room';status=null;feedback=null;lastViewKey='';signalLastAt=0;signalFailures=0;lastOpponentSignal=null;recentRemoteEmote=null;lastRemoteEmoteAt=0;signalTickCount=0;
   try{localStorage.setItem(currentRoomKey,roomCode)}catch(_){}
   putHTML('<div class="mb-duel-panel"><p class="mb-duel-status" id="mb-duel-info">대결 정보를 불러오는 중...</p></div>');
   await updateRoom();
@@ -274,18 +275,19 @@
   const extra=status.opponentAnsweredAt?Math.max(0,time-status.opponentAnsweredAt):0;
   return Math.max(0,duration()-original-extra);
  };
- const newReview=()=>status?.reviewMode==='both-ready-or-5s';
+ const newReview=()=>['both-ready-or-10s','both-ready-or-5s'].includes(status?.reviewMode);
+ const reviewMilliseconds=()=>status?.reviewMode==='both-ready-or-10s'?10000:5000;
  const lastAnswer=(p,index)=>p?.answers?.find(a=>a.index===index);
  function reviewTurnAt(ours,theirs){
   const last=Math.max(Number(ours?.at)||0,Number(theirs?.at)||0);
-  const fallback=last+5000;
+  const fallback=last+reviewMilliseconds();
   const first=Number(ours?.readyAt)||0,second=Number(theirs?.readyAt)||0;
   return first&&second?Math.min(fallback,Math.max(first,second)):fallback;
  }
  function reviewInfo(){
   const me=status?.players?.find(p=>p.id===status.me);
   const opponent=status?.players?.find(p=>p.id!==status.me);
-  if(!me||me.answered<1||me.answered>=count())return null;
+  if(!me||me.answered<1||me.answered>count())return null;
   const index=me.answered-1;
   const own=lastAnswer(me,index);
   const theirs=lastOpponentSignal?.answers?.find(a=>a.index===index);
@@ -308,10 +310,11 @@
   }
   const clock=dialog.querySelector('#mb-duel-review-clock');
   if(clock){
+   const end=info.index===count()-1?status.finalReviewEndsAt:status.turnStartsAt;
    const caption=!info.otherAnswered?'⏳ 상대 답변 대기 중'
-    :status.turnStartsAt&&now()<status.turnStartsAt
-     ?'⏱ '+(Math.max(0,(status.turnStartsAt-now())/1000)).toFixed(1)+'초 후 자동 진행'
-     :'⚔ 다음 문제 시작!';
+    :end&&now()<end
+     ?'⏱ '+(Math.max(0,(end-now())/1000)).toFixed(1)+'초 후 '+(info.index===count()-1?'결과 발표':'자동 진행')
+     :'⚔ '+(info.index===count()-1?'최종 결과 공개!':'다음 문제 시작!');
    if(clock.textContent!==caption)clock.textContent=caption;
   }
   const statusText=dialog.querySelector('#mb-duel-review-status');
