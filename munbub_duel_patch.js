@@ -131,6 +131,7 @@
   '<button class="mb-duel-close" type="button" id="mb-duel-close" aria-label="대결 나가기"></button>'+
   '</div><h2 aria-label="1대1 모드"></h2>'}
  function putHTML(content){
+  dialog.classList.toggle('mb-duel-live',content.includes('mb-duel-arena'));
   dialog.innerHTML=makeHeader()+content;
   dialog.querySelector('#mb-duel-close')?.addEventListener('click',()=>dialog.close());
   dialog.querySelector('#mb-duel-home')?.addEventListener('click',()=>{
@@ -456,7 +457,11 @@
    '<div class="mb-duel-score'+(p.id===status.me?' me':'')+'" data-duel-player="'+esc(p.id)+'">'+
    '<span class="mb-duel-player-name">'+esc(p.name)+(p.id===status.me?' (나)':'')+'</span>'+
    '<strong class="mb-duel-score-value">'+(hidden?'🔒 공개 대기':p.score+'점')+'</strong>'+
-   '<small class="mb-duel-progress">'+(hidden?'상대 답변 후 점수 공개 · '+p.answered+'/'+count():'정답 '+p.correct+' · '+p.answered+'/'+count())+'</small></div>').join('')+'</div>';
+   '<small class="mb-duel-progress">'+(hidden?'상대 답변 후 점수 공개 · '+p.answered+'/'+count():'정답 '+p.correct+' · '+p.answered+'/'+count())+'</small>'+
+   (p.id===status.me?
+     '<div id="mb-duel-local-emote" class="mb-duel-portrait-emote mb-duel-local-emote" role="status" aria-live="polite" hidden></div>':
+     '<div id="mb-duel-remote-emote" class="mb-duel-portrait-emote mb-duel-remote-emote" role="status" aria-live="polite" hidden></div>')+
+   '</div>').join('')+'</div>';
  }
  function refreshScoreboard(){
   const hidden=concealedScore();
@@ -491,7 +496,7 @@
   if(!el)return;
   const live=recentRemoteEmote&&Date.now()-recentRemoteEmote.received<2900;
   el.hidden=!live;
-  if(live)el.innerHTML='<strong>상대방</strong> <span class="mb-duel-emote-art mb-duel-remote-sticker" style="'+spriteStyle(recentRemoteEmote.id)+'" role="img" aria-label="'+esc(EMOTES[recentRemoteEmote.id]?.[1]||'이모티콘')+'"></span>';
+  if(live)el.innerHTML='<strong>상대방</strong><span class="mb-duel-emote-art mb-duel-remote-sticker" style="'+spriteStyle(recentRemoteEmote.id)+'" role="img" aria-label="'+esc(EMOTES[recentRemoteEmote.id]?.[1]||'이모티콘')+'"></span>';
  }
  function receiveEmote(emote){
   if(!emote||!EMOTES[emote.id]||!Number.isFinite(emote.at)||
@@ -510,9 +515,7 @@
      (!status?.ready||!status.answerTicket?' disabled':'')+'>'+
      '<span class="mb-duel-emote-art" style="'+spriteStyle(key)+'"><span class="mb-duel-emote-fallback">'+icon+'</span></span></button>';
    }).join('')+
-   '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>'+
-   '<p id="mb-duel-remote-emote" class="mb-duel-remote-emote" role="status" aria-live="polite" hidden></p>'+
-   '<p id="mb-duel-local-emote" class="mb-duel-remote-emote mb-duel-local-emote" role="status" hidden></p>';
+   '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>';
  }
  async function sendEmote(id){
   if(!EMOTES[id]||!dialog.open||!roomCode||!status?.ready||
