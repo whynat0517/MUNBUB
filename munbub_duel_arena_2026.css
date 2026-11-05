@@ -1174,3 +1174,21 @@
   width:clamp(74px,22vw,108px)!important;height:clamp(74px,22vw,108px)!important;
  }
 }
+
+/* Speech tails point toward the player: left bubble rightwards, right bubble leftwards. */
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote::before,
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote::after{
+ content:''!important;position:absolute!important;box-sizing:border-box!important;
+ width:22px!important;height:26px!important;top:15%!important;bottom:auto!important;
+ left:auto!important;right:-20px!important;border:0!important;border-radius:0!important;
+ transform:none!important;clip-path:polygon(0 0,0 100%,100% 50%)!important;
+ background:#9b654c!important;pointer-events:none!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score .mb-duel-portrait-emote::after{
+ width:17px!important;height:20px!important;right:-14px!important;top:calc(15% + 3px)!important;background:#ffedcc!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-portrait-emote::before,
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-portrait-emote::after{
+ right:auto!important;left:-20px!important;clip-path:polygon(100% 0,100% 100%,0 50%)!important;
+}
+#mb-duel-dialog#mb-duel-dialog.mb-duel-live .mb-duel-scoreboard .mb-duel-score:nth-child(2) .mb-duel-portrait-emote::after{left:-14px!important}
