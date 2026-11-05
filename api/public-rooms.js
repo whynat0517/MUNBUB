@@ -15,8 +15,7 @@ export default async function handler(req,res){
     if(!r||!ID.test(r.code)||!Number.isFinite(r.expiresAt)||r.expiresAt<Date.now())return null;
     const [guest,host]=await Promise.all([
      readPrivate('duels/'+r.code+'/guest.json',{fresh:true}),
-     readPrivate('duels/'+r.code+'/presence/'+
-      (await readPrivate('duels/'+r.code+'/room.json',{fresh:true}))?.hostId+'.json',{fresh:true})
+     readPrivate('duels/'+r.code+'/presence/'+r.hostId+'.json',{fresh:true})
     ]);
     if(host?.leftAt)return null;
     return {code:r.code,name:r.roomName||'공개 대결방',
