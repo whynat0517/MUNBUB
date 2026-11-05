@@ -49,7 +49,7 @@
  // Hide the legacy local ranking entirely; only live server ranking remains.
  document.querySelectorAll('#mb-hard-account').forEach(el=>el.remove());
  let selected='home';
- const tracked=new Set(['home','spelling','idiom','application','infinite','timed','hard','duel','mistakes','history','settings']);
+ const tracked=new Set(['home','spelling','idiom','application','infinite','timed','ranked','hard','duel','mistakes','history','settings']);
  function paint(){
   for(const btn of document.querySelectorAll('.sidebar-nav [data-route],.mobile-drawer [data-route],.mobile-bottom [data-route]')){
    const active=btn.dataset.route===selected;
