@@ -35,19 +35,20 @@
   '#view-setup #mb-ranked-entry button{border:3px solid #e2b387;border-radius:11px;padding:11px 16px;background:#f1d3a7;color:#462c2a;font-weight:1000;font-size:clamp(15px,1.75vw,19px);cursor:pointer}',
   '#view-setup #mb-ranked-entry p{margin:5px 0;font-size:13px;color:#ffe2c6}',
   '@media(max-width:540px){#mb-ranked-dialog .mb-ranked-modes{grid-template-columns:1fr}#mb-ranked-dialog .mb-ranked-choices{grid-template-columns:1fr}#mb-ranked-dialog .mb-ranked-modes button{padding:8px}#mb-ranked-dialog .mb-ranked-question{padding:13px;min-height:70px}}'
- ].join('\n');style.textContent += [
-  '.sidebar-nav .mb-ranked-nav,.mobile-drawer .mb-ranked-nav{box-sizing:border-box!important;display:block!important;flex:none!important;width:100%!important;min-height:0!important;aspect-ratio:3/1!important;padding:0!important;margin:2px auto!important;border:0!important;border-radius:0!important;background:transparent url("/ui-assets/mb_ranking_ui.webp") center/contain no-repeat!important;box-shadow:none!important;color:transparent!important;font-size:0!important;text-indent:-9999px!important;overflow:hidden!important;cursor:pointer;transition:filter .14s,transform .14s}',
-  '.sidebar-nav .mb-ranked-nav:hover,.mobile-drawer .mb-ranked-nav:hover{filter:brightness(1.13)!important;transform:scale(1.04)}',
-  '.sidebar-nav .mb-ranked-nav.active,.mobile-drawer .mb-ranked-nav.active{filter:brightness(.78)!important;outline:0!important;transform:scale(.98)}',
-  '@media(max-width:700px){.sidebar-nav .mb-ranked-nav,.mobile-drawer .mb-ranked-nav{max-height:66px!important}}'
  ].join('\n');
 style.textContent += [
- '.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;position:relative!important;width:100%!important;aspect-ratio:3/1!important;min-height:0!important;height:auto!important;padding:0!important;margin:2px auto!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;opacity:1!important;overflow:visible!important;filter:none;transform:none;text-indent:0!important;color:transparent!important;font-size:0!important;cursor:pointer}',
- '.sidebar-nav button.mb-ranked-nav .mb-ranked-art,.mobile-drawer button.mb-ranked-nav .mb-ranked-art{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;aspect-ratio:3/1!important;object-fit:contain!important;image-rendering:auto!important;opacity:1!important;pointer-events:none!important}',
- '.sidebar-nav button.mb-ranked-nav:hover .mb-ranked-art,.mobile-drawer button.mb-ranked-nav:hover .mb-ranked-art{filter:brightness(1.12)!important;transform:scale(1.035)}',
- '.sidebar-nav button.mb-ranked-nav.active .mb-ranked-art,.mobile-drawer button.mb-ranked-nav.active .mb-ranked-art{filter:brightness(.77)!important}',
- '#mb-ranked-dialog::backdrop{background:rgba(24,15,20,.53)!important}',
- '@media(max-width:700px){.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{max-height:none!important}}'
+ '.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{display:flex!important;align-items:center!important;justify-content:center!important;position:relative!important;flex:none!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-height:0!important;aspect-ratio:2048/682!important;height:auto!important;margin:2px auto!important;padding:0!important;border:0!important;border-radius:0!important;outline-offset:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important;filter:none!important;color:#f6d6a6!important;font-size:0!important;line-height:0!important;text-indent:0!important;overflow:visible!important;opacity:1!important;cursor:pointer!important}',
+ '.sidebar-nav button.mb-ranked-nav .mb-ranked-art,.mobile-drawer button.mb-ranked-nav .mb-ranked-art{display:block!important;position:relative!important;width:100%!important;max-width:100%!important;height:auto!important;aspect-ratio:2048/682!important;object-fit:contain!important;opacity:1!important;filter:none!important;image-rendering:auto!important;pointer-events:none!important}',
+ '.sidebar-nav button.mb-ranked-nav .mb-ranked-fallback,.mobile-drawer button.mb-ranked-nav .mb-ranked-fallback{display:none!important}',
+ '.sidebar-nav button.mb-ranked-nav.art-missing,.mobile-drawer button.mb-ranked-nav.art-missing{font-size:18px!important;line-height:1.3!important;border:3px double #e6c49a!important;background:#492b30!important}',
+ '.sidebar-nav button.mb-ranked-nav.art-missing .mb-ranked-fallback,.mobile-drawer button.mb-ranked-nav.art-missing .mb-ranked-fallback{display:inline!important}',
+ '.sidebar-nav button.mb-ranked-nav:hover .mb-ranked-art,.mobile-drawer button.mb-ranked-nav:hover .mb-ranked-art{filter:brightness(1.12)!important;transform:scale(1.025)!important}',
+ '.sidebar-nav button.mb-ranked-nav.active .mb-ranked-art,.mobile-drawer button.mb-ranked-nav.active .mb-ranked-art{filter:brightness(.78)!important}',
+ '#mb-ranked-dialog{z-index:2147482000!important;isolation:isolate!important}',
+ '#mb-ranked-dialog::backdrop{background:rgba(24,15,20,.33)!important}',
+ '#mb-ranked-dialog .mb-ranked-modes{position:relative;z-index:1}',
+ '#mb-ranked-dialog .mb-ranked-modes button{position:relative;z-index:2;opacity:1!important;visibility:visible!important}',
+ '@media(max-width:700px){.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{max-height:76px!important}}'
 ].join('\n');
 document.head.append(style);
  let selected='infinite',run=null,active=false,busy=false,mode=null,qid=null,
@@ -254,7 +255,8 @@ document.head.append(style);
    btn.dataset.route='ranked';
    btn.setAttribute('aria-label','랭킹전');
    btn.title='온라인 랭킹전';
-   btn.innerHTML='<img class="mb-ranked-art" src="/ui-assets/mb_ranking_ui.webp" width="600" height="200" alt="" decoding="async">';
+   btn.innerHTML='<img class="mb-ranked-art" src="/ui-assets/mb_ranking_ui.webp" width="2048" height="682" alt="" decoding="async" loading="eager"><span class="mb-ranked-fallback">🏆 랭킹전</span>';
+   btn.querySelector('img')?.addEventListener('error',()=>btn.classList.add('art-missing'),{once:true});
    const timed=container.querySelector('[data-route="timed"]');
    if(timed)timed.after(btn);else container.append(btn);
    btn.addEventListener('click',e=>{
