@@ -38,6 +38,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- munbub_layout_fix_20261105.css munbub_art_refresh_20261106.css munbub_quiz_scenes_2026.js munbub_duel_arena_2026.css munbub_quiz_scenes_2026.css
+          sed -i 's/[[:blank:]]*$//' munbub_quiz_scenes_2026.js
+          git add -- munbub_quiz_scenes_2026.js
           git diff --cached --check
           if git diff --cached --quiet; then
             echo 'No changes'; exit 0
