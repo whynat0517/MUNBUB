@@ -16,6 +16,13 @@
   workspace.append(group);
   group.append(clock);
  }
+ // One decorative animation; the original game timer remains the only clock.
+ const hourglass=document.createElement('img');
+ hourglass.className='mb-time-scene-hourglass';hourglass.id='mb-time-scene-hourglass';
+ hourglass.src='./ui-assets/hourglass_user_20261106.webp';hourglass.alt='';
+ hourglass.setAttribute('aria-hidden','true');hourglass.decoding='async';
+ hourglass.addEventListener('error',()=>{if(!hourglass.dataset.fallback){hourglass.dataset.fallback='1';hourglass.src='./ui-assets/hourglass_loop.webp'}});
+ workspace?.prepend(hourglass);
  const CLASSES=['mb-scene-spelling','mb-scene-idiom','mb-scene-infinite','mb-scene-hard','mb-scene-timed'];
  function refresh(){
   const active=typeof store!=='undefined'&&store?.active;
