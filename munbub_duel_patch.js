@@ -66,6 +66,15 @@
   '#mb-duel-dialog .mb-duel-result.good{background:#dff7d6;color:#205c37;border-color:#438e56}',
   '#mb-duel-dialog .mb-duel-result.bad{background:#ffe1dc;color:#96313a;border-color:#ad4b4f}',
   '#mb-duel-dialog .mb-duel-note{color:#735444;font-size:13px}',
+  '#mb-duel-dialog .mb-duel-solution{padding:10px 13px;margin:9px 0;border:2px solid #9c7152;background:#fffaf0;color:#603c2d;font-size:clamp(16px,2vw,20px);font-weight:850;border-radius:12px}',
+  '#mb-duel-dialog .mb-duel-emotes{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:8px 0;padding:7px 8px;border:2px solid #b48b6e;background:#fff9ec;border-radius:11px}',
+  '#mb-duel-dialog .mb-duel-emotes-label{font-weight:850;font-size:12px;margin-right:3px;color:#714e3d}',
+  '#mb-duel-dialog .mb-duel-emotes button{box-sizing:border-box;min-width:38px;min-height:39px;padding:3px 5px;font-size:24px;line-height:1;border:1px solid #b98c71;background:#fff2d8;border-radius:8px;touch-action:manipulation}',
+  '#mb-duel-dialog .mb-duel-emotes button:active{transform:scale(.9)}',
+  '#mb-duel-dialog .mb-duel-remote-emote{margin:7px 0;padding:8px 13px;background:#ffe8bc;border:2px solid #a66b48;border-radius:12px;color:#5a352b;font-weight:900;font-size:17px;line-height:1.4}',
+  '#mb-duel-dialog .mb-duel-remote-emote[hidden]{display:none!important}',
+  '#mb-duel-dialog .mb-duel-emotes-state{font-size:12px;color:#805b48;min-width:65px}',
+  '@media(max-width:460px){#mb-duel-dialog .mb-duel-emotes{gap:3px;padding:5px}#mb-duel-dialog .mb-duel-emotes button{font-size:22px;min-width:36px;min-height:37px}#mb-duel-dialog .mb-duel-emotes-label{width:100%}}',
   '@media(max-width:600px){#mb-duel-dialog .mb-duel-option-list{grid-template-columns:1fr}#mb-duel-dialog .mb-duel-option-list button{min-height:55px}#mb-duel-dialog .mb-duel-scoreboard{gap:6px}}'
  ].join('\n');
  document.head.append(css);
@@ -73,7 +82,7 @@
  if(homeRow){
   const btn=document.createElement('button');
   btn.type='button';btn.className='mb-duel-home';
-  btn.innerHTML='🎮 1대1 대결<small>친구와 같은 10문제로 승부!</small>';
+  btn.innerHTML='🎮 1대1 대결<small>친구와 설정한 문제로 승부!</small>';
   btn.setAttribute('aria-label','온라인 1대1 대결');
   homeRow.append(btn);
   btn.addEventListener('click',openLobby);
@@ -370,6 +379,60 @@
   updateOpponentSignal();
   refreshReview();
  }
+  const EMOTES={
+  wave:['👋','인사'],cheer:['🙌','만세'],laugh:['😂','웃음'],
+  wow:['😮','놀람'],cry:['😢','아쉬움'],fire:['🔥','불꽃'],
+  thumbs:['👍','좋아요'],thinking:['🤔','고민']
+ };
+ function renderRemoteEmote(){
+  const el=dialog.querySelector('#mb-duel-remote-emote');
+  if(!el)return;
+  const live=recentRemoteEmote&&Date.now()-recentRemoteEmote.received<2900;
+  el.hidden=!live;
+  if(live)el.textContent='상대방: '+EMOTES[recentRemoteEmote.id]?.[0]+' '+EMOTES[recentRemoteEmote.id]?.[1];
+ }
+ function receiveEmote(emote){
+  if(!emote||!EMOTES[emote.id]||!Number.isFinite(emote.at)||
+     emote.at<=lastRemoteEmoteAt)return;
+  lastRemoteEmoteAt=emote.at;
+  recentRemoteEmote={id:emote.id,received:Date.now()};
+  renderRemoteEmote();
+ }
+ function emotePalette(){
+  if(!status?.ready||!status.answerTicket)return '';
+  return '<div class="mb-duel-emotes" aria-label="상대에게 이모티콘 보내기">'+
+   '<span class="mb-duel-emotes-label">이모티콘</span>'+
+   Object.entries(EMOTES).map(([key,[icon,name]])=>
+    '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'">'+icon+'</button>'
+   ).join('')+
+   '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>'+
+   '<p id="mb-duel-remote-emote" class="mb-duel-remote-emote" role="status" aria-live="polite" hidden></p>';
+ }
+ async function sendEmote(id){
+  if(!EMOTES[id]||!dialog.open||!roomCode||!status?.ready||
+     !status.answerTicket||emoteBusy)return;
+  const time=Date.now();
+  if(time-lastEmoteSentAt<1150)return;
+  lastEmoteSentAt=time;emoteBusy=true;
+  const area=dialog.querySelector('#mb-duel-emotes-state');
+  if(area)area.textContent='전송 중…';
+  const currentCode=roomCode;
+  try{
+   await api({action:'emote',code:currentCode,emote:id,answerTicket:status.answerTicket});
+   if(currentCode===roomCode){
+    const label=dialog.querySelector('#mb-duel-emotes-state');
+    if(label)label.textContent='전송 완료!';
+   }
+  }catch(e){
+   if(e.message.includes('1초'))lastEmoteSentAt=Date.now();
+   const label=dialog.querySelector('#mb-duel-emotes-state');
+   if(label)label.textContent=e.message;
+  }finally{emoteBusy=false}
+ }
+ dialog.addEventListener('click',event=>{
+  const button=event.target.closest?.('[data-duel-emote]');
+  if(button){event.preventDefault();sendEmote(button.dataset.duelEmote)}
+ });
   function showGame(){
   if(!dialog.open||!roomCode||!status)return;
   const me=status.players.find(x=>x.id===status.me);
@@ -397,7 +460,7 @@
   const typeLabel={mixed:'맞춤법+사자성어',spelling:'맞춤법만',idiom:'사자성어만'};
   let html='<div class="mb-duel-panel"><p>친구 초대 코드 <strong class="mb-duel-code" id="mb-duel-code">'+esc(roomCode)+'</strong> <button id="mb-duel-copy" type="button">복사</button></p>'+
    '<p class="mb-duel-note">⚙ '+count()+'문제 · 문제당 '+options.seconds+'초 · '+esc(typeLabel[options.type]||'혼합')+'</p>';
-  html+=scoreboard();
+  html+=scoreboard()+emotePalette();
   if(newPhase==='waiting')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 아직 상대방이 입장하지 않았어. 둘 다 들어와야 시작돼!</p>';
   if(newPhase==='opponent')html+='<p class="mb-duel-status" id="mb-duel-info">⏳ 답안 제출 완료! 상대방도 답을 고르면 정답과 해설을 함께 공개해.</p><p class="mb-duel-note">답안은 서버에 접수됐어. 결과는 아직 공개되지 않아.</p>';
   if(newPhase==='countdown')html+='<section class="mb-duel-start-box" aria-label="대결 시작 카운트다운"><div class="mb-duel-start-label">⚔ 대결 시작까지</div>'+
@@ -439,6 +502,7 @@
   }
   html+='<div class="mb-duel-actions"><button id="mb-duel-new" type="button">새 대결 / 코드 입력</button></div><p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
   putHTML(html);
+  renderRemoteEmote();
   updateOpponentSignal();
   refreshReview();
   dialog.querySelector('#mb-duel-next-ready')?.addEventListener('click',sendReady);
@@ -543,6 +607,9 @@
  }
  function tick(){
   if(!dialog.open||!roomCode||!status||document.hidden)return;
+  if(recentRemoteEmote&&Date.now()-recentRemoteEmote.received>=2900){
+   recentRemoteEmote=null;renderRemoteEmote();
+  }
   if(phase==='countdown'){
    const left=Math.max(0,Math.ceil((status.turnStartsAt-now())/1000));
    const el=dialog.querySelector('#mb-duel-countdown');
