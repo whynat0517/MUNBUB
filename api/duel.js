@@ -42,7 +42,7 @@ const hasExpired=room=>!room||!Number.isFinite(room.expiresAt)||room.expiresAt<D
 
 function pickQuestions(settings){
  const sp=duelQuestionIds().filter(k=>/^s[0-9]+$/.test(k));
- const id=duelQuestionIds().filter(k=>/^i[0-9]+$/.test(k));
+ const id=duelQuestionIds().filter(k=>/^i[0-9]+$/.test(k)&&Number(k.slice(1))<=95);
  const sample=(arr,n)=>{
   const a=[...arr];for(let i=0;i<n;i++){const j=i+randomInt(a.length-i);[a[i],a[j]]=[a[j],a[i]]}
   return a.slice(0,n);
