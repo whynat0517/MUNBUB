@@ -7,7 +7,8 @@ import {configured,noCache,sameOrigin,session,token,verify,newId,
 
 const MODES=['timed60','infinite','hardcore'];
 const CATEGORIES=['s','i','a'];
-const BANK_IDS=duelQuestionIds().filter(id=>/^[sia]\d{1,4}$/.test(id));
+const BANK_IDS=duelQuestionIds().filter(id=>/^[sia]\d{1,4}$/.test(id)&&
+ (id[0]!=='i'||Number(id.slice(1))<=95));
 function chooseQuestion(st){
  const target=CATEGORIES[st.answered%3];
  const permitted=BANK_IDS.filter(id=>id.startsWith(target)&&!st.recent.includes(id));
