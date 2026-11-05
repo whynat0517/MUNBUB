@@ -217,7 +217,8 @@ export default async function handler(req,res){
    const settings=validSettings(body.settings);
    if(!settings)return sendError(res,400,'문제 수·시간·유형 중 지원하지 않는 설정이 있어.');
    const code=codeNew(),now=Date.now();
-   const publicRoom=body.publicRoom===true;
+   const publicRoom=body.publicRoom===true||body.lobbyRoom===true;
+   const listPublicly=body.publicRoom===true;
    const roomName=String(body.roomName||'').replace(/[<>\x00-\x1f]/g,'').trim().slice(0,36)||me.name+'의 대결방';
    const hostTitle=titleOf(body.title);
    await put(roomPath(code),JSON.stringify({
@@ -225,7 +226,7 @@ export default async function handler(req,res){
     publicRoom,roomName,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
-   if(publicRoom)await writePrivate('public-rooms/'+code+'.json',{
+   if(listPublicly)await writePrivate('public-rooms/'+code+'.json',{
     code,roomName,hostId:me.id,hostName:me.name,hostTitle,createdAt:now,
     expiresAt:now+ROOM_LIFETIME,settings
    },{overwrite:true});
