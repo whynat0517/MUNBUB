@@ -65,6 +65,18 @@
   '#mb-duel-dialog .mb-duel-result{margin-top:12px;padding:13px;border-radius:13px;border:3px solid #896848;font-size:clamp(16px,2.1vw,22px);font-weight:950}',
   '#mb-duel-dialog .mb-duel-result.good{background:#dff7d6;color:#205c37;border-color:#438e56}',
   '#mb-duel-dialog .mb-duel-result.bad{background:#ffe1dc;color:#96313a;border-color:#ad4b4f}',
+  '#mb-duel-dialog h2{background-image:url("/ui-assets/duel-parts/01_title_1v1.png"),linear-gradient(#684242,#32232b);background-size:100% 100%;background-repeat:no-repeat;min-height:62px;display:flex;align-items:center;justify-content:center}',
+  '#mb-duel-dialog .mb-duel-scoreboard{position:relative;gap:clamp(22px,4vw,62px)}',
+  '#mb-duel-dialog .mb-duel-scoreboard::after{content:"VS";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:7px 9px;background:#642c2e;color:#ffe0b0;border:3px double #e6ba85;border-radius:50%;font-size:clamp(14px,2vw,22px);font-weight:1000}',
+  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){background-image:url("/ui-assets/duel-parts/02_player_left.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){background-image:url("/ui-assets/duel-parts/03_player_right.png"),linear-gradient(#69483d,#4b2c32);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-question-text{background-image:url("/ui-assets/duel-parts/05_question_board.png"),linear-gradient(#fffaf0,#ffe7cb);background-size:100% 100%;background-repeat:no-repeat}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(1){background-image:url("/ui-assets/duel-parts/08_choice_a.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(2){background-image:url("/ui-assets/duel-parts/09_choice_b.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(3){background-image:url("/ui-assets/duel-parts/10_choice_c.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-option-list button:nth-child(4){background-image:url("/ui-assets/duel-parts/11_choice_d.png"),linear-gradient(#fffaf0,#f6dfc0);background-size:100% 100%}',
+  '#mb-duel-dialog .mb-duel-round-indicator{background-image:url("/ui-assets/duel-parts/12_round_indicator_blank.png"),linear-gradient(#5f3534,#48242a);background-size:100% 100%}',
+  '#mb-duel-dialog #mb-duel-close{background-image:url("/ui-assets/duel-parts/17_exit_button.png");background-size:100% 100%;background-repeat:no-repeat}',
   '#mb-duel-dialog .mb-duel-note{color:#735444;font-size:13px}',
   '#mb-duel-dialog{width:min(95vw,1180px);max-height:95dvh;background:linear-gradient(180deg,#e4eff21a,#271c1d18),url("/ui-assets/duel-day-loop.webp") center/cover fixed!important}',
   '#mb-duel-dialog .mb-duel-panel{max-width:1050px;margin:0 auto;padding:clamp(13px,2vw,24px);background:linear-gradient(#fff1dce8,#fae2c6ec);backdrop-filter:blur(4px)}',
@@ -590,7 +602,12 @@
    const players=[...status.players].sort((a,b)=>b.score-a.score||b.correct-a.correct);
    const draw=players[0].score===players[1].score&&players[0].correct===players[1].correct;
    const win=players[0]?.id===status.me;
-   html+='<h3>🏆 대결 종료!</h3><p class="mb-duel-result '+(win&&!draw?'good':'bad')+'">'+(draw?'🤝 무승부!':win?'🎉 승리!':'⚔ 다음에는 승리해 보자!')+'</p><p>최종 결과: '+esc(players[0].name)+' '+players[0].score+'점 / '+esc(players[1].name)+' '+players[1].score+'점</p>';
+   html+='<h3>🏆 대결 종료!</h3>'+
+    '<img class="mb-duel-result-hero" alt="'+(draw?'무승부':win?'승리한 선비':'패배한 선비')+
+    '" src="'+(win&&!draw?'/ui-assets/duel-winner.png':'/ui-assets/duel-loser.png')+
+    '" onerror="this.onerror=null;this.src=\'/ui-assets/mascot-character.png\'">'+
+    '<p class="mb-duel-result '+(win&&!draw?'good':'bad')+'">'+(draw?'🤝 무승부!':win?'🎉 승리!':'⚔ 다음에는 승리해 보자!')+
+    '</p><p>최종 결과: '+esc(players[0].name)+' '+players[0].score+'점 / '+esc(players[1].name)+' '+players[1].score+'점</p>';
   }
   html+='<div class="mb-duel-round-indicator">ROUND '+Math.min(qidx+1,count())+' / '+count()+'</div><div class="mb-duel-actions"><button id="mb-duel-new" type="button">새 대결 / 코드 입력</button></div><p id="mb-duel-info" class="mb-duel-note" role="status">대결은 서버에서 채점돼. 동일한 문제를 각자 풀어!</p></div>';
   putHTML(html);
