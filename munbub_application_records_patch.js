@@ -22,7 +22,7 @@
   prompt:q.prompt.replace(/___\s+([.!?])/g,'___$1'),options:[...q.options],answers:[...q.answers],
   note:q.note,source:q.source||'학교 프린트',sourceId:q.id
  }));
- if(extra.length!==129||new Set(extra.map(q=>q.id)).size!==extra.length||
+ if(!extra.length||new Set(extra.map(q=>q.id)).size!==extra.length||
     extra.some(q=>MAP.has(q.id))){
   console.error('맛춘범 응용 확장: 원본 문제 수 또는 ID 충돌, 추가 중단');return;
  }
@@ -163,7 +163,7 @@
    '</div><strong>'+esc(value)+'</strong><div class="mb-record-info">'+esc(description)+'</div></div>';
   const infinite=card('∞ 무한모드 · 최고 정답',
    inf?inf.correct+'문제':'기록 없음',
-   inf?categoryName(inf.category)+' · '+inf.answered+'문제 풀이 · '+day(inf.at):'무한모드 도전을 완료하면 기록돼.');
+   inf?categoryName(inf.category)+' · '+inf.answered+'문제 풀이 · '+day(inf.at):'무한모드에서 문제를 풀면 바로 기록돼.');
   const hardScore=hard.scoreAt?hard.bestScore+'점':'기록 없음';
   const hardRecord=card('⚔ 하드코어 · 최고 점수',
    hardScore,hard.scoreAt?day(hard.scoreAt):'하드코어 도전 종료 후 기록돼.');
