@@ -91,7 +91,7 @@ document.head.append(style);
   if(!dialog.open)dialog.showModal();
   showLobby();
   checkLogin().then(ok=>{
-   if(dialog.open&&!ok&&!run)showLobby('🔒 온라인 랭킹전은 먼저 닉네임·비밀번호로 로그인해야 해.');
+   if(dialog.open&&!busy&&!active&&!ok&&!run)showLobby('🔒 온라인 랭킹전은 먼저 닉네임·비밀번호로 로그인해야 해.');
   });
  }
  const findQ=()=>{
@@ -148,8 +148,10 @@ document.head.append(style);
   try{
    // Ranked POST validates the login cookie itself. Avoid a separate GET
    // race that previously blocked a valid account during brief network errors.
-   const out=await api({action:'start',rankedChallenge:true,mode:selected});
-   mode=selected;run=out.run;qid=out.qid;correct=0;answered=0;score=0;deadline=out.deadline||null;
+   const selection=selected;
+   const out=await api({action:'start',rankedChallenge:true,mode:selection});
+   if(!out?.run||!out?.qid)throw Error('서버에서 문제를 전달하지 못했어. 다시 도전해 줘.');
+   mode=selection;run=out.run;qid=out.qid;correct=0;answered=0;score=0;deadline=out.deadline||null;
    dialog.dataset.mbRankedMode=mode;
    if(!findQ())throw Error('랭킹 문제 데이터가 준비되지 않았어. 화면을 새로고침한 뒤 다시 도전해 줘.');
    generation++;active=true;showQuestion();
