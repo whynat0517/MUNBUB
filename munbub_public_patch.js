@@ -91,7 +91,7 @@ function createView(){
  $('#mb-pub-back').onclick=listView;$('#mb-pub-createform').onsubmit=async e=>{
   e.preventDefault();if(busy)return;busy=true;message('방을 만들고 있어...');
   const settings={type:$('#mb-pub-type').value,form:$('#mb-pub-form').value,count:Number($('#mb-pub-amount').value),seconds:Number($('#mb-pub-seconds').value)};
-  const body={action:'create',settings,publicRoom:!$('#mb-pub-private').checked,roomName:$('#mb-pub-name').value.trim(),title:window.mbGetEquippedTitle?.()||'국어 새내기'};
+  const body={action:'create',settings,publicRoom:!$('#mb-pub-private').checked,lobbyRoom:true,roomName:$('#mb-pub-name').value.trim(),title:window.mbGetEquippedTitle?.()||'국어 새내기'};
   try{const out=await request('/api/duel',body);await enterDuel(out.code)}
   catch(error){message(error.message)}finally{busy=false}
  };
