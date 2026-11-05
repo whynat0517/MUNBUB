@@ -1,0 +1,75 @@
+name: Apply Matchunbeom Update ZIP
+on:
+  push:
+    paths:
+      - 'matchunbeom_update.zip'
+      - '.github/workflows/apply-matchunbeom-update.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: matchunbeom-zip-update
+  cancel-in-progress: false
+
+jobs:
+  unpack:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout existing project
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: true
+      - name: Validate and extract only the reviewed update files
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'e70441c3a376e01cb9f856f8c99d3844c9d253c1521e90639c5e698d1bcc96b9  matchunbeom_update.zip' | sha256sum -c -
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          allowed = {
+            "munbub_public_patch.js",
+            "munbub_online_patch.js",
+            "munbub_titles_patch.js",
+            "munbub_ranked_visual_20261106.css",
+            "munbub_ranked_challenge.js",
+            "munbub_art_refresh_20261106.css",
+            "munbub_quiz_scenes_2026.js",
+            "ui-assets/duel-scoreboard-final.png",
+            "ui-assets/ranked-infinite-button.png",
+            "ui-assets/public-button-final.png",
+            "ui-assets/ranked-stage-final.png",
+            "ui-assets/title-button-final.png",
+            "ui-assets/ranked-time-button.png",
+            "ui-assets/timed-background-final.gif",
+            "ui-assets/ranked-hard-button.png",
+            "업데이트_검증_배포안내_20261106.md",
+            "UPDATED_FILES_20261106.txt",
+          }
+          with ZipFile("matchunbeom_update.zip") as archive:
+              names = archive.namelist()
+              if len(names) != len(allowed) or set(names) != allowed:
+                  raise SystemExit("Unexpected ZIP content; refusing extraction")
+              for name in names:
+                  target = Path(name)
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(archive.read(name))
+          print("Extracted", len(allowed), "files to original project paths")
+          PY
+      - name: Commit extracted project files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- munbub_public_patch.js munbub_online_patch.js munbub_titles_patch.js munbub_ranked_visual_20261106.css munbub_ranked_challenge.js munbub_art_refresh_20261106.css munbub_quiz_scenes_2026.js ui-assets/duel-scoreboard-final.png ui-assets/ranked-infinite-button.png ui-assets/public-button-final.png ui-assets/ranked-stage-final.png ui-assets/title-button-final.png ui-assets/ranked-time-button.png ui-assets/timed-background-final.gif ui-assets/ranked-hard-button.png UPDATED_FILES_20261106.txt '업데이트_검증_배포안내_20261106.md'
+          git rm -- matchunbeom_update.zip
+          if git diff --cached --quiet; then
+            echo 'No changes needed'
+          else
+            git commit -m 'Apply ranking UI assets and gameplay updates from verified ZIP'
+            git push origin HEAD:main
+          fi
