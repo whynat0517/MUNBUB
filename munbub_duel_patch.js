@@ -583,7 +583,12 @@
    :!newReview()&&Date.now()<feedbackUntil?'feedback'
    :!unlocked?'opponent'
    :now()<status.turnStartsAt?'countdown':'question';
-  const viewKey=newPhase+'|'+qidx;
+  // Include multiplayer lobby readiness and opponent presence in the view key.
+   // Otherwise the fast poll changes state but never redraws the waiting UI.
+   const lobbyKey=newPhase==='waiting'&&status.publicRoom
+    ?'|'+String(status.guestName||'')+'|'+Number(!!status.lobbyReady?.host)+'|'+Number(!!status.lobbyReady?.guest)
+    :'';
+   const viewKey=newPhase+'|'+qidx+lobbyKey;
   if(viewKey===lastViewKey){refreshScoreboard();return;}
   lastViewKey=viewKey;phase=newPhase;
   const options=status.settings||{count:count(),seconds:25,type:'mixed'};
