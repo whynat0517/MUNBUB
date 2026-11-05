@@ -235,11 +235,11 @@
   dialog.querySelector('#mb-duel-again')?.addEventListener('click',showLobby);
  }
  async function heartbeat(){
-  if(!roomCode||!status?.answerTicket||!dialog.open||heartbeatBusy||
+  if(!roomCode||(!status?.answerTicket&&!(status?.publicRoom&&status?.players?.length===2))||!dialog.open||heartbeatBusy||
      Date.now()-lastHeartbeat<5200)return;
   const code=roomCode;heartbeatBusy=true;lastHeartbeat=Date.now();
   try{
-   const out=await api({action:'pulse',code,answerTicket:status.answerTicket});
+   const out=await api({action:'pulse',code,...(status?.answerTicket?{answerTicket:status.answerTicket}:{})});
    if(out.ended&&roomCode===code)opponentGone(false);
   }catch(_){/* transient connection failures must not interrupt the user's answer */}
   finally{heartbeatBusy=false}
