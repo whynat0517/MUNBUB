@@ -92,6 +92,7 @@
  let emoteBusy=false,lastEmoteSentAt=0,lastRemoteEmoteAt=0,recentRemoteEmote=null,signalTickCount=0;
  let signalBusy=false,signalLastAt=0,signalFailures=0,lastOpponentSignal=null;
  const currentRoomKey='mb_duel_last_room_v1';
+ const roomSettingsKey='mb_duel_host_settings_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
  function showError(message){const place=statusEl();if(place)place.textContent=message;else renderNotice(message)}
  function makeHeader(){return '<button class="mb-duel-close" type="button" id="mb-duel-close">✕ 닫기</button><h2>🎮 1대1 맞춤법 대결</h2>'}
@@ -115,14 +116,24 @@
   const last=localStorage.getItem(currentRoomKey)||'';
   putHTML('<div class="mb-duel-panel"><p>친구에게 <strong>8자리 방 코드</strong>를 알려 주고 같은 문제로 대결해 봐! 방장이 문제 수와 시간, 유형을 정할 수 있어.</p>'+
    '<form id="mb-duel-create-form"><div class="mb-duel-config">'+
-   '<label>문제 수<select id="mb-duel-count"><option value="5">5문제</option><option value="10" selected>10문제</option><option value="15">15문제</option><option value="20">20문제</option></select></label>'+
-   '<label>문제당 제한 시간<select id="mb-duel-seconds"><option value="10">10초</option><option value="15">15초</option><option value="25" selected>25초</option><option value="40">40초</option></select></label>'+
+   '<label>문제 수<select id="mb-duel-count"><option value="5">5문제</option><option value="10" selected>10문제</option><option value="15">15문제</option><option value="20">20문제</option><option value="30">30문제</option></select></label>'+
+   '<label>문제당 제한 시간<select id="mb-duel-seconds"><option value="10">10초</option><option value="15">15초</option><option value="25" selected>25초</option><option value="30">30초</option><option value="40">40초</option><option value="60">60초</option></select></label>'+
    '<label>문제 유형<select id="mb-duel-type"><option value="mixed" selected>맞춤법 + 사자성어</option><option value="spelling">맞춤법만</option><option value="idiom">사자성어만</option></select></label>'+
    '</div><button id="mb-duel-create" type="submit" class="mb-duel-primary">➕ 설정대로 대결방 만들기</button></form>'+
    '<hr><label for="mb-duel-input"><strong>초대받은 방 코드</strong></label><input id="mb-duel-input" maxlength="8" autocomplete="off" placeholder="예: ABCD2345" value="'+esc(last)+'"><div class="mb-duel-actions"><button id="mb-duel-join">↪ 방 코드로 참가</button>'+(last?'<button id="mb-duel-return">최근 방 다시 보기</button>':'')+'</div><p class="mb-duel-note">닉네임·비밀번호 로그인 후 참가할 수 있어. 1대1 점수는 하드코어 랭킹에 합산되지 않아.</p><p id="mb-duel-info" role="status" class="mb-duel-status">새 방을 만들거나 친구의 코드를 입력해 줘.</p></div>');
+  try{
+   const saved=JSON.parse(localStorage.getItem(roomSettingsKey)||'null');
+   for(const [id,value] of [['mb-duel-count',saved?.count],['mb-duel-seconds',saved?.seconds],['mb-duel-type',saved?.type]]){
+    const el=$(id);
+    if(el&&[...el.options].some(opt=>opt.value===String(value)))el.value=String(value);
+   }
+  }catch(_){}
   dialog.querySelector('#mb-duel-create-form')?.addEventListener('submit',e=>{
    e.preventDefault();
-   startAction('create',{count:Number($('mb-duel-count').value),seconds:Number($('mb-duel-seconds').value),type:$('mb-duel-type').value});
+   const settings={count:Number($('mb-duel-count').value),
+    seconds:Number($('mb-duel-seconds').value),type:$('mb-duel-type').value};
+   try{localStorage.setItem(roomSettingsKey,JSON.stringify(settings))}catch(_){}
+   startAction('create',settings);
   });
   dialog.querySelector('#mb-duel-join')?.addEventListener('click',()=>startAction('join',dialog.querySelector('#mb-duel-input')?.value));
   dialog.querySelector('#mb-duel-return')?.addEventListener('click',()=>enterRoom(last));
@@ -632,8 +643,8 @@
  function signalDelay(){
   if(!dialog.open||!roomCode||document.hidden)return 1400;
   if(signalFailures>3)return 2600;
-  if(phase==='question'||phase==='opponent'||phase==='review')return 350;
-  if(phase==='countdown'||phase==='feedback')return 500;
+  if(phase==='question'||phase==='opponent')return 350;
+  if(phase==='review'||phase==='countdown'||phase==='feedback')return 500;
   if(phase==='waiting')return 580;
   if(phase==='finished')return 650;
   return 2200;
