@@ -16,11 +16,12 @@ function validSettings(input){
   ?{count,seconds,type}:null;
 }
 function roomSettings(room){return validSettings(room?.settings)||{count:10,seconds:25,type:'mixed'}}
-const REVIEW_MS=5000;
+const REVIEW_MS=10000;
+const EMOTE_IDS=new Set(['wave','cheer','laugh','wow','cry','fire','thumbs','thinking']);
 function nextTurnAt(roomVersion,ours,theirs){
  const lastAt=Math.max(Number(ours?.at)||0,Number(theirs?.at)||0);
  if(roomVersion<4)return lastAt+1500;
- const fallback=lastAt+REVIEW_MS;
+ const fallback=lastAt+(roomVersion>=5?REVIEW_MS:5000);
  const first=Number(ours?.readyAt)||0,second=Number(theirs?.readyAt)||0;
  // Fast-forward only on agreement by BOTH players. Either may agree early.
  return first&&second?Math.min(fallback,Math.max(first,second)):fallback;
@@ -34,6 +35,7 @@ const roomPath=c=>PREFIX+c+'/room.json';
 const guestPath=c=>PREFIX+c+'/guest.json';
 const stepPath=(c,id,index)=>PREFIX+c+'/steps/'+id+'/'+index+'.json';
 const progressPath=(c,id)=>PREFIX+c+'/progress/'+id+'.json';
+const emotePath=(c,id)=>PREFIX+c+'/emotes/'+id+'.json';
 const hasExpired=room=>!room||!Number.isFinite(room.expiresAt)||room.expiresAt<Date.now();
 
 function pickQuestions(settings){
@@ -95,12 +97,14 @@ async function state(c,room,guest,me){
   nextTurnAt(room.version||0,lastMine,lastOther)):null;
  const reviewReadyAt=Number(lastMine?.readyAt)||null;
  const opponentReviewReadyAt=Number(lastOther?.readyAt)||null;
+ const finalReviewEndsAt=!!guest&&records.every(x=>x.finished)&&settings.count>0
+  ?nextTurnAt(room.version||0,mine?._answerDetails[settings.count-1],other?._answerDetails[settings.count-1]):null;
  return {code:c,hostName:room.hostName,guestName:guest?.name||null,
   me:me.id,role:room.hostId===me.id?'host':'guest',
   ready:!!guest,startsAt:guest?guest.joinedAt+6000:null,turnReady,turnStartsAt,
   opponentAnswered,opponentAnsweredAt,serverNow:Date.now(),settings,
-  reviewMode:room.version>=4?'both-ready-or-5s':'legacy',
-  reviewReadyAt,opponentReviewReadyAt,
+  reviewMode:room.version>=5?'both-ready-or-10s':room.version>=4?'both-ready-or-5s':'legacy',
+  reviewReadyAt,opponentReviewReadyAt,finalReviewEndsAt,
   // A room-scoped, signed read ticket lets the client check ONLY the other
   // player's compact progress snapshot. The API still authenticates the
   // session and verifies ticket owner/room/expiry on every signal request.
@@ -144,11 +148,15 @@ export default async function handler(req,res){
       serverNow:Date.now()
      });
     }
-    const progress=await readPrivate(progressPath(claim.code,claim.opponentId),{fresh:true});
+    const [progress,emote]=await Promise.all([
+     readPrivate(progressPath(claim.code,claim.opponentId),{fresh:true}),
+     req.query?.reactions==='1'?readPrivate(emotePath(claim.code,claim.opponentId),{fresh:true}):Promise.resolve(null)
+    ]);
     return res.status(200).json({
      ready:true,answered:progress?.answered||0,correct:progress?.correct||0,
      score:progress?.score||0,lastAt:progress?.lastAt||null,
      answers:(progress?.answers||[]).map(x=>({index:x.index,at:x.at,readyAt:x.readyAt||null})),
+     ...(req.query?.reactions==='1'?{emote:emote?.id&&EMOTE_IDS.has(emote.id)?emote:null}:{}),
      serverNow:Date.now()
     });
    }catch(e){
@@ -178,7 +186,7 @@ export default async function handler(req,res){
    if(!settings)return sendError(res,400,'문제 수·시간·유형 중 지원하지 않는 설정이 있어.');
    const code=codeNew(),now=Date.now();
    await put(roomPath(code),JSON.stringify({
-    version:4,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
+    version:5,settings,code,hostId:me.id,hostName:me.name,questionIds:pickQuestions(settings),
     createdAt:now,expiresAt:now+ROOM_LIFETIME
    }),{access:'private',addRandomSuffix:false,contentType:'application/json'});
    // Create the initial compact read model; avoids a list of empty steps on every poll.
@@ -188,7 +196,7 @@ export default async function handler(req,res){
   const code=String(body.code||'').trim().toUpperCase();
   if(!codeOK(code))return sendError(res,400,'올바른 8자리 방 코드를 입력해 줘.');
   let room,guest;
-  if((body.action==='answer'||body.action==='ready')&&body.answerTicket){
+  if((body.action==='answer'||body.action==='ready'||body.action==='emote')&&body.answerTicket){
    const verified=verify(String(body.answerTicket));
    if(!verified||verified.kind!=='duel-answer'||
     verified.code!==code||verified.viewerId!==me.id||
@@ -238,12 +246,26 @@ export default async function handler(req,res){
    }
    return res.status(200).json({code,joined:true});
   }
+  if(body.action==='emote'){
+   if(!guest||room.version<5)return sendError(res,409,'이 방에서는 이모티콘을 사용할 수 없어.');
+   if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'참가자만 이모티콘을 보낼 수 있어.');
+   const id=String(body.emote||'');
+   if(!EMOTE_IDS.has(id))return sendError(res,400,'지원하지 않는 이모티콘이야.');
+   const path=emotePath(code,me.id);
+   const previous=await readPrivate(path,{fresh:true});
+   const now=Date.now();
+   if(previous&&now-Number(previous.at||0)<1100)
+    return sendError(res,429,'이모티콘은 1초마다 보낼 수 있어.');
+   const data={id,at:now};
+   await writePrivate(path,data,{overwrite:true});
+   return res.status(200).json({accepted:true,emote:data});
+  }
   if(body.action==='ready'){
    if(!guest||room.version<4)return sendError(res,409,'현재 방은 바로 넘기기를 지원하지 않아.');
    if(me.id!==room.hostId&&me.id!==guest.id)return sendError(res,403,'방 참가자만 동의할 수 있어.');
    const index=Number(body.index),settings=roomSettings(room);
-   if(!Number.isInteger(index)||index<0||index>=settings.count-1)
-    return sendError(res,400,'다음 문제가 없는 상태야.');
+   if(!Number.isInteger(index)||index<0||index>=settings.count)
+    return sendError(res,400,'현재 문제 번호를 확인해 줘.');
    const myPath=progressPath(code,me.id);
    const progress=await readPrivate(myPath,{fresh:true});
    if(!progress||progress.answered!==index+1||progress.answers?.[index]?.index!==index)
@@ -278,7 +300,7 @@ export default async function handler(req,res){
    if(otherCount<index)return sendError(res,409,'상대방이 이전 문제를 마칠 때까지 기다려 줘.');
    let began=start;
    if(index>0){
-    // New rooms: five seconds after both answers, or immediately if both
+    // New rooms: ten seconds after both answers, or immediately if both
     // players agree. This is verified on the SERVER, not just the UI.
     // Older active rooms keep their original 1.5-second rule.
     began=nextTurnAt(room.version||0,
