@@ -424,3 +424,221 @@
 @media(prefers-reduced-motion:reduce){
  #mb-duel-dialog .mb-duel-emotes button,#mb-duel-dialog .mb-duel-option-list button{transition:none!important;animation:none!important}
 }
+
+
+/* 2026-11-05 repair: preserve native artwork aspect ratios, no stretched frames. */
+#mb-duel-dialog h2{
+ width:min(43%,634px)!important;
+ height:auto!important;
+ min-height:0!important;
+ aspect-ratio:634/147!important;
+ background-size:contain!important;
+ margin:0 auto 2px!important;
+}
+#mb-duel-dialog .mb-duel-top-controls{
+ position:absolute;right:clamp(8px,1vw,17px);top:clamp(7px,1vw,17px);
+ z-index:7;display:flex;align-items:center;justify-content:flex-end;
+ gap:clamp(4px,.5vw,9px);
+}
+#mb-duel-dialog .mb-duel-top-controls button,
+#mb-duel-dialog .mb-duel-top-controls #mb-duel-close{
+ position:static!important;float:none!important;
+ box-sizing:border-box!important;
+ flex:0 0 auto!important;
+ width:clamp(39px,4.35vw,69px)!important;
+ height:clamp(39px,4.35vw,69px)!important;
+ min-height:0!important;padding:0!important;margin:0!important;
+ border:0!important;border-radius:0!important;
+ background-color:transparent!important;background-position:center!important;
+ background-repeat:no-repeat!important;background-size:contain!important;
+ color:transparent!important;font-size:0!important;text-indent:-9999px!important;
+ box-shadow:none!important;cursor:pointer;
+}
+#mb-duel-dialog .mb-duel-top-controls #mb-duel-home{background-image:url("/ui-assets/duel-parts/18_home_button.webp")!important}
+#mb-duel-dialog .mb-duel-top-controls #mb-duel-sound{background-image:url("/ui-assets/duel-parts/20_sound_button.webp")!important}
+#mb-duel-dialog .mb-duel-top-controls #mb-duel-close{background-image:url("/ui-assets/duel-parts/17_exit_button.webp")!important}
+#mb-duel-dialog .mb-duel-top-controls button:hover{filter:brightness(1.14);transform:translateY(-2px)}
+#mb-duel-dialog .mb-duel-top-controls button:focus-visible{outline:3px solid #e4bd79;outline-offset:1px}
+#mb-duel-dialog .mb-duel-panel:not(.mb-duel-arena){
+ box-sizing:border-box!important;
+ width:min(98%,1020px)!important;
+ max-width:1020px!important;
+ min-height:0!important;
+ margin:3px auto 18px!important;
+ padding:clamp(13px,2vw,29px)!important;
+ border:4px double #b4896e!important;
+ background:linear-gradient(160deg,rgba(255,246,230,.95),rgba(252,230,207,.95))!important;
+ box-shadow:0 9px 29px #28172959!important;
+}
+#mb-duel-dialog .mb-duel-config{
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ gap:9px!important;
+}
+#mb-duel-dialog .mb-duel-scoreboard{
+ min-height:0!important; gap:clamp(36px,6vw,125px)!important;
+ align-items:center!important; margin:0 auto!important;
+}
+#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score,
+#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1),
+#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){
+ box-sizing:border-box!important;
+ aspect-ratio:494/168!important;
+ height:auto!important;
+ min-height:0!important;
+ max-height:168px!important;
+ border:0!important;
+ background-size:contain!important;
+ background-repeat:no-repeat!important;
+ padding:clamp(5px,.7vw,11px) clamp(10px,1.5vw,20px)!important;
+ font-size:clamp(11px,1.25vw,19px)!important;
+ line-height:1.12!important;
+ overflow:hidden!important;
+}
+#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){
+ padding-left:clamp(48px,10.5vw,156px)!important;
+}
+#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){
+ padding-right:clamp(48px,10.5vw,156px)!important;
+}
+#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score strong{
+ font-size:clamp(15px,1.8vw,26px)!important;
+ line-height:1.1!important;
+}
+#mb-duel-dialog .mb-duel-scoreboard .mb-duel-score small{
+ font-size:clamp(8px,.82vw,13px)!important;line-height:1.05!important;
+}
+#mb-duel-dialog .mb-duel-vs-bar{
+ box-sizing:border-box!important;
+ aspect-ratio:761/112!important;
+ height:auto!important;
+ min-height:0!important;
+ background-size:contain!important;
+ margin:clamp(-28px,-1.9vw,-8px) auto 0!important;
+}
+#mb-duel-dialog .mb-duel-question-text{
+ aspect-ratio:1438/277!important;
+ height:auto!important;
+ min-height:clamp(125px,15.2vw,248px)!important;
+ max-height:none!important;
+ padding:clamp(14px,2vw,30px) clamp(19px,5vw,85px)!important;
+ background-size:contain!important;
+ font-size:clamp(18px,2.25vw,32px)!important;
+}
+#mb-duel-dialog .mb-duel-option-list{
+ align-items:center!important;
+ gap:clamp(3px,.7vw,10px) clamp(6px,.8vw,12px)!important;
+ margin:2px auto!important;
+}
+#mb-duel-dialog .mb-duel-option-list button{
+ box-sizing:border-box!important;
+ aspect-ratio:725/103!important;
+ height:auto!important;
+ min-height:0!important;
+ width:100%!important;
+ padding:clamp(5px,1vw,13px) clamp(25px,3vw,45px) clamp(5px,1vw,13px) clamp(48px,10.4vw,145px)!important;
+ background-size:contain!important;
+ background-repeat:no-repeat!important;
+ font-size:clamp(14px,1.73vw,25px)!important;
+ line-height:1.15!important;
+}
+#mb-duel-dialog .mb-duel-round-indicator{
+ aspect-ratio:682/80!important;
+ min-height:0!important;
+ height:auto!important;
+ background-size:contain!important;
+}
+#mb-duel-dialog .mb-duel-footer{
+ position:sticky!important;bottom:0!important;z-index:8!important;
+ min-height:0!important;
+ grid-template-columns:minmax(0,1.75fr) minmax(150px,.7fr) minmax(170px,.72fr)!important;
+ padding:clamp(4px,.5vw,8px)!important;
+ border:2px solid #d8ab7c!important;
+ border-radius:14px!important;
+ background:linear-gradient(110deg,rgba(61,36,44,.96),rgba(91,53,56,.97))!important;
+ backdrop-filter:blur(3px);
+ box-shadow:0 7px 20px #21101963!important;
+}
+#mb-duel-dialog .mb-duel-footer-actions button{
+ background-size:contain!important;
+ width:clamp(44px,4.8vw,74px)!important;
+ max-width:78px!important;
+ aspect-ratio:1/1!important;
+ height:auto!important;
+ min-height:0!important;
+ flex:0 1 auto!important;
+}
+#mb-duel-dialog .mb-duel-emotes{
+ background:rgba(35,21,30,.7)!important;
+ border-color:#cea67c!important;
+}
+#mb-duel-dialog .mb-duel-emotes button{
+ aspect-ratio:1/1!important;
+ width:clamp(44px,4vw,59px)!important;
+ height:auto!important;
+ min-height:44px!important;
+ border:1px solid #d09d7a!important;
+ background:linear-gradient(#f9deae,#e9c89b)!important;
+}
+#mb-duel-dialog .mb-duel-emote-art{
+ display:block!important;
+ width:100%!important;height:100%!important;
+ background-image:url("/ui-assets/duel-emotes-sheet.webp")!important;
+ background-size:400% 300%!important;
+ background-repeat:no-repeat!important;
+ font-size:0!important;image-rendering:auto!important;
+}
+#mb-duel-dialog .mb-duel-emotes .mb-duel-emote-art{
+ /* Each slot sets its own precise sprite coordinates inline. */
+}
+
+#mb-duel-dialog .mb-duel-remote-emote .mb-duel-emote-art{
+ width:clamp(72px,8vw,130px)!important;
+ height:clamp(72px,8vw,130px)!important;
+}
+#mb-duel-dialog .mb-duel-start-box{max-width:430px!important;margin:8px auto!important}
+@media(max-width:900px){
+ #mb-duel-dialog h2{width:min(52%,490px)!important}
+ #mb-duel-dialog .mb-duel-config{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #mb-duel-dialog .mb-duel-scoreboard{gap:clamp(7px,2vw,40px)!important}
+ #mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){padding-left:clamp(42px,9vw,86px)!important}
+ #mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){padding-right:clamp(42px,9vw,86px)!important}
+ #mb-duel-dialog .mb-duel-option-list button{padding-left:clamp(48px,11vw,95px)!important}
+ #mb-duel-dialog .mb-duel-footer{grid-template-columns:minmax(0,1fr) minmax(110px,.44fr)!important}
+}
+@media(max-width:560px){
+ #mb-duel-dialog h2{width:53%!important;min-height:0!important;height:auto!important}
+ #mb-duel-dialog .mb-duel-top-controls{top:5px;right:5px;gap:2px}
+ #mb-duel-dialog .mb-duel-top-controls button,
+ #mb-duel-dialog .mb-duel-top-controls #mb-duel-close{
+  width:clamp(33px,9vw,40px)!important;height:clamp(33px,9vw,40px)!important}
+ #mb-duel-dialog .mb-duel-scoreboard .mb-duel-score{
+  min-height:0!important;padding:2px 3px!important;font-size:11px!important}
+ #mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(1){
+  padding-left:clamp(42px,14vw,60px)!important}
+ #mb-duel-dialog .mb-duel-scoreboard .mb-duel-score:nth-child(2){
+  padding-right:clamp(42px,14vw,60px)!important}
+ #mb-duel-dialog .mb-duel-scoreboard .mb-duel-score strong{font-size:16px!important}
+ #mb-duel-dialog .mb-duel-scoreboard .mb-duel-score small{font-size:9px!important}
+ #mb-duel-dialog .mb-duel-question-text{aspect-ratio:auto!important;min-height:120px!important;background-size:contain!important}
+ #mb-duel-dialog .mb-duel-option-list button{
+  aspect-ratio:725/105!important;min-height:0!important;
+  padding:3px 15px 3px 75px!important;font-size:16px!important}
+ #mb-duel-dialog .mb-duel-footer{
+  grid-template-columns:1fr!important;
+  gap:4px!important;padding:5px 8px!important;
+ }
+ #mb-duel-dialog .mb-duel-footer .mb-duel-round-indicator{
+  grid-column:1!important;grid-row:1!important;
+  width:80%!important;justify-self:center!important;
+ }
+ #mb-duel-dialog .mb-duel-footer .mb-duel-emotes{
+  grid-column:1!important;grid-row:2!important;
+  min-height:49px!important;max-height:57px!important;
+  flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;
+ }
+ #mb-duel-dialog .mb-duel-footer .mb-duel-footer-actions{
+  grid-column:1!important;grid-row:3!important;gap:9px!important;
+ }
+ #mb-duel-dialog .mb-duel-footer-actions button{height:47px!important;width:47px!important}
+ #mb-duel-dialog .mb-duel-emotes button{width:45px!important;height:45px!important}
+}

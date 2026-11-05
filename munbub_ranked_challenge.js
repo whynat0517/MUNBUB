@@ -41,6 +41,14 @@
   '.sidebar-nav .mb-ranked-nav.active,.mobile-drawer .mb-ranked-nav.active{filter:brightness(.78)!important;outline:0!important;transform:scale(.98)}',
   '@media(max-width:700px){.sidebar-nav .mb-ranked-nav,.mobile-drawer .mb-ranked-nav{max-height:66px!important}}'
  ].join('\n');
+style.textContent += [
+ '.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{display:flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;position:relative!important;width:100%!important;aspect-ratio:3/1!important;min-height:0!important;height:auto!important;padding:0!important;margin:2px auto!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;opacity:1!important;overflow:visible!important;filter:none;transform:none;text-indent:0!important;color:transparent!important;font-size:0!important;cursor:pointer}',
+ '.sidebar-nav button.mb-ranked-nav .mb-ranked-art,.mobile-drawer button.mb-ranked-nav .mb-ranked-art{display:block!important;width:100%!important;height:auto!important;max-width:100%!important;aspect-ratio:3/1!important;object-fit:contain!important;image-rendering:auto!important;opacity:1!important;pointer-events:none!important}',
+ '.sidebar-nav button.mb-ranked-nav:hover .mb-ranked-art,.mobile-drawer button.mb-ranked-nav:hover .mb-ranked-art{filter:brightness(1.12)!important;transform:scale(1.035)}',
+ '.sidebar-nav button.mb-ranked-nav.active .mb-ranked-art,.mobile-drawer button.mb-ranked-nav.active .mb-ranked-art{filter:brightness(.77)!important}',
+ '#mb-ranked-dialog::backdrop{background:rgba(24,15,20,.53)!important}',
+ '@media(max-width:700px){.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{max-height:none!important}}'
+].join('\n');
 document.head.append(style);
  let selected='infinite',run=null,active=false,busy=false,mode=null,qid=null,
      correct=0,answered=0,score=0,deadline=null,lastResult=null,tickId=null,generation=0;
@@ -61,6 +69,7 @@ document.head.append(style);
  }
  function showLobby(message=''){
   active=false;run=null;mode=null;deadline=null;lastResult=null;
+  delete dialog.dataset.mbRankedMode;
   frame('🏆 랭킹전 도전', '<p class="mb-ranked-help">랭킹전은 일반 학습 기록과 별개야. 세 모드 모두 <strong>맞춤법 · 사자성어 · 응용문제</strong>를 섞어서 출제하고 정답은 서버에서 검증해.</p>'+
    '<div class="mb-ranked-modes">'+Object.entries(MODES).map(([key,opt])=>
     '<button type="button" data-rank-pick="'+key+'" class="'+(key===selected?'selected':'')+'">'+esc(opt.title)+
@@ -80,7 +89,14 @@ document.head.append(style);
    if(dialog.open&&!ok&&!run)showLobby('🔒 온라인 랭킹전은 먼저 닉네임·비밀번호로 로그인해야 해.');
   });
  }
- const findQ=()=>typeof MAP!=='undefined'&&MAP.get(qid);
+ const findQ=()=>{
+  if(typeof MAP!=='undefined'&&MAP.has(qid))return MAP.get(qid);
+  if(typeof BANK!=='undefined')for(const arr of [BANK.spelling,BANK.idioms,BANK.applications]){
+   const question=(arr||[]).find(q=>q.id===qid);
+   if(question)return question;
+  }
+  return null;
+ };
  const choices=(q)=>{
   if(q.type==='idiom'){
    const all=(BANK.idioms||[]).filter(x=>x.id!==q.id&&x.answer!==q.answer&&x.meaning!==q.meaning);
@@ -123,10 +139,13 @@ document.head.append(style);
  async function start(){
   if(busy)return;
   busy=true;
+  const button=$('mb-ranked-begin');if(button){button.disabled=true;button.textContent='⏳ 문제를 준비하고 있어…'}
   try{
    if(!await checkLogin())throw Error('닉네임·비밀번호로 로그인한 뒤 랭킹전에 참가해 줘.');
    const out=await api({action:'start',rankedChallenge:true,mode:selected});
    mode=selected;run=out.run;qid=out.qid;correct=0;answered=0;score=0;deadline=out.deadline||null;
+   dialog.dataset.mbRankedMode=mode;
+   if(!findQ())throw Error('랭킹 문제 데이터가 준비되지 않았어. 화면을 새로고침한 뒤 다시 도전해 줘.');
    generation++;active=true;showQuestion();
   }catch(e){showLobby(e.message)}finally{busy=false}
  }
@@ -226,11 +245,11 @@ document.head.append(style);
   const make=(container,aria)=>{
    if(!container||container.querySelector('.mb-ranked-nav'))return;
    const btn=document.createElement('button');
-   btn.type='button';btn.className='mb-ranked-nav navbtn';
+   btn.type='button';btn.className='mb-ranked-nav';
    btn.dataset.route='ranked';
    btn.setAttribute('aria-label','랭킹전');
    btn.title='온라인 랭킹전';
-   btn.textContent='🏆 랭킹전';
+   btn.innerHTML='<img class="mb-ranked-art" src="/ui-assets/mb_ranking_ui.webp" width="600" height="200" alt="" decoding="async">';
    const timed=container.querySelector('[data-route="timed"]');
    if(timed)timed.after(btn);else container.append(btn);
    btn.addEventListener('click',e=>{

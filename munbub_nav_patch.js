@@ -128,4 +128,13 @@
   };
   document.body.append(atlasScript);
  }
+ // Quiz backgrounds are isolated from the title/home and do not change BGM.
+ if(!document.getElementById('mb-quiz-scenes-loader')){
+  const scenes=document.createElement('script');
+  scenes.id='mb-quiz-scenes-loader';
+  scenes.src='./munbub_quiz_scenes_2026.js';
+  scenes.onerror=()=>console.error('게임 플레이 배경 모듈 로드 실패');
+  document.body.append(scenes);
+ }
+
 })();

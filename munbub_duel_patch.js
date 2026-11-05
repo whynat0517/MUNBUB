@@ -138,10 +138,24 @@
  const roomSettingsKey='mb_duel_host_settings_v1';
  const statusEl=()=>dialog.querySelector('#mb-duel-info');
  function showError(message){const place=statusEl();if(place)place.textContent=message;else renderNotice(message)}
- function makeHeader(){return '<button class="mb-duel-close" type="button" id="mb-duel-close" aria-label="대결 나가기">✕ 닫기</button><h2 aria-label="1대1 모드">1대1 모드</h2>'}
+ function makeHeader(){return '<div class="mb-duel-top-controls">'+
+  '<button type="button" id="mb-duel-home" aria-label="홈으로 돌아가기"></button>'+
+  '<button type="button" id="mb-duel-sound" aria-label="소리 켜기 또는 끄기"></button>'+
+  '<button class="mb-duel-close" type="button" id="mb-duel-close" aria-label="대결 나가기"></button>'+
+  '</div><h2 aria-label="1대1 모드"></h2>'}
  function putHTML(content){
   dialog.innerHTML=makeHeader()+content;
   dialog.querySelector('#mb-duel-close')?.addEventListener('click',()=>dialog.close());
+  dialog.querySelector('#mb-duel-home')?.addEventListener('click',()=>{
+   dialog.close();window.navigate?.('home');
+  });
+  dialog.querySelector('#mb-duel-sound')?.addEventListener('click',()=>{
+   const master=document.querySelector('#bgmToggle')||
+    document.querySelector('.mb-home-sound');
+   if(master){master.click();return}
+   const settings=document.querySelector('#bgmSettingsToggle');
+   if(settings)settings.click();
+  });
  }
  function renderNotice(message){putHTML('<div class="mb-duel-panel"><p class="mb-duel-status" id="mb-duel-info">'+esc(message)+'</p><div class="mb-duel-actions"><button type="button" id="mb-duel-back">방 선택으로</button></div></div>');dialog.querySelector('#mb-duel-back')?.addEventListener('click',showLobby)}
  async function api(body,code){
@@ -499,12 +513,13 @@
   renderRemoteEmote();
  }
  function emotePalette(){
-  if(!status?.ready||!status.answerTicket)return '';
+  if(!status)return '';
   return '<div class="mb-duel-emotes" aria-label="상대에게 이모티콘 보내기">'+
    '<span class="mb-duel-emotes-label">이모티콘</span>'+
    EMOTE_ORDER.map(key=>{
     const [icon,name]=EMOTES[key];
-    return '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'">'+
+    return '<button type="button" data-duel-emote="'+key+'" aria-label="'+name+' 보내기" title="'+name+'"'+
+     (!status?.ready||!status.answerTicket?' disabled':'')+'>'+
      '<span class="mb-duel-emote-art" style="'+spriteStyle(key)+'">'+icon+'</span></button>';
    }).join('')+
    '<span id="mb-duel-emotes-state" class="mb-duel-emotes-state" aria-live="polite"></span></div>'+
