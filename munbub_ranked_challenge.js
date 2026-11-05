@@ -50,6 +50,12 @@ style.textContent += [
  '#mb-ranked-dialog .mb-ranked-modes button{position:relative;z-index:2;opacity:1!important;visibility:visible!important}',
  '@media(max-width:700px){.sidebar-nav button.mb-ranked-nav,.mobile-drawer button.mb-ranked-nav{max-height:76px!important}}'
 ].join('\n');
+style.textContent += '\n'+[
+ '#mb-ranked-dialog .mb-ranked-hourglass{position:absolute;right:16px;top:78px;z-index:1;width:clamp(54px,9vw,90px);height:auto;aspect-ratio:1/1;object-fit:contain;pointer-events:none;filter:drop-shadow(0 5px 7px #2c171b65)}',
+ '#mb-ranked-dialog[data-mb-ranked-mode="timed60"] .mb-ranked-body{padding-top:clamp(92px,10vw,113px)!important}',
+ '#mb-ranked-dialog[data-mb-ranked-mode="timed60"] .mb-ranked-body .mb-ranked-question{position:relative}',
+ '@media(max-width:540px){#mb-ranked-dialog .mb-ranked-hourglass{right:10px;top:70px;width:64px}}'
+].join('\n');
 document.head.append(style);
  let selected='infinite',run=null,active=false,busy=false,mode=null,qid=null,
      correct=0,answered=0,score=0,deadline=null,lastResult=null,tickId=null,generation=0;
@@ -57,7 +63,9 @@ document.head.append(style);
  const safeMode=x=>MODES[x]?x:'infinite';
  function frame(title,content){
   dialog.innerHTML='<div class="mb-ranked-head"><h2>'+esc(title)+'</h2><button id="mb-ranked-close" type="button" aria-label="랭킹전 닫기">✕</button></div>'+
-   '<div class="mb-ranked-body">'+content+'</div>';
+   '<div class="mb-ranked-body">'+
+   (dialog.dataset.mbRankedMode==='timed60'?'<img class="mb-ranked-hourglass" src="/ui-assets/hourglass_loop.webp" alt="움직이는 모래시계" width="96" height="96">':'')+
+   content+'</div>';
  }
  async function api(data){
   const r=await fetch('/api/ranked',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
